@@ -51,6 +51,9 @@ private fun parseColor(hex: String?): Color? {
     }
 }
 
+/** Poster shape used everywhere: slightly wider than 2:3, as in the reference. */
+const val PosterAspect = 0.705f
+
 /** Short tag shown in the poster corner, like the "ORIGINAL" tag in the design. */
 private fun statusTag(status: String?): String? = when (status) {
     "RELEASING" -> "AIRING"
@@ -65,6 +68,7 @@ fun PosterCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     titleMaxLines: Int = 2,
+    tagAtBottom: Boolean = false,
 ) {
     val placeholder = remember(anime.id) { parseColor(anime.coverColor) ?: KiroSurface }
     val tag = remember(anime.id) { statusTag(anime.status) }
@@ -73,7 +77,7 @@ fun PosterCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(2f / 3f)
+                .aspectRatio(PosterAspect)
                 .clip(RoundedCornerShape(6.dp))
                 .background(placeholder.copy(alpha = 0.3f)),
         ) {
@@ -84,18 +88,22 @@ fun PosterCard(
                 modifier = Modifier.fillMaxSize(),
             )
             if (tag != null) {
+                // Small pill like the reference. Home rows pin it to the top-right corner,
+                // the search grid floats it at the bottom-right.
+                val pillShape = if (tagAtBottom) RoundedCornerShape(4.dp) else RoundedCornerShape(bottomStart = 6.dp)
                 Text(
                     text = tag,
                     color = Color.White,
-                    fontSize = 11.sp,
+                    fontSize = 9.sp,
+                    lineHeight = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.3.sp,
                     maxLines = 1,
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .clip(RoundedCornerShape(bottomStart = 6.dp))
+                        .align(if (tagAtBottom) Alignment.BottomEnd else Alignment.TopEnd)
+                        .padding(if (tagAtBottom) 6.dp else 0.dp)
+                        .clip(pillShape)
                         .background(KiroPurple)
-                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
                 )
             }
         }
@@ -103,6 +111,7 @@ fun PosterCard(
         Text(
             text = anime.displayTitle,
             style = MaterialTheme.typography.bodyLarge,
+            lineHeight = 21.sp,
             color = MaterialTheme.colorScheme.onBackground,
             maxLines = titleMaxLines,
             overflow = TextOverflow.Ellipsis,

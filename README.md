@@ -4,7 +4,7 @@ An anime streaming app for Android built with **Kotlin** (Jetpack Compose), **Ja
 powered by the [AniList GraphQL API](https://anilist.gitbook.io/anilist-apiv2-docs/).
 Typography is Netflix Sans (proprietary, see `licenses/FONTS.md`).
 
-**Version 1.4.0** - Home and Search screens, responsive layouts, Fluent icons.
+**Version 1.5.0** - Home and Search screens, responsive layouts, Fluent icons.
 
 ## Download
 

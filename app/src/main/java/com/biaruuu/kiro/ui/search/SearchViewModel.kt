@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.biaruuu.kiro.data.AniListRepository
 import com.biaruuu.kiro.data.Anime
 import com.biaruuu.kiro.data.ApiErrors
+import com.biaruuu.kiro.data.SortOrder
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -17,6 +18,8 @@ import kotlinx.coroutines.launch
 data class SearchUiState(
     val query: String = "",
     val genre: String? = null,
+    val sort: SortOrder = SortOrder.POPULARITY,
+    val total: Int = 0,
     val results: List<Anime> = emptyList(),
     val loading: Boolean = false,
     val loadingMore: Boolean = false,
@@ -45,6 +48,12 @@ class SearchViewModel : ViewModel() {
 
     fun onGenreToggle(genre: String) {
         _state.update { it.copy(genre = if (it.genre == genre) null else genre) }
+        schedule(debounce = false)
+    }
+
+    fun onSortChange(sort: SortOrder) {
+        if (_state.value.sort == sort) return
+        _state.update { it.copy(sort = sort) }
         schedule(debounce = false)
     }
 
@@ -79,7 +88,7 @@ class SearchViewModel : ViewModel() {
             else it.copy(loadingMore = true, error = null)
         }
         try {
-            val result = AniListRepository.search(snapshot.query.trim(), snapshot.genre, page)
+            val result = AniListRepository.search(snapshot.query.trim(), snapshot.genre, snapshot.sort, page)
             _state.update { cur ->
                 val merged = if (page == 1) {
                     result.items
@@ -90,6 +99,7 @@ class SearchViewModel : ViewModel() {
                 cur.copy(
                     results = merged,
                     hasNext = result.hasNext(),
+                    total = if (page == 1) result.total else cur.total,
                     page = page,
                     loading = false,
                     loadingMore = false,

@@ -16,8 +16,8 @@ object AniListRepository {
         return await<HomeContent> { callback -> AniListApi.loadHome(season, year, callback) }
     }
 
-    suspend fun search(query: String, genre: String?, page: Int): SearchResult =
-        await<SearchResult> { callback -> AniListApi.search(query, genre, page, callback) }
+    suspend fun search(query: String, genre: String?, sort: SortOrder, page: Int): SearchResult =
+        await<SearchResult> { callback -> AniListApi.search(query, genre, sort, page, callback) }
 
     private suspend fun <T : Any> await(
         start: (AniListApi.Callback<T>) -> AniListApi.Cancelable,

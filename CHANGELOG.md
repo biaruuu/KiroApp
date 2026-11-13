@@ -4,6 +4,23 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.5.0] - 2026-11-14
+
+Search redesigned to match the reference.
+
+### Changed
+- **Search screen revamped**:
+  - Flat grey search bar ("Search by title, tag") under a black status strip, with a divider below it.
+  - Genre filters are now text tabs (All, Action, Romance, Comedy, Fantasy, Adventure...) with a white underline on the selected one. "All" clears the filter.
+  - A "N Results" count (the real number of matches from AniList) with a sort selector on the right.
+  - Sort bottom sheet with **Popularity** and **Recently updated** (newest released titles first), a check mark on the current choice and a Cancel row.
+  - **Three posters per row** on phones; wider screens get more columns automatically.
+- Posters everywhere (Home rows, Trending Now, Search) use the reference proportions, slightly wider than 2:3, with 21sp title lines.
+- The AIRING / UPCOMING tag is a smaller pill. In Search it sits at the bottom-right of the poster; on Home it stays in the top-right corner.
+
+### Added
+- Fluent chevron and check icons.
+
 ## [1.4.0] - 2026-11-14
 
 ### Added

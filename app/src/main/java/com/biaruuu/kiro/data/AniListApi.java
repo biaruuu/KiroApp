@@ -87,11 +87,11 @@ public final class AniListApi {
 
     private static final String SEARCH_QUERY =
             "query Search($search: String, $genre: String, $page: Int, $perPage: Int,"
-                    + " $sort: [MediaSort]) {"
+                    + " $sort: [MediaSort], $statusIn: [MediaStatus]) {"
                     + " Page(page: $page, perPage: $perPage) {"
-                    + " pageInfo { hasNextPage }"
+                    + " pageInfo { hasNextPage total }"
                     + " media(type: ANIME, search: $search, genre: $genre, sort: $sort,"
-                    + " isAdult: false) { ...M } } } "
+                    + " status_in: $statusIn, isAdult: false) { ...M } } } "
                     + MEDIA_FIELDS;
 
     private AniListApi() {
@@ -146,16 +146,18 @@ public final class AniListApi {
     }
 
     /**
-     * Searches anime. An empty query returns what is trending, so the screen is never blank.
+     * Searches anime. An empty query lists everything, so the screen is never blank.
      *
      * @param query text to search for (may be empty)
      * @param genre optional AniList genre name, e.g. "Sci-Fi"
+     * @param sort  result order
      * @param page  1-based page number
      */
     @NonNull
     public static Cancelable search(
             @NonNull String query,
             @Nullable String genre,
+            @NonNull SortOrder sort,
             int page,
             @NonNull Callback<SearchResult> callback) {
         String text = query.trim();
@@ -169,7 +171,14 @@ public final class AniListApi {
             }
             variables.put("page", page);
             variables.put("perPage", SEARCH_PAGE_SIZE);
-            variables.put("sort", new JSONArray().put(text.isEmpty() ? "TRENDING_DESC" : "SEARCH_MATCH"));
+            if (sort == SortOrder.RECENT) {
+                variables.put("sort", new JSONArray().put("START_DATE_DESC"));
+                // Skip announced-but-unreleased titles so the newest entries are real releases.
+                variables.put("statusIn", new JSONArray().put("RELEASING").put("FINISHED"));
+            } else {
+                variables.put("sort", new JSONArray()
+                        .put(text.isEmpty() ? "POPULARITY_DESC" : "SEARCH_MATCH"));
+            }
         } catch (JSONException e) {
             callback.onError(e);
             return () -> { };
@@ -178,12 +187,13 @@ public final class AniListApi {
         return post(SEARCH_QUERY, variables, data -> {
             JSONObject pageObject = data.optJSONObject("Page");
             if (pageObject == null) {
-                return new SearchResult(new ArrayList<>(), false);
+                return new SearchResult(new ArrayList<>(), false, 0);
             }
             List<Anime> items = parseMedia(pageObject.optJSONArray("media"));
             JSONObject pageInfo = pageObject.optJSONObject("pageInfo");
             boolean hasNext = pageInfo != null && pageInfo.optBoolean("hasNextPage", false);
-            return new SearchResult(items, hasNext);
+            int total = pageInfo != null ? pageInfo.optInt("total", 0) : 0;
+            return new SearchResult(items, hasNext, total);
         }, callback);
     }
 
