@@ -1,0 +1,157 @@
+//! Kiro native core.
+//!
+//! Small, dependency-light helpers that the Kotlin UI calls through JNI:
+//! - `strip_html`   : turns AniList's HTML descriptions into clean plain text
+//! - `format_score` : 0-100 AniList score -> "8.7"
+//! - `season_for_month` : month number -> AniList season enum string
+
+use jni::objects::{JClass, JString};
+use jni::sys::{jint, jstring};
+use jni::JNIEnv;
+
+/// Convert an HTML snippet (as returned by AniList) into readable plain text.
+pub fn strip_html(input: &str) -> String {
+    let mut out = String::with_capacity(input.len());
+    let mut in_tag = false;
+    let mut tag = String::new();
+
+    for ch in input.chars() {
+        if in_tag {
+            if ch == '>' {
+                in_tag = false;
+                let t = tag.trim().trim_start_matches('/').to_ascii_lowercase();
+                if t.starts_with("br") {
+                    out.push('\n');
+                } else if (t == "p" || t == "li" || t == "div") && !out.ends_with('\n') {
+                    out.push('\n');
+                }
+                tag.clear();
+            } else {
+                tag.push(ch);
+            }
+        } else if ch == '<' {
+            in_tag = true;
+        } else {
+            out.push(ch);
+        }
+    }
+
+    let decoded = out
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace("&#039;", "'")
+        .replace("&nbsp;", " ")
+        .replace("&hellip;", "...")
+        .replace("&mdash;", "-")
+        .replace("&ndash;", "-");
+
+    // Collapse runs of blank lines and trim every line.
+    let mut result = String::with_capacity(decoded.len());
+    let mut blank_run = 0;
+    for line in decoded.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            blank_run += 1;
+            if blank_run > 1 {
+                continue;
+            }
+        } else {
+            blank_run = 0;
+        }
+        result.push_str(line);
+        result.push('\n');
+    }
+    result.trim().to_string()
+}
+
+/// AniList average score (0..=100) -> one-decimal rating out of 10.
+pub fn format_score(score: i32) -> String {
+    if score <= 0 {
+        return "N/A".to_string();
+    }
+    let clamped = score.min(100);
+    format!("{}.{}", clamped / 10, clamped % 10)
+}
+
+/// Month (1..=12) -> AniList `MediaSeason` value.
+pub fn season_for_month(month: i32) -> &'static str {
+    match month {
+        1 | 2 | 3 => "WINTER",
+        4 | 5 | 6 => "SPRING",
+        7 | 8 | 9 => "SUMMER",
+        _ => "FALL",
+    }
+}
+
+fn to_jstring(env: &mut JNIEnv, value: &str) -> jstring {
+    match env.new_string(value) {
+        Ok(s) => s.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_stripHtml<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    input: JString<'local>,
+) -> jstring {
+    let text: String = match env.get_string(&input) {
+        Ok(s) => s.into(),
+        Err(_) => return std::ptr::null_mut(),
+    };
+    to_jstring(&mut env, &strip_html(&text))
+}
+
+#[no_mangle]
+pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_formatScore<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    score: jint,
+) -> jstring {
+    to_jstring(&mut env, &format_score(score))
+}
+
+#[no_mangle]
+pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_seasonForMonth<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    month: jint,
+) -> jstring {
+    to_jstring(&mut env, season_for_month(month))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn strips_tags_and_entities() {
+        let s = "Hello <i>world</i>!<br><br>Tom &amp; Jerry &quot;ok&quot;";
+        assert_eq!(strip_html(s), "Hello world!\n\nTom & Jerry \"ok\"");
+    }
+
+    #[test]
+    fn collapses_blank_lines() {
+        assert_eq!(strip_html("a<br><br><br><br>b"), "a\n\nb");
+    }
+
+    #[test]
+    fn formats_scores() {
+        assert_eq!(format_score(87), "8.7");
+        assert_eq!(format_score(100), "10.0");
+        assert_eq!(format_score(0), "N/A");
+        assert_eq!(format_score(-5), "N/A");
+    }
+
+    #[test]
+    fn maps_seasons() {
+        assert_eq!(season_for_month(1), "WINTER");
+        assert_eq!(season_for_month(5), "SPRING");
+        assert_eq!(season_for_month(8), "SUMMER");
+        assert_eq!(season_for_month(11), "FALL");
+    }
+}

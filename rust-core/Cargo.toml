@@ -1,0 +1,18 @@
+[package]
+name = "kiro_core"
+version = "1.0.0"
+edition = "2021"
+description = "Native helpers for the Kiro anime streaming app"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+jni = "0.21"
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+panic = "abort"

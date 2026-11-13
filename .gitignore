@@ -1,0 +1,21 @@
+# Gradle / Android
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Native libraries are built from rust-core (scripts/build-rust.sh)
+app/src/main/jniLibs/
+
+# Rust
+rust-core/target/
+rust-core/Cargo.lock.bak
+
+# Roboto is downloaded by scripts/fetch-fonts.sh (Apache 2.0, Google Fonts)
+app/src/main/assets/fonts/*.ttf
+
+.DS_Store

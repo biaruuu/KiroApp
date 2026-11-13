@@ -1,0 +1,64 @@
+name: Release
+
+# Push a tag like v1.0.0 to build the APK and publish a GitHub release.
+# The release notes are taken from the matching section of CHANGELOG.md.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version and check it matches the app
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if ! grep -q "versionName = \"$VERSION\"" app/build.gradle.kts; then
+            echo "Tag $GITHUB_REF_NAME does not match versionName in app/build.gradle.kts" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Extract changelog for this version
+        run: bash scripts/release-notes.sh "${{ steps.version.outputs.version }}" > RELEASE_NOTES.md
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-ndk
+
+      - name: Fetch Roboto font
+        run: bash scripts/fetch-fonts.sh
+
+      - name: Build Rust core
+        run: bash scripts/build-rust.sh
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build release APK
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: Name the APK
+        run: cp app/build/outputs/apk/release/app-release.apk "Kiro-${{ steps.version.outputs.version }}.apk"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Kiro v${{ steps.version.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          files: Kiro-${{ steps.version.outputs.version }}.apk
