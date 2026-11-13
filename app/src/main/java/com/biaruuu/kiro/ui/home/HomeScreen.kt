@@ -19,6 +19,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.biaruuu.kiro.data.Anime
 import com.biaruuu.kiro.ui.components.AnimeRow
 import com.biaruuu.kiro.ui.components.ErrorState
+import com.biaruuu.kiro.ui.theme.LocalDimens
 
 @Composable
 fun HomeScreen(
@@ -30,6 +31,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val dims = LocalDimens.current
 
     when (val current = state) {
         HomeUiState.Loading -> Box(
@@ -49,7 +51,7 @@ fun HomeScreen(
             state = listState,
             modifier = modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(28.dp),
+            verticalArrangement = Arrangement.spacedBy(dims.rowSpacing),
         ) {
             if (current.content.hero.isNotEmpty()) {
                 item(key = "hero") {

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -20,9 +21,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -43,11 +41,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.biaruuu.kiro.R
 import com.biaruuu.kiro.data.Anime
 import com.biaruuu.kiro.ui.components.ErrorState
 import com.biaruuu.kiro.ui.components.MessageState
@@ -55,6 +55,7 @@ import com.biaruuu.kiro.ui.components.PosterCard
 import com.biaruuu.kiro.ui.theme.KiroPurple
 import com.biaruuu.kiro.ui.theme.KiroSurface
 import com.biaruuu.kiro.ui.theme.KiroSurfaceHigh
+import com.biaruuu.kiro.ui.theme.LocalDimens
 
 // These match AniList's genre names exactly.
 private val GENRES = listOf(
@@ -72,21 +73,29 @@ fun SearchScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val focusManager: FocusManager = LocalFocusManager.current
+    val dims = LocalDimens.current
 
-    Column(
+    // On tablets the content is capped and centred instead of stretching edge to edge.
+    Box(
         modifier = modifier
             .fillMaxSize()
             .statusBarsPadding(),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+    Column(
+        modifier = Modifier
+            .widthIn(max = dims.searchMaxWidth)
+            .fillMaxSize(),
     ) {
         TextField(
             value = state.query,
             onValueChange = viewModel::onQueryChange,
             placeholder = { Text("Search anime") },
-            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+            leadingIcon = { Icon(painterResource(R.drawable.ic_search), contentDescription = null) },
             trailingIcon = {
                 if (state.query.isNotEmpty()) {
                     IconButton(onClick = viewModel::clearQuery) {
-                        Icon(Icons.Filled.Close, contentDescription = "Clear")
+                        Icon(painterResource(R.drawable.ic_close), contentDescription = "Clear")
                     }
                 }
             },
@@ -114,11 +123,11 @@ fun SearchScreen(
             ),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = dims.gutter, vertical = 12.dp),
         )
 
         LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
+            contentPadding = PaddingValues(horizontal = dims.gutter),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(GENRES) { genre ->
@@ -146,7 +155,7 @@ fun SearchScreen(
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                modifier = Modifier.padding(horizontal = dims.gutter, vertical = 4.dp),
             )
         }
 
@@ -181,6 +190,7 @@ fun SearchScreen(
             }
         }
     }
+    }
 }
 
 @Composable
@@ -192,6 +202,7 @@ private fun ResultsGrid(
     onAnimeClick: (Anime) -> Unit,
     onLoadMore: () -> Unit,
 ) {
+    val dims = LocalDimens.current
     val nearEnd by remember(gridState) {
         derivedStateOf {
             val info = gridState.layoutInfo
@@ -206,8 +217,8 @@ private fun ResultsGrid(
     Box(modifier = Modifier.fillMaxSize()) {
         LazyVerticalGrid(
             state = gridState,
-            columns = GridCells.Adaptive(minSize = 108.dp),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+            columns = GridCells.Adaptive(minSize = dims.gridMinCell),
+            contentPadding = PaddingValues(start = dims.gutter, end = dims.gutter, top = 8.dp, bottom = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxSize(),

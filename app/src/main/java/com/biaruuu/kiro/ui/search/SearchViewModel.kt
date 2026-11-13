@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.biaruuu.kiro.data.AniListRepository
 import com.biaruuu.kiro.data.Anime
-import com.biaruuu.kiro.util.userMessage
+import com.biaruuu.kiro.data.ApiErrors
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -89,7 +89,7 @@ class SearchViewModel : ViewModel() {
                 }
                 cur.copy(
                     results = merged,
-                    hasNext = result.hasNext,
+                    hasNext = result.hasNext(),
                     page = page,
                     loading = false,
                     loadingMore = false,
@@ -103,7 +103,7 @@ class SearchViewModel : ViewModel() {
                 it.copy(
                     loading = false,
                     loadingMore = false,
-                    error = e.userMessage(),
+                    error = ApiErrors.userMessage(e),
                     loaded = true,
                 )
             }

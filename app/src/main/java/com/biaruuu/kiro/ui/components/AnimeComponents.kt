@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,14 +28,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.biaruuu.kiro.R
 import com.biaruuu.kiro.core.NativeCore
 import com.biaruuu.kiro.data.Anime
 import com.biaruuu.kiro.ui.theme.KiroSurface
+import com.biaruuu.kiro.ui.theme.LocalDimens
 
 private fun parseColor(hex: String?): Color? {
     if (hex.isNullOrBlank()) return null
@@ -55,7 +56,7 @@ fun PosterCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val placeholder = remember(anime.id) { parseColor(anime.coverImage.color) ?: KiroSurface }
+    val placeholder = remember(anime.id) { parseColor(anime.coverColor) ?: KiroSurface }
     val score = remember(anime.id) { NativeCore.scoreLabel(anime.averageScore) }
 
     Column(modifier = modifier.clickable(onClick = onClick)) {
@@ -83,7 +84,7 @@ fun PosterCard(
                         .padding(horizontal = 5.dp, vertical = 2.dp),
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Star,
+                        painter = painterResource(R.drawable.ic_star),
                         contentDescription = null,
                         tint = Color(0xFFFFC53D),
                         modifier = Modifier.size(11.dp),
@@ -109,7 +110,7 @@ fun PosterCard(
     }
 }
 
-/** A titled horizontal row of poster cards. */
+/** A titled horizontal row of poster cards. Card size follows the screen width. */
 @Composable
 fun AnimeRow(
     title: String,
@@ -117,24 +118,26 @@ fun AnimeRow(
     onAnimeClick: (Anime) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val dims = LocalDimens.current
     Column(modifier = modifier) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
+            fontSize = dims.sectionTitle,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(horizontal = 16.dp),
+            modifier = Modifier.padding(horizontal = dims.gutter),
         )
         Spacer(Modifier.height(12.dp))
         LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
+            contentPadding = PaddingValues(horizontal = dims.gutter),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             items(items, key = { it.id }) { anime ->
                 PosterCard(
                     anime = anime,
                     onClick = { onAnimeClick(anime) },
-                    modifier = Modifier.width(124.dp),
+                    modifier = Modifier.width(dims.cardWidth),
                 )
             }
         }

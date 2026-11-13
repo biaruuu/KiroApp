@@ -69,12 +69,6 @@ jobs:
         with:
           tool: cargo-ndk
 
-      - name: Fetch Roboto font
-        if: steps.version.outputs.exists == 'false'
-        env:
-          KIRO_REQUIRE_FONT: "1"
-        run: bash scripts/fetch-fonts.sh
-
       - name: Build Rust core
         if: steps.version.outputs.exists == 'false'
         run: bash scripts/build-rust.sh

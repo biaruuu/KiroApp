@@ -4,7 +4,7 @@ An anime streaming app for Android built with **Kotlin** (Jetpack Compose), **Ja
 powered by the [AniList GraphQL API](https://anilist.gitbook.io/anilist-apiv2-docs/).
 Typography is [Roboto](https://fonts.google.com/specimen/Roboto) from Google Fonts.
 
-**Version 1.0.0** - Home and Search screens.
+**Version 1.1.0** - Home and Search screens, responsive layouts, SVG icons.
 
 ## Download
 
@@ -15,9 +15,10 @@ Grab the latest `Kiro-x.y.z.apk` from the [Releases](../../releases) page and in
 
 | Part | Language | What it does |
 | --- | --- | --- |
-| `app/` UI, networking, state | Kotlin | Compose screens, AniList GraphQL client, view models |
-| `app/.../data/HttpClientProvider.java`, `KiroApplication.java` | Java | Shared OkHttp client and the Coil image loader |
+| `app/.../ui`, `core`, `data/AniListRepository.kt` | Kotlin | Jetpack Compose UI, view models, coroutine adapter |
+| `app/.../data/*.java`, `KiroApplication.java` | Java | AniList GraphQL client, networking, models, error messages |
 | `rust-core/` | Rust (JNI) | HTML cleanup of descriptions, score formatting, season detection |
+| `design/icons/` | SVG | Icon sources, converted by `scripts/svg2vector.py` |
 
 If the Rust library is missing, the app falls back to Kotlin implementations automatically.
 
@@ -26,7 +27,7 @@ If the Rust library is missing, the app falls back to Kotlin implementations aut
 Requirements: JDK 17, Android SDK (API 35), Rust with the Android targets, `cargo-ndk`, Android NDK.
 
 ```bash
-bash scripts/fetch-fonts.sh   # downloads Roboto (optional; falls back to the system font)
+python3 scripts/svg2vector.py # only after editing design/icons/*.svg
 bash scripts/build-rust.sh    # builds the native library into app/src/main/jniLibs
 ./gradlew assembleRelease     # APK in app/build/outputs/apk/release/
 ```

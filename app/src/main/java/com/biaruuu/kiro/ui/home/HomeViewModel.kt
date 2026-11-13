@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.biaruuu.kiro.data.AniListRepository
 import com.biaruuu.kiro.data.HomeContent
-import com.biaruuu.kiro.util.userMessage
+import com.biaruuu.kiro.data.ApiErrors
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,7 +34,7 @@ class HomeViewModel : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.value = HomeUiState.Error(e.userMessage())
+                _state.value = HomeUiState.Error(ApiErrors.userMessage(e))
             }
         }
     }

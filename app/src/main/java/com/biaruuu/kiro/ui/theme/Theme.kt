@@ -1,18 +1,15 @@
 package com.biaruuu.kiro.ui.theme
 
-import android.content.res.AssetManager
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
+import com.biaruuu.kiro.R
 
 val KiroPurple = Color(0xFF7B6CF6)
 val KiroBackground = Color(0xFF121212)
@@ -34,36 +31,13 @@ private val KiroColors = darkColorScheme(
     error = Color(0xFFFF6B6B),
 )
 
-private const val ROBOTO_ASSET = "fonts/Roboto-Variable.ttf"
-
-/**
- * Roboto (Google Fonts) is bundled as a variable font in assets/fonts. If the file is
- * not present we fall back to the system default font, which is Roboto on stock Android.
- */
-@OptIn(ExperimentalTextApi::class)
-private fun loadRoboto(assets: AssetManager): FontFamily {
-    val present = try {
-        assets.list("fonts")?.contains("Roboto-Variable.ttf") == true
-    } catch (_: Exception) {
-        false
-    }
-    if (!present) return FontFamily.Default
-
-    return try {
-        FontFamily(
-            listOf(400, 500, 700, 900).map { weight ->
-                Font(
-                    path = ROBOTO_ASSET,
-                    assetManager = assets,
-                    weight = FontWeight(weight),
-                    variationSettings = FontVariation.Settings(FontVariation.weight(weight)),
-                )
-            },
-        )
-    } catch (_: Exception) {
-        FontFamily.Default
-    }
-}
+/** Roboto (Google Fonts), bundled in res/font. */
+val Roboto = FontFamily(
+    Font(R.font.roboto_regular, FontWeight.Normal),
+    Font(R.font.roboto_medium, FontWeight.Medium),
+    Font(R.font.roboto_bold, FontWeight.Bold),
+    Font(R.font.roboto_black, FontWeight.Black),
+)
 
 private fun Typography.withFont(family: FontFamily): Typography = copy(
     displayLarge = displayLarge.copy(fontFamily = family),
@@ -83,15 +57,15 @@ private fun Typography.withFont(family: FontFamily): Typography = copy(
     labelSmall = labelSmall.copy(fontFamily = family),
 )
 
+private val KiroTypography = Typography().withFont(Roboto)
+
 @Composable
 fun KiroTheme(content: @Composable () -> Unit) {
-    val context = LocalContext.current
-    val typography = remember {
-        Typography().withFont(loadRoboto(context.assets))
-    }
     MaterialTheme(
         colorScheme = KiroColors,
-        typography = typography,
-        content = content,
-    )
+        typography = KiroTypography,
+    ) {
+        // Makes plain Text() calls (no explicit style) use Roboto too.
+        ProvideTextStyle(KiroTypography.bodyMedium, content)
+    }
 }
