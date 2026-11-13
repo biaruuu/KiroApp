@@ -31,12 +31,18 @@ private val KiroColors = darkColorScheme(
     error = Color(0xFFFF6B6B),
 )
 
-/** Roboto (Google Fonts), bundled in res/font. */
-val Roboto = FontFamily(
-    Font(R.font.roboto_regular, FontWeight.Normal),
-    Font(R.font.roboto_medium, FontWeight.Medium),
-    Font(R.font.roboto_bold, FontWeight.Bold),
-    Font(R.font.roboto_black, FontWeight.Black),
+/**
+ * Netflix Sans, bundled in res/font. The family ships Light, Regular, Medium and Bold, so Black
+ * (used by the KIRO wordmark) is mapped to the Bold file.
+ */
+val AppFont = FontFamily(
+    Font(R.font.netflix_sans_light, FontWeight.Light),
+    Font(R.font.netflix_sans_regular, FontWeight.Normal),
+    Font(R.font.netflix_sans_medium, FontWeight.Medium),
+    Font(R.font.netflix_sans_bold, FontWeight.SemiBold),
+    Font(R.font.netflix_sans_bold, FontWeight.Bold),
+    Font(R.font.netflix_sans_bold, FontWeight.ExtraBold),
+    Font(R.font.netflix_sans_bold, FontWeight.Black),
 )
 
 private fun Typography.withFont(family: FontFamily): Typography = copy(
@@ -57,7 +63,7 @@ private fun Typography.withFont(family: FontFamily): Typography = copy(
     labelSmall = labelSmall.copy(fontFamily = family),
 )
 
-private val KiroTypography = Typography().withFont(Roboto)
+private val KiroTypography = Typography().withFont(AppFont)
 
 @Composable
 fun KiroTheme(content: @Composable () -> Unit) {
@@ -65,7 +71,7 @@ fun KiroTheme(content: @Composable () -> Unit) {
         colorScheme = KiroColors,
         typography = KiroTypography,
     ) {
-        // Makes plain Text() calls (no explicit style) use Roboto too.
+        // Makes plain Text() calls (no explicit style) use the app font too.
         ProvideTextStyle(KiroTypography.bodyMedium, content)
     }
 }

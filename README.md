@@ -2,9 +2,9 @@
 
 An anime streaming app for Android built with **Kotlin** (Jetpack Compose), **Java** and **Rust**,
 powered by the [AniList GraphQL API](https://anilist.gitbook.io/anilist-apiv2-docs/).
-Typography is [Roboto](https://fonts.google.com/specimen/Roboto) from Google Fonts.
+Typography is Netflix Sans (proprietary, see `licenses/FONTS.md`).
 
-**Version 1.2.0** - Home and Search screens, responsive layouts, Fluent icons.
+**Version 1.3.0** - Home and Search screens, responsive layouts, Fluent icons.
 
 ## Download
 

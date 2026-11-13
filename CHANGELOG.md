@@ -4,6 +4,17 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.3.0] - 2026-11-14
+
+### Changed
+- **The whole app now uses Netflix Sans** (Light, Regular, Medium and Bold) in place of Roboto. The bold wordmark and splash screen use the Bold weight.
+
+### Removed
+- Roboto font files and license (no longer bundled).
+
+### Notes
+- Netflix Sans is a proprietary font; see `licenses/FONTS.md` before redistributing the repository or the APK.
+
 ## [1.2.0] - 2026-11-14
 
 New look that follows the Laftel-style reference, with Fluent icons and smoother scrolling.
