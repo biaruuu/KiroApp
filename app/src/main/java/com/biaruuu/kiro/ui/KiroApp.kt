@@ -8,38 +8,31 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
-import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.biaruuu.kiro.R
 import com.biaruuu.kiro.data.Anime
+import com.biaruuu.kiro.ui.components.KiroBottomBar
+import com.biaruuu.kiro.ui.components.KiroSideRail
+import com.biaruuu.kiro.ui.components.NavDestination
 import com.biaruuu.kiro.ui.home.HomeScreen
 import com.biaruuu.kiro.ui.search.SearchScreen
 import com.biaruuu.kiro.ui.theme.KiroBackground
@@ -49,13 +42,24 @@ import com.biaruuu.kiro.ui.theme.WindowClass
 import com.biaruuu.kiro.ui.theme.dimensFor
 import kotlinx.coroutines.delay
 
-private enum class Tab(val label: String, val icon: Int) {
-    Home("Home", R.drawable.ic_home),
-    Search("Search", R.drawable.ic_search),
-    Peek("Peek", R.drawable.ic_peek),
-    Library("Library", R.drawable.ic_library),
-    Me("Me", R.drawable.ic_me),
-}
+private const val TAB_HOME = 0
+private const val TAB_SEARCH = 1
+private const val TAB_PEEK = 2
+private const val TAB_LIBRARY = 3
+private const val TAB_ME = 4
+
+private val Destinations = listOf(
+    NavDestination("Home", R.drawable.fluent_home_regular, R.drawable.fluent_home_filled),
+    NavDestination("Search", R.drawable.fluent_search_regular, R.drawable.fluent_search_filled),
+    NavDestination(
+        "Peek",
+        R.drawable.fluent_video_clip_multiple_regular,
+        R.drawable.fluent_video_clip_multiple_filled,
+        badge = true,
+    ),
+    NavDestination("Library", R.drawable.fluent_library_regular, R.drawable.fluent_library_filled),
+    NavDestination("Me", R.drawable.fluent_emoji_regular, R.drawable.fluent_emoji_filled),
+)
 
 @Composable
 fun KiroApp() {
@@ -97,7 +101,7 @@ private fun KiroScaffold() {
     val context = LocalContext.current
     val dims = LocalDimens.current
     val useRail = dims.windowClass != WindowClass.Compact
-    var tab by rememberSaveable { mutableStateOf(Tab.Home) }
+    var tab by rememberSaveable { mutableIntStateOf(TAB_HOME) }
 
     // Hoisted so scroll position survives switching tabs.
     val homeListState: LazyListState = rememberLazyListState()
@@ -113,61 +117,22 @@ private fun KiroScaffold() {
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (!useRail) {
-                NavigationBar(containerColor = KiroBackground) {
-                    Tab.entries.forEach { item ->
-                        NavigationBarItem(
-                            selected = tab == item,
-                            onClick = { tab = item },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(item.icon),
-                                    contentDescription = item.label,
-                                    modifier = Modifier.size(26.dp),
-                                )
-                            },
-                            label = { Text(item.label, fontSize = 12.sp) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = KiroPurple,
-                                selectedTextColor = KiroPurple,
-                                unselectedIconColor = Color.White,
-                                unselectedTextColor = Color.White,
-                                indicatorColor = Color.Transparent,
-                            ),
-                        )
-                    }
-                }
+                KiroBottomBar(
+                    destinations = Destinations,
+                    selectedIndex = tab,
+                    onSelect = { tab = it },
+                )
             }
         },
     ) { innerPadding ->
         Row(modifier = Modifier.fillMaxSize()) {
             if (useRail) {
-                NavigationRail(
-                    containerColor = KiroBackground,
-                    modifier = Modifier.fillMaxHeight(),
-                ) {
-                    Tab.entries.forEach { item ->
-                        NavigationRailItem(
-                            selected = tab == item,
-                            onClick = { tab = item },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(item.icon),
-                                    contentDescription = item.label,
-                                    modifier = Modifier.size(26.dp),
-                                )
-                            },
-                            label = { Text(item.label, fontSize = 12.sp) },
-                            alwaysShowLabel = true,
-                            colors = NavigationRailItemDefaults.colors(
-                                selectedIconColor = KiroPurple,
-                                selectedTextColor = KiroPurple,
-                                unselectedIconColor = Color.White,
-                                unselectedTextColor = Color.White,
-                                indicatorColor = Color.Transparent,
-                            ),
-                        )
-                    }
-                }
+                KiroSideRail(
+                    destinations = Destinations,
+                    selectedIndex = tab,
+                    onSelect = { tab = it },
+                    width = dims.navRailWidth,
+                )
             }
 
             // Only the bottom inset is applied here; each screen handles the status bar itself
@@ -179,7 +144,7 @@ private fun KiroScaffold() {
                 .padding(bottom = innerPadding.calculateBottomPadding())
 
             when (tab) {
-                Tab.Home -> HomeScreen(
+                TAB_HOME -> HomeScreen(
                     listState = homeListState,
                     onAnimeClick = onAnimeClick,
                     onPlay = {
@@ -191,15 +156,15 @@ private fun KiroScaffold() {
                     modifier = contentModifier,
                 )
 
-                Tab.Search -> SearchScreen(
+                TAB_SEARCH -> SearchScreen(
                     gridState = searchGridState,
                     onAnimeClick = onAnimeClick,
                     modifier = contentModifier,
                 )
 
-                Tab.Peek -> PlaceholderScreen("Peek", contentModifier)
-                Tab.Library -> PlaceholderScreen("Library", contentModifier)
-                Tab.Me -> PlaceholderScreen("Me", contentModifier)
+                TAB_PEEK -> PlaceholderScreen("Peek", contentModifier)
+                TAB_LIBRARY -> PlaceholderScreen("Library", contentModifier)
+                TAB_ME -> PlaceholderScreen("Me", contentModifier)
             }
         }
     }

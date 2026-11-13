@@ -4,6 +4,25 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.2.0] - 2026-11-14
+
+New look that follows the Laftel-style reference, with Fluent icons and smoother scrolling.
+
+### Changed
+- **Fluent icons**: every icon is now from Microsoft's Fluent UI System Icons (MIT). The outline version is used normally and the filled version when selected.
+- **Bottom navigation redesigned** to match the reference: flat dark bar with a thin top divider, 28dp outline icons that fill and turn purple when selected, no pill indicator, and a purple dot on Peek.
+- **No gradients anywhere.** The hero uses a flat, even dim over the artwork plus a text shadow, and on tablets and landscape a solid text panel beside the artwork.
+- Poster cards are cleaner: smaller corners, tighter spacing like the reference, and a purple tag in the corner for airing and upcoming anime (instead of a score badge).
+- Hero is taller on phones to match the reference, with a smaller bold title, Play button resized to the design, and a round dimmed button behind the notification bell.
+- Search uses the same Fluent icons and slightly tighter corners.
+- Side navigation rail on tablets and landscape uses the same flat style as the bottom bar.
+
+### Improved
+- **Smoother scrolling**: a larger in-memory image cache plus an on-disk cache so posters never reload, the next hero banner is preloaded, list items are typed so Compose can reuse them, and the hero no longer auto-advances while you are swiping it.
+
+### Fixed
+- Launcher icon is now generated from an SVG source (`design/icons/ic_launcher_foreground.svg`).
+
 ## [1.1.0] - 2026-11-13
 
 Responsive design, SVG icons and a Java network layer.

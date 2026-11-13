@@ -19,6 +19,7 @@ data class Dimens(
     val windowClass: WindowClass,
     val gutter: Dp,
     val rowSpacing: Dp,
+    val cardSpacing: Dp,
     val cardWidth: Dp,
     val gridMinCell: Dp,
     val heroAspect: Float,
@@ -27,6 +28,7 @@ data class Dimens(
     val sectionTitle: TextUnit,
     val wordmark: TextUnit,
     val searchMaxWidth: Dp,
+    val navRailWidth: Dp,
 )
 
 fun windowClassFor(widthDp: Int): WindowClass = when {
@@ -45,14 +47,17 @@ fun dimensFor(widthDp: Int): Dimens {
                 windowClass = windowClass,
                 gutter = gutter.dp,
                 rowSpacing = 28.dp,
-                cardWidth = ((widthDp - gutter) / 2.6f).coerceIn(104f, 160f).dp,
+                cardSpacing = 8.dp,
+                // About 2.7 cards fit, so the third peeks in and hints that the row scrolls.
+                cardWidth = ((widthDp - gutter * 1.5f) / 2.7f).coerceIn(104f, 160f).dp,
                 gridMinCell = 108.dp,
                 heroAspect = 0.68f,
-                heroTitle = 28.sp,
-                heroTagline = 16.sp,
+                heroTitle = 26.sp,
+                heroTagline = 15.sp,
                 sectionTitle = 22.sp,
                 wordmark = 26.sp,
                 searchMaxWidth = 720.dp,
+                navRailWidth = 0.dp,
             )
         }
 
@@ -62,14 +67,16 @@ fun dimensFor(widthDp: Int): Dimens {
                 windowClass = windowClass,
                 gutter = gutter.dp,
                 rowSpacing = 32.dp,
+                cardSpacing = 10.dp,
                 cardWidth = ((widthDp - gutter) / 4.4f).coerceIn(130f, 190f).dp,
                 gridMinCell = 128.dp,
-                heroAspect = 1.7f,
+                heroAspect = 2.0f,
                 heroTitle = 36.sp,
                 heroTagline = 18.sp,
                 sectionTitle = 24.sp,
                 wordmark = 30.sp,
                 searchMaxWidth = 720.dp,
+                navRailWidth = 88.dp,
             )
         }
 
@@ -79,14 +86,16 @@ fun dimensFor(widthDp: Int): Dimens {
                 windowClass = windowClass,
                 gutter = gutter.dp,
                 rowSpacing = 36.dp,
+                cardSpacing = 12.dp,
                 cardWidth = ((widthDp - gutter - 80) / 6.3f).coerceIn(150f, 210f).dp,
                 gridMinCell = 148.dp,
-                heroAspect = 2.2f,
+                heroAspect = 2.5f,
                 heroTitle = 46.sp,
                 heroTagline = 20.sp,
                 sectionTitle = 26.sp,
                 wordmark = 32.sp,
                 searchMaxWidth = 800.dp,
+                navRailWidth = 96.dp,
             )
         }
     }

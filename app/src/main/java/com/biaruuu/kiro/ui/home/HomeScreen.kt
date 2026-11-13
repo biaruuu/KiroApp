@@ -54,7 +54,7 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(dims.rowSpacing),
         ) {
             if (current.content.hero.isNotEmpty()) {
-                item(key = "hero") {
+                item(key = "hero", contentType = "hero") {
                     HeroCarousel(
                         heroes = current.content.hero,
                         onPlay = onPlay,
@@ -62,7 +62,7 @@ fun HomeScreen(
                     )
                 }
             }
-            items(current.content.sections, key = { it.title }) { section ->
+            items(current.content.sections, key = { it.title }, contentType = { "row" }) { section ->
                 AnimeRow(
                     title = section.title,
                     items = section.items,

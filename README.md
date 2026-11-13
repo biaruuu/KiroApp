@@ -4,7 +4,7 @@ An anime streaming app for Android built with **Kotlin** (Jetpack Compose), **Ja
 powered by the [AniList GraphQL API](https://anilist.gitbook.io/anilist-apiv2-docs/).
 Typography is [Roboto](https://fonts.google.com/specimen/Roboto) from Google Fonts.
 
-**Version 1.1.0** - Home and Search screens, responsive layouts, SVG icons.
+**Version 1.2.0** - Home and Search screens, responsive layouts, Fluent icons.
 
 ## Download
 
@@ -18,7 +18,7 @@ Grab the latest `Kiro-x.y.z.apk` from the [Releases](../../releases) page and in
 | `app/.../ui`, `core`, `data/AniListRepository.kt` | Kotlin | Jetpack Compose UI, view models, coroutine adapter |
 | `app/.../data/*.java`, `KiroApplication.java` | Java | AniList GraphQL client, networking, models, error messages |
 | `rust-core/` | Rust (JNI) | HTML cleanup of descriptions, score formatting, season detection |
-| `design/icons/` | SVG | Icon sources, converted by `scripts/svg2vector.py` |
+| `design/icons/` | SVG | [Fluent UI System Icons](https://github.com/microsoft/fluentui-system-icons) (MIT), converted by `scripts/svg2vector.py` |
 
 If the Rust library is missing, the app falls back to Kotlin implementations automatically.
 

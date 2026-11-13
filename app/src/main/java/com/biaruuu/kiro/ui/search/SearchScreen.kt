@@ -91,16 +91,16 @@ fun SearchScreen(
             value = state.query,
             onValueChange = viewModel::onQueryChange,
             placeholder = { Text("Search anime") },
-            leadingIcon = { Icon(painterResource(R.drawable.ic_search), contentDescription = null) },
+            leadingIcon = { Icon(painterResource(R.drawable.fluent_search_regular), contentDescription = null) },
             trailingIcon = {
                 if (state.query.isNotEmpty()) {
                     IconButton(onClick = viewModel::clearQuery) {
-                        Icon(painterResource(R.drawable.ic_close), contentDescription = "Clear")
+                        Icon(painterResource(R.drawable.fluent_dismiss_regular), contentDescription = "Clear")
                     }
                 }
             },
             singleLine = true,
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(10.dp),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(
                 onSearch = {
@@ -223,7 +223,7 @@ private fun ResultsGrid(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
-            items(results, key = { it.id }) { anime ->
+            items(results, key = { it.id }, contentType = { "poster" }) { anime ->
                 PosterCard(anime = anime, onClick = { onAnimeClick(anime) })
             }
             if (loadingMore) {
