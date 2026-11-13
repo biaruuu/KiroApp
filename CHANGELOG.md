@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.4.0] - 2026-11-14
+
+### Added
+- **Trending Now** row under the hero: the 10 most-trending anime, each with a big outlined rank number (1-10) beside its poster, like the reference. It uses live AniList trending data.
+
+### Fixed
+- **Notification bell** is now a plain white icon with no dark circle behind it, matching the reference. It keeps a very faint shadow so it stays visible on bright artwork.
+
 ## [1.3.0] - 2026-11-14
 
 ### Changed

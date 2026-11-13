@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -152,18 +153,25 @@ fun HeroCarousel(
                     fontWeight = FontWeight.Black,
                     letterSpacing = 1.sp,
                 )
-                IconButton(
-                    onClick = onNotifications,
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.32f)),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.fluent_alert_regular),
-                        contentDescription = "Notifications",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp),
-                    )
+                IconButton(onClick = onNotifications) {
+                    // Plain white bell like the reference. A faint offset copy underneath keeps
+                    // it readable on bright artwork without putting a dark disc behind it.
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(R.drawable.fluent_alert_regular),
+                            contentDescription = null,
+                            tint = Color.Black.copy(alpha = 0.35f),
+                            modifier = Modifier
+                                .size(26.dp)
+                                .offset(y = 1.dp),
+                        )
+                        Icon(
+                            painter = painterResource(R.drawable.fluent_alert_regular),
+                            contentDescription = "Notifications",
+                            tint = Color.White,
+                            modifier = Modifier.size(26.dp),
+                        )
+                    }
                 }
             }
 

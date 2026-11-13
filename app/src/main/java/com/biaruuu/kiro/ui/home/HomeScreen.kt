@@ -19,6 +19,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.biaruuu.kiro.data.Anime
 import com.biaruuu.kiro.ui.components.AnimeRow
 import com.biaruuu.kiro.ui.components.ErrorState
+import com.biaruuu.kiro.ui.components.RankedRow
 import com.biaruuu.kiro.ui.theme.LocalDimens
 
 @Composable
@@ -62,12 +63,20 @@ fun HomeScreen(
                     )
                 }
             }
-            items(current.content.sections, key = { it.title }, contentType = { "row" }) { section ->
-                AnimeRow(
-                    title = section.title,
-                    items = section.items,
-                    onAnimeClick = onAnimeClick,
-                )
+            items(current.content.sections, key = { it.title }, contentType = { if (it.isRanked) "ranked" else "row" }) { section ->
+                if (section.isRanked) {
+                    RankedRow(
+                        title = section.title,
+                        items = section.items,
+                        onAnimeClick = onAnimeClick,
+                    )
+                } else {
+                    AnimeRow(
+                        title = section.title,
+                        items = section.items,
+                        onAnimeClick = onAnimeClick,
+                    )
+                }
             }
         }
     }

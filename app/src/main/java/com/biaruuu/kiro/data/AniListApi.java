@@ -46,6 +46,7 @@ public final class AniListApi {
     private static final MediaType JSON_TYPE = MediaType.get("application/json; charset=utf-8");
     private static final int SEARCH_PAGE_SIZE = 24;
     private static final int HERO_COUNT = 8;
+    private static final int TRENDING_COUNT = 10;
     private static final int ROW_SIZE = 16;
 
     private static final String MEDIA_FIELDS =
@@ -70,7 +71,7 @@ public final class AniListApi {
 
     private static final String HOME_QUERY =
             "query Home($season: MediaSeason, $seasonYear: Int) { "
-                    + rowQuery("trending", HERO_COUNT, "sort: TRENDING_DESC") + " "
+                    + rowQuery("trending", TRENDING_COUNT, "sort: TRENDING_DESC") + " "
                     + rowQuery("season", ROW_SIZE,
                     "season: $season, seasonYear: $seasonYear, sort: POPULARITY_DESC") + " "
                     + rowQuery("popular", ROW_SIZE, "sort: POPULARITY_DESC") + " "
@@ -115,14 +116,19 @@ public final class AniListApi {
         }
 
         return post(HOME_QUERY, variables, data -> {
+            List<Anime> trending = mediaList(data, "trending");
             List<Anime> hero = new ArrayList<>();
-            for (Anime anime : mediaList(data, "trending")) {
+            for (Anime anime : trending) {
                 if (anime.getHeroUrl() != null && hero.size() < HERO_COUNT) {
                     hero.add(anime);
                 }
             }
 
             List<HomeSection> sections = new ArrayList<>();
+            // Ranked "Top 10" row, right under the hero.
+            if (!trending.isEmpty()) {
+                sections.add(new HomeSection("Trending Now", trending, true));
+            }
             addSection(sections, "Airing This Season", mediaList(data, "season"));
             addSection(sections, "Popular Right Now", mediaList(data, "popular"));
             addSection(sections, "Can't Hide My Feelings for You!", mediaList(data, "romance"));
