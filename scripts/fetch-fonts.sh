@@ -17,5 +17,9 @@ if curl -fsSL --retry 3 --retry-delay 2 -o "$FILE" "$URL" && [ -s "$FILE" ]; the
 else
   rm -f "$FILE"
   echo "WARNING: could not download Roboto; the app will use the system default font." >&2
+  # CI sets KIRO_REQUIRE_FONT=1 so a missing font fails the build instead of shipping without it.
+  if [ "${KIRO_REQUIRE_FONT:-0}" = "1" ]; then
+    exit 1
+  fi
 fi
 exit 0
