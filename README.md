@@ -35,11 +35,11 @@ bash scripts/build-rust.sh    # builds the native library into app/src/main/jniL
 
 1. Bump `versionCode` and `versionName` in `app/build.gradle.kts`.
 2. Add a `## [x.y.z] - YYYY-MM-DD` section to `CHANGELOG.md` describing what is new.
-3. Commit, then tag and push: `git tag vx.y.z && git push origin vx.y.z`.
+3. Commit and push to `main`.
 
-The **Release** workflow builds the APK and publishes a GitHub release whose notes are that
-changelog section. It fails on purpose if the tag does not match `versionName` or the changelog
-entry is missing.
+The **Release** workflow builds the APK and publishes a GitHub release `vx.y.z` whose notes are that
+changelog section. It skips versions that already have a release, and fails on purpose if the
+changelog entry is missing. (Pushing a tag such as `v1.0.1` also triggers it.)
 
 ## Signing key
 
