@@ -69,7 +69,8 @@ object SubtitleOptions {
             .getString("sub_custom_font_name", null)
 
     /** Copies a font file the user picked (.ttf / .otf) into the app and remembers its name. */
-    fun importCustomFont(context: Context, uri: Uri, displayName: String): Boolean = try {
+    fun importCustomFont(context: Context, uri: Uri, displayName: String): Boolean {
+        return try {
         val target = customFile(context)
         context.contentResolver.openInputStream(uri)?.use { input ->
             target.outputStream().use { input.copyTo(it) }
@@ -81,9 +82,10 @@ object SubtitleOptions {
             .apply()
         cache.remove(CUSTOM)
         true
-    } catch (_: Exception) {
-        customFile(context).delete()
-        false
+        } catch (_: Exception) {
+            customFile(context).delete()
+            false
+        }
     }
 
     fun typeface(context: Context, font: String): Typeface = cache.getOrPut(font) {
