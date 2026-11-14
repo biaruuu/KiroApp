@@ -40,6 +40,7 @@ import com.biaruuu.kiro.ui.components.NavDestination
 import com.biaruuu.kiro.ui.detail.DetailScreen
 import com.biaruuu.kiro.ui.detail.MoreDetailScreen
 import com.biaruuu.kiro.ui.home.HomeScreen
+import com.biaruuu.kiro.ui.player.PlayerScreen
 import com.biaruuu.kiro.ui.search.SearchScreen
 import com.biaruuu.kiro.ui.theme.KiroBackground
 import com.biaruuu.kiro.ui.theme.KiroPurple
@@ -182,21 +183,25 @@ private fun KiroScaffold() {
 
     val top = backStack.lastOrNull()
     if (top != null) {
-        val id = top.substring(2).toIntOrNull()
+        val parts = top.split(":")
+        val id = parts.getOrNull(1)?.toIntOrNull()
         if (id != null) {
             val overlay = Modifier.fillMaxSize().background(KiroBackground)
-            if (top.startsWith("m:")) {
-                MoreDetailScreen(
+            val pop = { backStack.removeAt(backStack.lastIndex) }
+            when (parts[0]) {
+                "m" -> MoreDetailScreen(animeId = id, onBack = { pop() }, modifier = overlay)
+                "p" -> PlayerScreen(
                     animeId = id,
-                    onBack = { backStack.removeAt(backStack.lastIndex) },
+                    startEpisode = parts.getOrNull(2)?.toIntOrNull() ?: 1,
+                    onClose = { pop() },
                     modifier = overlay,
                 )
-            } else {
-                DetailScreen(
+                else -> DetailScreen(
                     animeId = id,
-                    onBack = { backStack.removeAt(backStack.lastIndex) },
+                    onBack = { pop() },
                     onOpenAnime = { backStack.add("d:$it") },
                     onMore = { backStack.add("m:$it") },
+                    onPlay = { anime, episode -> backStack.add("p:$anime:$episode") },
                     modifier = overlay,
                 )
             }

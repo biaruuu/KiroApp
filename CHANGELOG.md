@@ -4,6 +4,22 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.7.0] - 2026-11-14
+
+Video player.
+
+### Added
+- **Video player** built on Media3 ExoPlayer, styled after the reference: full-screen landscape, close button and episode title at the top, rewind 10 / pause / forward 10 in the centre, a purple seek bar with elapsed and total time, and Audio & Subtitles, Episodes, Next Episode and Lock underneath.
+  - Tap to show or hide the controls (they hide by themselves while playing); double-tap the left or right half to skip 10 seconds.
+  - Audio & Subtitles lists the tracks the video offers (with subtitles off); Episodes jumps to any aired episode; Next Episode (also automatic at the end); Lock hides every control until unlocked; the top-right menu sets playback speed.
+  - Play on the details page and every episode row open the player.
+- There is no Go Premium button.
+
+### Changed
+- The "Streaming is coming soon" banner is gone.
+- Streaming is not connected to a video provider yet, so every episode plays a public sample video for now. The real source plugs in at one place (`PlaybackSource`).
+- The app now handles rotation without restarting.
+
 ## [1.6.7] - 2026-11-14
 
 ### Changed

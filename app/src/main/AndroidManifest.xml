@@ -16,6 +16,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density|uiMode"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.Kiro">
             <intent-filter>

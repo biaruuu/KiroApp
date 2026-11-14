@@ -12,8 +12,8 @@ android {
         applicationId = "com.biaruuu.kiro"
         minSdk = 26
         targetSdk = 35
-        versionCode = 14
-        versionName = "1.6.7"
+        versionCode = 15
+        versionName = "1.7.0"
         // TMDB key: GitHub secret TMDB_API_KEY in CI, or -PTMDB_API_KEY / env var locally.
         val tmdbKey = (System.getenv("TMDB_API_KEY") ?: project.findProperty("TMDB_API_KEY") as String? ?: "").trim()
         buildConfigField("String", "TMDB_API_KEY", "\"$tmdbKey\"")
@@ -84,6 +84,9 @@ dependencies {
     implementation("androidx.compose.material3:material3")
 
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("androidx.media3:media3-exoplayer:1.5.1")
+    implementation("androidx.media3:media3-exoplayer-hls:1.5.1")
+    implementation("androidx.media3:media3-ui:1.5.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 }

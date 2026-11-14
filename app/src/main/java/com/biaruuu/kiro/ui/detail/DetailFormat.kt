@@ -3,6 +3,7 @@ package com.biaruuu.kiro.ui.detail
 import com.biaruuu.kiro.core.NativeCore
 import com.biaruuu.kiro.data.Anime
 import com.biaruuu.kiro.data.AnimeDetail
+import com.biaruuu.kiro.data.EpisodeInfo
 import java.util.Locale
 
 /** 1234 -> "1.2K", computed by the Rust core. */
@@ -70,3 +71,11 @@ fun shareText(anime: Anime): String =
 
 /** "in 3d 4h 12m 5s"; "Airing now" once due. Formatted by the Rust core. */
 fun countdownLabel(secondsLeft: Long): String = NativeCore.countdown(secondsLeft)
+
+/** Episodes that have aired. The next, unaired one is shown as a countdown instead. */
+fun releasedEpisodes(episodes: List<EpisodeInfo>, nextEpisode: Int, status: String?): List<EpisodeInfo> =
+    when {
+        nextEpisode > 0 -> episodes.filter { it.number < nextEpisode }
+        status == "NOT_YET_RELEASED" -> emptyList()
+        else -> episodes
+    }

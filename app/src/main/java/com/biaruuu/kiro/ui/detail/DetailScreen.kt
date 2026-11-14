@@ -89,6 +89,7 @@ fun DetailScreen(
     onBack: () -> Unit,
     onOpenAnime: (Int) -> Unit,
     onMore: (Int) -> Unit,
+    onPlay: (animeId: Int, episode: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val vm: DetailViewModel = viewModel(key = "detail-$animeId", factory = DetailViewModel.Factory(animeId))
@@ -110,6 +111,7 @@ fun DetailScreen(
                 loadingMore = state.loading,
                 onOpenAnime = onOpenAnime,
                 onMore = onMore,
+                onPlay = onPlay,
                 episodesFromState = state.episodes,
                 seasonsFromState = state.seasons,
             )
@@ -148,6 +150,7 @@ private fun DetailContent(
     loadingMore: Boolean,
     onOpenAnime: (Int) -> Unit,
     onMore: (Int) -> Unit,
+    onPlay: (Int, Int) -> Unit,
     episodesFromState: List<EpisodeInfo>,
     seasonsFromState: List<SeasonEntry>,
 ) {
@@ -175,7 +178,6 @@ private fun DetailContent(
     var expanded by rememberSaveable { mutableStateOf(false) }
 
     val trailerId = trailerIds.getOrNull(trailerIndex)
-    val comingSoon = { Toast.makeText(context, "Streaming is coming soon", Toast.LENGTH_SHORT).show() }
 
     val episodes = remember(detail, episodesFromState, newestFirst) {
         val list = episodesFromState.ifEmpty { detail?.episodes.orEmpty() }
@@ -186,11 +188,7 @@ private fun DetailContent(
     val nextEp = detail?.nextEpisode ?: 0
     val nextAt = detail?.nextAiringAt ?: 0L
     val released = remember(episodes, nextEp, anime.status) {
-        when {
-            nextEp > 0 -> episodes.filter { it.number < nextEp }
-            anime.status == "NOT_YET_RELEASED" -> emptyList()
-            else -> episodes
-        }
+        releasedEpisodes(episodes, nextEp, anime.status)
     }
     val nowSeconds by produceState(System.currentTimeMillis() / 1000) {
         while (true) {
@@ -317,7 +315,11 @@ private fun DetailContent(
                         .height(48.dp)
                         .clip(RoundedCornerShape(4.dp))
                         .background(KiroPurple)
-                        .clickable(onClick = comingSoon),
+                        .clickable {
+                            val first = released.firstOrNull()
+                            if (first != null) onPlay(anime.id, first.number)
+                            else Toast.makeText(context, "Not released yet", Toast.LENGTH_SHORT).show()
+                        },
                     contentAlignment = Alignment.Center,
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -466,21 +468,6 @@ private fun DetailContent(
                 }
             }
         }
-        item(key = "banner") {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(KiroPurple)
-                    .padding(vertical = 12.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("Streaming is coming soon", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            }
-            Spacer(Modifier.height(8.dp))
-        }
-
         if (detail == null && loadingMore) {
             item(key = "loading") {
                 Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -501,7 +488,7 @@ private fun DetailContent(
         }
 
         items(released, key = { it.number }, contentType = { "episode" }) { episode ->
-            EpisodeRow(episode, fallbackImage = anime.heroUrl, onClick = comingSoon)
+            EpisodeRow(episode, fallbackImage = anime.heroUrl, onClick = { onPlay(anime.id, episode.number) })
         }
 
         item(key = "end") { Spacer(Modifier.navigationBarsPadding().height(32.dp)) }

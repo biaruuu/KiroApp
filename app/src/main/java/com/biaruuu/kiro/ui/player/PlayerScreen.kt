@@ -1,0 +1,734 @@
+package com.biaruuu.kiro.ui.player
+
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.Tracks
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
+import com.biaruuu.kiro.R
+import com.biaruuu.kiro.ui.detail.DetailViewModel
+import com.biaruuu.kiro.ui.detail.releasedEpisodes
+import com.biaruuu.kiro.ui.theme.KiroPurple
+import kotlinx.coroutines.delay
+import java.util.Locale
+
+private val PanelBackground = Color(0xFF161616)
+private val TrackGrey = Color(0xFF5C5C5E)
+private val MutedText = Color(0xFF8E8E93)
+
+private enum class Panel { Tracks, Episodes, Speed }
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
+private fun formatTime(ms: Long): String {
+    val total = (ms.coerceAtLeast(0) / 1000)
+    val h = total / 3600
+    val m = (total % 3600) / 60
+    val s = total % 60
+    return if (h > 0) String.format(Locale.US, "%d:%02d:%02d", h, m, s)
+    else String.format(Locale.US, "%02d:%02d", m, s)
+}
+
+/**
+ * Full-screen landscape video player (Media3 ExoPlayer) with custom controls: close, title and
+ * more at the top, rewind / play-pause / forward in the middle, a seek bar with times, and the
+ * Audio & Subtitles / Episodes / Next Episode / Lock actions underneath.
+ */
+@Composable
+fun PlayerScreen(
+    animeId: Int,
+    startEpisode: Int,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Same view model the details page uses, so the episode list is already loaded.
+    val vm: DetailViewModel = viewModel(key = "detail-$animeId", factory = DetailViewModel.Factory(animeId))
+    val ui by vm.state.collectAsState()
+    val episodes = releasedEpisodes(
+        ui.episodes.ifEmpty { ui.detail?.episodes.orEmpty() },
+        ui.detail?.nextEpisode ?: 0,
+        ui.base?.status,
+    )
+
+    var current by rememberSaveable { mutableIntStateOf(startEpisode) }
+    val episode = episodes.firstOrNull { it.number == current }
+    val title = episode?.heading ?: ui.base?.displayTitle.orEmpty()
+    val nextEpisode = episodes.firstOrNull { it.number > current }
+
+    val exo = remember { ExoPlayer.Builder(context).build() }
+    // The player listener lives for the whole screen, so it must read the latest values.
+    val latestEpisodes by rememberUpdatedState(episodes)
+    val latestCurrent by rememberUpdatedState(current)
+
+    var isPlaying by remember { mutableStateOf(false) }
+    var buffering by remember { mutableStateOf(true) }
+    var duration by remember { mutableLongStateOf(0L) }
+    var position by remember { mutableLongStateOf(0L) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var tracks by remember { mutableStateOf(Tracks.EMPTY) }
+    var speed by remember { mutableFloatStateOf(1f) }
+
+    var controlsVisible by remember { mutableStateOf(true) }
+    var interaction by remember { mutableIntStateOf(0) }
+    var locked by remember { mutableStateOf(false) }
+    var panel by remember { mutableStateOf<Panel?>(null) }
+    var seeking by remember { mutableStateOf(false) }
+    var retry by remember { mutableIntStateOf(0) }
+
+    fun playEpisode(number: Int) {
+        current = number
+        position = 0
+    }
+
+    // Load (or reload) the video whenever the episode changes.
+    LaunchedEffect(current, retry) {
+        error = null
+        buffering = true
+        exo.setMediaItem(MediaItem.fromUri(PlaybackSource.urlFor(animeId, current)))
+        exo.prepare()
+        exo.playWhenReady = true
+    }
+
+    DisposableEffect(exo) {
+        val listener = object : Player.Listener {
+            override fun onIsPlayingChanged(isPlayingNow: Boolean) {
+                isPlaying = isPlayingNow
+            }
+
+            override fun onPlaybackStateChanged(state: Int) {
+                buffering = state == Player.STATE_BUFFERING
+                if (exo.duration > 0) duration = exo.duration
+                if (state == Player.STATE_ENDED) {
+                    val next = latestEpisodes.firstOrNull { it.number > latestCurrent }
+                    if (next != null) playEpisode(next.number) else controlsVisible = true
+                }
+            }
+
+            override fun onPlayerError(e: PlaybackException) {
+                error = "Couldn't play this video"
+            }
+
+            override fun onTracksChanged(t: Tracks) {
+                tracks = t
+            }
+        }
+        exo.addListener(listener)
+        onDispose {
+            exo.removeListener(listener)
+            exo.release()
+        }
+    }
+
+    // Progress ticker.
+    LaunchedEffect(exo) {
+        while (true) {
+            if (!seeking) position = exo.currentPosition
+            if (exo.duration > 0) duration = exo.duration
+            delay(250)
+        }
+    }
+
+    // Pause when the app leaves the foreground.
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE) exo.pause()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // Landscape + immersive while the player is open.
+    DisposableEffect(Unit) {
+        val activity = context.findActivity()
+        val window = activity?.window
+        val controller = window?.let { WindowCompat.getInsetsController(it, it.decorView) }
+        controller?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        controller?.hide(WindowInsetsCompat.Type.systemBars())
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        onDispose {
+            controller?.show(WindowInsetsCompat.Type.systemBars())
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
+    // Hide the controls a few seconds after the last touch while playing.
+    LaunchedEffect(controlsVisible, isPlaying, interaction, panel) {
+        if (controlsVisible && isPlaying && panel == null) {
+            delay(3500)
+            controlsVisible = false
+        }
+    }
+
+    BackHandler(enabled = panel != null) { panel = null }
+
+    fun seekBy(deltaMs: Long) {
+        val target = (exo.currentPosition + deltaMs).coerceIn(0L, if (duration > 0) duration else Long.MAX_VALUE)
+        exo.seekTo(target)
+        position = target
+        interaction++
+    }
+
+    Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = { ctx ->
+                PlayerView(ctx).apply {
+                    useController = false
+                    player = exo
+                    keepScreenOn = true
+                }
+            },
+        )
+
+        // Touch layer: tap shows / hides controls, double tap skips 10 seconds.
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(locked) {
+                    detectTapGestures(
+                        onTap = {
+                            controlsVisible = !controlsVisible
+                            interaction++
+                        },
+                        onDoubleTap = { offset ->
+                            if (!locked) seekBy(if (offset.x < size.width / 2f) -10_000L else 10_000L)
+                        },
+                    )
+                },
+        )
+
+        if (buffering && error == null) {
+            CircularProgressIndicator(
+                color = Color.White,
+                strokeWidth = 3.dp,
+                modifier = Modifier.align(Alignment.Center).size(40.dp),
+            )
+        }
+
+        error?.let { message ->
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(message, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "Retry",
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(KiroPurple)
+                        .clickable { retry++ }
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                )
+            }
+        }
+
+        // ---- Locked: only the unlock button ----
+        if (locked) {
+            AnimatedVisibility(
+                visible = controlsVisible,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier.align(Alignment.CenterStart).padding(start = 32.dp),
+            ) {
+                RoundButton(R.drawable.fluent_lock_closed_regular, "Unlock") {
+                    locked = false
+                    interaction++
+                }
+            }
+        } else {
+            AnimatedVisibility(
+                visible = controlsVisible,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                Controls(
+                    title = title,
+                    isPlaying = isPlaying,
+                    buffering = buffering,
+                    position = position,
+                    duration = duration,
+                    hasNext = nextEpisode != null,
+                    onClose = onClose,
+                    onMore = { panel = Panel.Speed },
+                    onTogglePlay = {
+                        if (exo.isPlaying) exo.pause() else exo.play()
+                        interaction++
+                    },
+                    onBack10 = { seekBy(-10_000L) },
+                    onForward10 = { seekBy(10_000L) },
+                    onSeekStart = { seeking = true },
+                    onSeekPreview = { position = it },
+                    onSeekEnd = {
+                        exo.seekTo(it)
+                        position = it
+                        seeking = false
+                        interaction++
+                    },
+                    onTracks = { panel = Panel.Tracks },
+                    onEpisodes = { panel = Panel.Episodes },
+                    onNext = {
+                        val next = nextEpisode
+                        if (next != null) playEpisode(next.number)
+                        else Toast.makeText(context, "No more episodes", Toast.LENGTH_SHORT).show()
+                    },
+                    onLock = {
+                        locked = true
+                        controlsVisible = true
+                        interaction++
+                    },
+                )
+            }
+        }
+
+        // ---- Side panels ----
+        panel?.let { open ->
+            SidePanel(
+                title = when (open) {
+                    Panel.Tracks -> "Audio & Subtitles"
+                    Panel.Episodes -> "Episodes"
+                    Panel.Speed -> "Playback speed"
+                },
+                onClose = { panel = null },
+            ) {
+                when (open) {
+                    Panel.Tracks -> TrackList(exo, tracks) { panel = null }
+                    Panel.Episodes -> LazyColumn {
+                        items(episodes, key = { it.number }) { ep ->
+                            PanelRow(
+                                label = ep.heading,
+                                selected = ep.number == current,
+                            ) {
+                                playEpisode(ep.number)
+                                panel = null
+                            }
+                        }
+                    }
+                    Panel.Speed -> LazyColumn {
+                        items(listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f)) { s ->
+                            PanelRow(
+                                label = if (s == 1f) "Normal" else "${s}x",
+                                selected = s == speed,
+                            ) {
+                                speed = s
+                                exo.setPlaybackSpeed(s)
+                                panel = null
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Controls(
+    title: String,
+    isPlaying: Boolean,
+    buffering: Boolean,
+    position: Long,
+    duration: Long,
+    hasNext: Boolean,
+    onClose: () -> Unit,
+    onMore: () -> Unit,
+    onTogglePlay: () -> Unit,
+    onBack10: () -> Unit,
+    onForward10: () -> Unit,
+    onSeekStart: () -> Unit,
+    onSeekPreview: (Long) -> Unit,
+    onSeekEnd: (Long) -> Unit,
+    onTracks: () -> Unit,
+    onEpisodes: () -> Unit,
+    onNext: () -> Unit,
+    onLock: () -> Unit,
+) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.45f))) {
+        val sidePad = 24.dp
+
+        // Top bar: close, title, more.
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = sidePad).padding(top = 18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.fluent_dismiss_regular),
+                contentDescription = "Close",
+                tint = Color.White,
+                modifier = Modifier.size(24.dp).clip(CircleShape).clickable(onClick = onClose),
+            )
+            Spacer(Modifier.width(14.dp))
+            Text(
+                title,
+                color = Color.White,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                painter = painterResource(R.drawable.fluent_more_vertical_regular),
+                contentDescription = "More",
+                tint = Color.White,
+                modifier = Modifier.size(24.dp).clip(CircleShape).clickable(onClick = onMore),
+            )
+        }
+
+        // Centre: rewind 10, play / pause, forward 10.
+        Row(
+            modifier = Modifier.align(Alignment.Center).padding(bottom = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(maxWidth * 0.17f),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.fluent_skip_back_10_regular),
+                contentDescription = "Back 10 seconds",
+                tint = Color.White,
+                modifier = Modifier.size(38.dp).clip(CircleShape).clickable(onClick = onBack10),
+            )
+            Box(
+                modifier = Modifier.size(56.dp).clip(CircleShape).clickable(onClick = onTogglePlay),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (!buffering) {
+                    if (isPlaying) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            repeat(2) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(10.dp)
+                                        .height(38.dp)
+                                        .clip(RoundedCornerShape(3.dp))
+                                        .background(Color.White),
+                                )
+                            }
+                        }
+                    } else {
+                        Icon(
+                            painter = painterResource(R.drawable.fluent_play_filled),
+                            contentDescription = "Play",
+                            tint = Color.White,
+                            modifier = Modifier.size(48.dp),
+                        )
+                    }
+                }
+            }
+            Icon(
+                painter = painterResource(R.drawable.fluent_skip_forward_10_regular),
+                contentDescription = "Forward 10 seconds",
+                tint = Color.White,
+                modifier = Modifier.size(38.dp).clip(CircleShape).clickable(onClick = onForward10),
+            )
+        }
+
+        // Bottom: times + seek bar, then the four actions.
+        Column(
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = 14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = sidePad),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(formatTime(position), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.width(14.dp))
+                SeekBar(
+                    position = position,
+                    duration = duration,
+                    onSeekStart = onSeekStart,
+                    onSeekPreview = onSeekPreview,
+                    onSeekEnd = onSeekEnd,
+                    modifier = Modifier.weight(1f),
+                )
+                Spacer(Modifier.width(14.dp))
+                Text(formatTime(duration), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+            }
+            Spacer(Modifier.height(4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
+                Action(R.drawable.fluent_closed_caption_regular, "Audio & Subtitles", true, onTracks)
+                Action(R.drawable.fluent_video_clip_multiple_regular, "Episodes", true, onEpisodes)
+                Action(R.drawable.fluent_next_regular, "Next Episode", hasNext, onNext)
+                Action(R.drawable.fluent_lock_open_regular, "Lock", true, onLock)
+            }
+        }
+    }
+}
+
+@Composable
+private fun Action(icon: Int, label: String, enabled: Boolean, onClick: () -> Unit) {
+    val tint = if (enabled) Color.White else Color.White.copy(alpha = 0.4f)
+    Row(
+        modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable(onClick = onClick).padding(horizontal = 4.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(label, color = tint, fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+    }
+}
+
+@Composable
+private fun RoundButton(icon: Int, description: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .clip(CircleShape)
+            .background(Color.Black.copy(alpha = 0.55f))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(painterResource(icon), contentDescription = description, tint = Color.White, modifier = Modifier.size(24.dp))
+    }
+}
+
+/** Thin grey line, purple progress and a round purple thumb. Tap or drag to seek. */
+@Composable
+private fun SeekBar(
+    position: Long,
+    duration: Long,
+    onSeekStart: () -> Unit,
+    onSeekPreview: (Long) -> Unit,
+    onSeekEnd: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val fraction = if (duration > 0) (position.toFloat() / duration).coerceIn(0f, 1f) else 0f
+    val thumb = 20.dp
+    BoxWithConstraints(
+        modifier = modifier
+            .height(32.dp)
+            .pointerInput(duration) {
+                detectTapGestures { offset ->
+                    if (duration > 0) {
+                        onSeekEnd((offset.x / size.width * duration).toLong().coerceIn(0L, duration))
+                    }
+                }
+            }
+            .pointerInput(duration) {
+                var last = 0L
+                detectDragGestures(
+                    onDragStart = { offset ->
+                        onSeekStart()
+                        last = if (duration > 0) (offset.x / size.width * duration).toLong().coerceIn(0L, duration) else 0L
+                        onSeekPreview(last)
+                    },
+                    onDragEnd = { onSeekEnd(last) },
+                    onDragCancel = { onSeekEnd(last) },
+                    onDrag = { change, _ ->
+                        change.consume()
+                        if (duration > 0) {
+                            last = (change.position.x / size.width * duration).toLong().coerceIn(0L, duration)
+                            onSeekPreview(last)
+                        }
+                    },
+                )
+            },
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        val travel = maxWidth - thumb
+        Box(modifier = Modifier.fillMaxWidth().height(2.dp).background(TrackGrey))
+        Box(modifier = Modifier.width(thumb / 2 + travel * fraction).height(2.dp).background(KiroPurple))
+        Box(
+            modifier = Modifier
+                .padding(start = travel * fraction)
+                .size(thumb)
+                .clip(CircleShape)
+                .background(KiroPurple),
+        )
+    }
+}
+
+@Composable
+private fun SidePanel(title: String, onClose: () -> Unit, content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.5f))
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClose),
+    ) {
+        Column(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .fillMaxHeight()
+                .width(340.dp)
+                .background(PanelBackground)
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
+                .padding(top = 12.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Icon(
+                    painter = painterResource(R.drawable.fluent_dismiss_regular),
+                    contentDescription = "Close",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp).clip(CircleShape).clickable(onClick = onClose),
+                )
+            }
+            content()
+        }
+    }
+}
+
+@Composable
+private fun PanelRow(label: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(52.dp).clickable(onClick = onClick).padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(modifier = Modifier.width(32.dp)) {
+            if (selected) {
+                Icon(
+                    painter = painterResource(R.drawable.fluent_checkmark_regular),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+        }
+        Text(
+            label,
+            color = if (selected) Color.White else Color(0xFFD0D0D4),
+            fontSize = 14.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/** Audio tracks and subtitles the video offers, with an "Off" choice for subtitles. */
+@Composable
+private fun TrackList(exo: ExoPlayer, tracks: Tracks, onDone: () -> Unit) {
+    data class Choice(val label: String, val type: Int, val group: Tracks.Group?, val index: Int, val selected: Boolean)
+
+    val choices = remember(tracks) {
+        val out = mutableListOf<Choice>()
+        for (type in listOf(C.TRACK_TYPE_AUDIO, C.TRACK_TYPE_TEXT)) {
+            val groups = tracks.groups.filter { it.type == type }
+            if (groups.isEmpty()) continue
+            if (type == C.TRACK_TYPE_TEXT) {
+                out += Choice("Subtitles off", type, null, -1, groups.none { it.isSelected })
+            }
+            groups.forEach { group ->
+                for (i in 0 until group.length) {
+                    if (!group.isTrackSupported(i)) continue
+                    val format = group.getTrackFormat(i)
+                    val name = format.label
+                        ?: format.language?.let { Locale.forLanguageTag(it).displayLanguage }?.takeIf { it.isNotBlank() }
+                        ?: (if (type == C.TRACK_TYPE_AUDIO) "Audio" else "Subtitles") + " ${out.size + 1}"
+                    out += Choice(name, type, group, i, group.isTrackSelected(i))
+                }
+            }
+        }
+        out.toList()
+    }
+
+    if (choices.isEmpty()) {
+        Text(
+            "This video has no other audio or subtitle tracks.",
+            color = MutedText,
+            fontSize = 13.sp,
+            modifier = Modifier.padding(20.dp),
+        )
+        return
+    }
+    LazyColumn {
+        items(choices) { c ->
+            PanelRow(label = c.label, selected = c.selected) {
+                val params = exo.trackSelectionParameters.buildUpon()
+                if (c.group == null) {
+                    params.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+                } else {
+                    params.setTrackTypeDisabled(c.type, false)
+                    params.setOverrideForType(TrackSelectionOverride(c.group.mediaTrackGroup, c.index))
+                }
+                exo.trackSelectionParameters = params.build()
+                onDone()
+            }
+        }
+    }
+}
