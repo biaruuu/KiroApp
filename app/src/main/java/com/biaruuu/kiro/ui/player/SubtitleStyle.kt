@@ -5,49 +5,110 @@ package com.biaruuu.kiro.ui.player
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
+import android.net.Uri
+import android.os.Build
 import androidx.core.content.res.ResourcesCompat
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
 import com.biaruuu.kiro.R
+import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
-/** What the user picked for how captions look. Indexes point into [SubtitleOptions]. */
+/**
+ * How captions look. Font is a name from [SubtitleOptions.fonts] ("Custom" uses the imported file);
+ * size, background and edge are indexes into the option lists below.
+ */
 data class SubtitleStyle(
-    val font: Int = 0,
-    val sizePercent: Int = 100,
-    val color: Int = 0,
-    val background: Int = 1,
-    val edge: Int = 1,
+    val font: String = SubtitleOptions.DEFAULT_FONT,
+    val size: Int = 1,
+    val background: Int = 0,
+    val edge: Int = 2,
 )
 
 object SubtitleOptions {
-    val fonts = listOf("Netflix Sans", "Sans", "Serif", "Monospace", "Casual")
-    val colors = listOf(
-        "White" to Color.WHITE,
-        "Yellow" to Color.parseColor("#FFEB3B"),
-        "Cyan" to Color.parseColor("#4DD0E1"),
-        "Green" to Color.parseColor("#69F0AE"),
-        "Pink" to Color.parseColor("#FF80AB"),
+    const val DEFAULT_FONT = "Netflix Sans"
+    const val CUSTOM = "Custom"
+
+    /** Font name, bundled file (null = not a file) and the weight to use for variable fonts. */
+    private data class Face(val asset: String?, val weight: Int)
+
+    private val faces = linkedMapOf(
+        DEFAULT_FONT to Face(null, 0),
+        "Roboto (System)" to Face(null, 0),
+        "Inter" to Face("fonts/inter.ttf", 600),
+        "Open Sans" to Face("fonts/opensans.ttf", 600),
+        "Poppins" to Face("fonts/poppins_medium.ttf", 0),
+        "Montserrat" to Face("fonts/montserrat.ttf", 600),
+        "Cinzel" to Face("fonts/cinzel.ttf", 600),
+        "Roboto Mono" to Face("fonts/robotomono.ttf", 600),
+        "Comic Neue" to Face("fonts/comicneue_bold.ttf", 0),
     )
+
+    /** Every choice, with "Custom" (a font file the user imports) last. */
+    val fonts: List<String> = faces.keys.toList() + CUSTOM
+
+    /** Same four sizes as the reference: Small, Medium, Large, Extra Large (14/18/24/30 on a base of 18). */
+    val sizes = listOf("Small" to 14f, "Medium" to 18f, "Large" to 24f, "Extra Large" to 30f)
     val backgrounds = listOf(
-        "None" to Color.TRANSPARENT,
-        "Dim" to Color.argb(150, 0, 0, 0),
-        "Black" to Color.BLACK,
+        "Transparent" to Color.TRANSPARENT,
+        "Semi-Transparent" to Color.argb(0x88, 0, 0, 0),
+        "Solid" to Color.BLACK,
     )
     val edges = listOf(
         "None" to CaptionStyleCompat.EDGE_TYPE_NONE,
+        "Subtle Shadow" to CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW,
         "Outline" to CaptionStyleCompat.EDGE_TYPE_OUTLINE,
-        "Shadow" to CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW,
     )
-    const val MIN_SIZE = 50
-    const val MAX_SIZE = 200
-    const val SIZE_STEP = 10
 
-    fun typeface(context: Context, index: Int): Typeface = when (index) {
-        0 -> ResourcesCompat.getFont(context, R.font.netflix_sans_medium) ?: Typeface.SANS_SERIF
-        1 -> Typeface.SANS_SERIF
-        2 -> Typeface.SERIF
-        3 -> Typeface.MONOSPACE
-        else -> Typeface.create("casual", Typeface.NORMAL)
+    private val cache = ConcurrentHashMap<String, Typeface>()
+
+    private fun customFile(context: Context) = File(context.filesDir, "subtitle_font.ttf")
+
+    fun customName(context: Context): String? =
+        context.applicationContext.getSharedPreferences("kiro_user_data", Context.MODE_PRIVATE)
+            .getString("sub_custom_font_name", null)
+
+    /** Copies a font file the user picked (.ttf / .otf) into the app and remembers its name. */
+    fun importCustomFont(context: Context, uri: Uri, displayName: String): Boolean = try {
+        val target = customFile(context)
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            target.outputStream().use { input.copyTo(it) }
+        } ?: return false
+        // Make sure it really is a font before keeping it.
+        Typeface.createFromFile(target)
+        context.applicationContext.getSharedPreferences("kiro_user_data", Context.MODE_PRIVATE).edit()
+            .putString("sub_custom_font_name", displayName.substringBeforeLast('.'))
+            .apply()
+        cache.remove(CUSTOM)
+        true
+    } catch (_: Exception) {
+        customFile(context).delete()
+        false
+    }
+
+    fun typeface(context: Context, font: String): Typeface = cache.getOrPut(font) {
+        val bold = if (Build.VERSION.SDK_INT >= 28) 600 else 0
+        when (font) {
+            DEFAULT_FONT -> ResourcesCompat.getFont(context, R.font.netflix_sans_bold)
+            "Roboto (System)" ->
+                if (bold > 0) Typeface.create(Typeface.SANS_SERIF, bold, false) else Typeface.SANS_SERIF
+            CUSTOM -> customFile(context).takeIf { it.exists() }?.let {
+                try {
+                    Typeface.createFromFile(it)
+                } catch (_: Exception) {
+                    null
+                }
+            }
+            else -> faces[font]?.let { face ->
+                try {
+                    val builder = Typeface.Builder(context.assets, face.asset!!)
+                    if (face.weight > 0) builder.setFontVariationSettings("'wght' ${face.weight}")
+                    builder.build()
+                } catch (_: Exception) {
+                    null
+                }
+            }
+        } ?: Typeface.SANS_SERIF
     }
 }
 
@@ -56,22 +117,22 @@ object SubtitleStyleStore {
 
     fun load(context: Context): SubtitleStyle {
         val p = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val font = p.getString("sub_font_name", SubtitleOptions.DEFAULT_FONT)
+            ?.takeIf { it in SubtitleOptions.fonts } ?: SubtitleOptions.DEFAULT_FONT
         return SubtitleStyle(
-            font = p.getInt("sub_font", 0).coerceIn(0, SubtitleOptions.fonts.lastIndex),
-            sizePercent = p.getInt("sub_size", 100).coerceIn(SubtitleOptions.MIN_SIZE, SubtitleOptions.MAX_SIZE),
-            color = p.getInt("sub_color", 0).coerceIn(0, SubtitleOptions.colors.lastIndex),
-            background = p.getInt("sub_bg", 1).coerceIn(0, SubtitleOptions.backgrounds.lastIndex),
-            edge = p.getInt("sub_edge", 1).coerceIn(0, SubtitleOptions.edges.lastIndex),
+            font = font,
+            size = p.getInt("sub_size_idx", 1).coerceIn(0, SubtitleOptions.sizes.lastIndex),
+            background = p.getInt("sub_bg_idx", 0).coerceIn(0, SubtitleOptions.backgrounds.lastIndex),
+            edge = p.getInt("sub_edge_idx", 2).coerceIn(0, SubtitleOptions.edges.lastIndex),
         )
     }
 
     fun save(context: Context, style: SubtitleStyle) {
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putInt("sub_font", style.font)
-            .putInt("sub_size", style.sizePercent)
-            .putInt("sub_color", style.color)
-            .putInt("sub_bg", style.background)
-            .putInt("sub_edge", style.edge)
+            .putString("sub_font_name", style.font)
+            .putInt("sub_size_idx", style.size)
+            .putInt("sub_bg_idx", style.background)
+            .putInt("sub_edge_idx", style.edge)
             .apply()
     }
 }
@@ -82,7 +143,7 @@ fun SubtitleView.applyKiroStyle(context: Context, style: SubtitleStyle) {
     setApplyEmbeddedFontSizes(false)
     setStyle(
         CaptionStyleCompat(
-            SubtitleOptions.colors[style.color].second,
+            Color.WHITE,
             SubtitleOptions.backgrounds[style.background].second,
             Color.TRANSPARENT,
             SubtitleOptions.edges[style.edge].second,
@@ -90,6 +151,6 @@ fun SubtitleView.applyKiroStyle(context: Context, style: SubtitleStyle) {
             SubtitleOptions.typeface(context, style.font),
         ),
     )
-    // 5.33% of the video height is the normal caption size.
-    setFractionalTextSize(0.0533f * style.sizePercent / 100f)
+    // 5.33% of the video height is the normal size (Medium).
+    setFractionalTextSize(0.0533f * SubtitleOptions.sizes[style.size].second / 18f)
 }

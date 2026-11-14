@@ -60,7 +60,6 @@ public final class StreamResolver {
     private static List<StreamSource> run(Context context, StreamRequest request) throws Exception {
         // 1. All providers at once.
         List<StreamProvider> providers = new ArrayList<>();
-        providers.add(new SampleProvider(context));
         providers.add(new CustomProvider(context));
 
         List<Callable<List<StreamSource>>> tasks = new ArrayList<>();

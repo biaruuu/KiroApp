@@ -4,6 +4,17 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.8.1] - 2026-11-15
+
+Subtitle style revamp and no more sample video.
+
+### Changed
+- **Subtitle style** is now a list in the same layout as Nivio: FONT, SIZE (Small, Medium, Large, Extra Large), BACKGROUND (Transparent, Semi-Transparent, Solid) and TEXT STYLE (None, Subtle Shadow, Outline). The chosen row is highlighted with a tick, each font previews itself, and changes apply to the captions immediately and are remembered.
+- **Multiple fonts**: Netflix Sans, Roboto, Inter, Open Sans, Poppins, Montserrat, Cinzel, Roboto Mono and Comic Neue (bundled, SIL OFL), plus **Custom Font** to load your own .ttf / .otf file.
+
+### Removed
+- The built-in sample video. When no streaming source is set up the player now says so and offers **Add my source**.
+
 ## [1.8.0] - 2026-11-15
 
 Multi-source playback and subtitle styling.

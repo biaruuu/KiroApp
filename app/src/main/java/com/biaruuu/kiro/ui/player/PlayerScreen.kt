@@ -105,6 +105,8 @@ private val PanelBackground = Color(0xFF161616)
 private val TrackGrey = Color(0xFF5C5C5E)
 private val MutedText = Color(0xFF8E8E93)
 
+private const val NO_SOURCE = "No streaming source is set up yet"
+
 private enum class Panel { Menu, Tracks, Episodes, Speed, Sources, SubStyle }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
@@ -228,7 +230,7 @@ fun PlayerScreen(
         resolving = false
         if (found.isEmpty()) {
             buffering = false
-            error = "No playable source found"
+            error = NO_SOURCE
         }
     }
 
@@ -394,7 +396,29 @@ fun PlayerScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(message, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                Spacer(Modifier.height(12.dp))
+                if (message == NO_SOURCE) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Add the address of a video source you have the right to use.",
+                        color = MutedText,
+                        fontSize = 12.sp,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "Add my source",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(KiroPurple)
+                            .clickable { showSourceDialog = true }
+                            .padding(horizontal = 24.dp, vertical = 8.dp),
+                    )
+                    Spacer(Modifier.height(10.dp))
+                } else {
+                    Spacer(Modifier.height(12.dp))
+                }
                 Text(
                     "Retry",
                     color = Color.White,
@@ -490,7 +514,12 @@ fun PlayerScreen(
                                 activeSource?.let { "${it.providerName} · ${it.qualityLabel}" } ?: "Finding sources…",
                             ) { panel = Panel.Sources }
                         }
-                        item { MenuRow("Subtitle style", SubtitleOptions.fonts[subStyle.font]) { panel = Panel.SubStyle } }
+                        item {
+                            MenuRow(
+                                "Subtitle style",
+                                "${subStyle.font} · ${SubtitleOptions.sizes[subStyle.size].first} · ${SubtitleOptions.backgrounds[subStyle.background].first}",
+                            ) { panel = Panel.SubStyle }
+                        }
                         item {
                             MenuRow("Load subtitle file", ".srt · .vtt · .ass") {
                                 panel = null
@@ -935,114 +964,163 @@ private fun MenuRow(label: String, value: String, onClick: () -> Unit) {
     }
 }
 
-/** Preview plus pickers for font, size, color, background and edge. Saved as you tap. */
+/**
+ * Subtitle style as a list: FONT (each name shown in its own typeface), SIZE, BACKGROUND and TEXT
+ * STYLE, with the chosen row ticked. Changes are saved and applied to the captions at once.
+ */
 @Composable
 private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -> Unit) {
     val context = LocalContext.current
-    val typeface = remember(style.font) { SubtitleOptions.typeface(context, style.font) }
-    val textColor = Color(SubtitleOptions.colors[style.color].second)
-    val bgColor = Color(SubtitleOptions.backgrounds[style.background].second)
-    val edge = SubtitleOptions.edges[style.edge].second
+    var customName by remember { mutableStateOf(SubtitleOptions.customName(context)) }
+    val pickFont = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            val name = context.contentResolver.query(uri, null, null, null, null)?.use { c ->
+                val i = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                if (c.moveToFirst() && i >= 0) c.getString(i) else null
+            } ?: uri.lastPathSegment.orEmpty()
+            if (SubtitleOptions.importCustomFont(context, uri, name)) {
+                customName = SubtitleOptions.customName(context)
+                onChange(style.copy(font = SubtitleOptions.CUSTOM))
+            } else {
+                Toast.makeText(context, "That file isn't a usable font", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
-    Column(modifier = Modifier.verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
-        // Live preview.
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 8.dp)
-                .height(96.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(Color(0xFF2A2A2C)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                "I'll take back what's mine.",
-                color = textColor,
-                fontFamily = FontFamily(typeface),
-                fontSize = (16f * style.sizePercent / 100f).sp,
-                fontWeight = FontWeight.Medium,
-                style = TextStyle(
-                    shadow = when (edge) {
-                        androidx.media3.ui.CaptionStyleCompat.EDGE_TYPE_OUTLINE ->
-                            Shadow(Color.Black, Offset.Zero, 6f)
-                        androidx.media3.ui.CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW ->
-                            Shadow(Color.Black, Offset(3f, 3f), 4f)
-                        else -> null
-                    },
-                ),
-                modifier = Modifier.background(bgColor).padding(horizontal = 6.dp, vertical = 2.dp),
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        item { SectionLabel("FONT") }
+        items(SubtitleOptions.fonts) { font ->
+            val selected = style.font == font
+            if (font == SubtitleOptions.CUSTOM) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            if (customName != null) onChange(style.copy(font = font)) else pickFont.launch(arrayOf("*/*"))
+                        }
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                customName?.let { "Custom: $it" } ?: "Custom Font (.ttf / .otf)",
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                            )
+                            Text(
+                                if (customName != null) "Tap to use it, or browse for another file"
+                                else "Load your own font file (.ttf / .otf)",
+                                color = MutedText,
+                                fontSize = 11.sp,
+                            )
+                        }
+                        if (selected) {
+                            Icon(
+                                painter = painterResource(R.drawable.fluent_checkmark_regular),
+                                contentDescription = null,
+                                tint = KiroPurple,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                        Text(
+                            "Browse",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .clickable { pickFont.launch(arrayOf("*/*")) }
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                        )
+                    }
+                }
+            } else {
+                val typeface = remember(font) { SubtitleOptions.typeface(context, font) }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onChange(style.copy(font = font)) }
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            font,
+                            color = if (selected) KiroPurple else Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (selected) {
+                            Icon(
+                                painter = painterResource(R.drawable.fluent_checkmark_regular),
+                                contentDescription = null,
+                                tint = KiroPurple,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                    }
+                    Text(
+                        "The quick brown fox jumps over the lazy dog",
+                        color = if (selected) KiroPurple.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.6f),
+                        fontFamily = FontFamily(typeface),
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+
+        item { SectionLabel("SIZE") }
+        items(SubtitleOptions.sizes.indices.toList()) { i ->
+            StyleRow(SubtitleOptions.sizes[i].first, style.size == i) { onChange(style.copy(size = i)) }
+        }
+        item { SectionLabel("BACKGROUND") }
+        items(SubtitleOptions.backgrounds.indices.toList()) { i ->
+            StyleRow(SubtitleOptions.backgrounds[i].first, style.background == i) { onChange(style.copy(background = i)) }
+        }
+        item { SectionLabel("TEXT STYLE") }
+        items(SubtitleOptions.edges.indices.toList()) { i ->
+            StyleRow(SubtitleOptions.edges[i].first, style.edge == i) { onChange(style.copy(edge = i)) }
+        }
+        item { Spacer(Modifier.height(16.dp)) }
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text,
+        color = MutedText,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 1.sp,
+        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 4.dp),
+    )
+}
+
+@Composable
+private fun StyleRow(label: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(48.dp).clickable(onClick = onClick).padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            color = if (selected) KiroPurple else Color.White,
+            fontSize = 14.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            modifier = Modifier.weight(1f),
+        )
+        if (selected) {
+            Icon(
+                painter = painterResource(R.drawable.fluent_checkmark_regular),
+                contentDescription = null,
+                tint = KiroPurple,
+                modifier = Modifier.size(22.dp),
             )
         }
-
-        StyleGroup("Font") {
-            SubtitleOptions.fonts.forEachIndexed { i, name ->
-                Chip(name, style.font == i) { onChange(style.copy(font = i)) }
-            }
-        }
-        StyleGroup("Size") {
-            Chip("–", false) {
-                onChange(style.copy(sizePercent = (style.sizePercent - SubtitleOptions.SIZE_STEP).coerceAtLeast(SubtitleOptions.MIN_SIZE)))
-            }
-            Text("${style.sizePercent}%", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            Chip("+", false) {
-                onChange(style.copy(sizePercent = (style.sizePercent + SubtitleOptions.SIZE_STEP).coerceAtMost(SubtitleOptions.MAX_SIZE)))
-            }
-        }
-        StyleGroup("Color") {
-            SubtitleOptions.colors.forEachIndexed { i, (name, _) ->
-                Chip(name, style.color == i) { onChange(style.copy(color = i)) }
-            }
-        }
-        StyleGroup("Background") {
-            SubtitleOptions.backgrounds.forEachIndexed { i, (name, _) ->
-                Chip(name, style.background == i) { onChange(style.copy(background = i)) }
-            }
-        }
-        StyleGroup("Edge") {
-            SubtitleOptions.edges.forEachIndexed { i, (name, _) ->
-                Chip(name, style.edge == i) { onChange(style.copy(edge = i)) }
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "Reset to default",
-            color = Color.White,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier
-                .padding(horizontal = 20.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .clickable { onChange(SubtitleStyle()) }
-                .padding(vertical = 8.dp),
-        )
     }
-}
-
-@Composable
-private fun StyleGroup(title: String, content: @Composable () -> Unit) {
-    Column(modifier = Modifier.padding(top = 10.dp)) {
-        Text(title, color = MutedText, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 20.dp))
-        Spacer(Modifier.height(6.dp))
-        Row(
-            modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) { content() }
-    }
-}
-
-@Composable
-private fun Chip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Text(
-        label,
-        color = if (selected) Color.White else Color(0xFFD0D0D4),
-        fontSize = 13.sp,
-        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-        maxLines = 1,
-        modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (selected) KiroPurple else Color(0xFF2A2A2C))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 7.dp),
-    )
 }
