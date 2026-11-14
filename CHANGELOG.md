@@ -4,6 +4,20 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.8.0] - 2026-11-15
+
+Multi-source playback and subtitle styling.
+
+### Added
+- **Multiple sources with automatic best pick.** Every episode asks all providers at once, measures how fast each video address answers, drops the ones that don't, and ranks the rest by resolution and speed. The ranking runs in the native Rust library (with unit tests). The player starts the best one and, if it fails, **fails over to the next** automatically. The menu's Source page shows the list (provider, quality, speed) and lets you pick one.
+- **Subtitle style.** Menu > Subtitle style: choose the font (Netflix Sans, Sans, Serif, Monospace, Casual), size (50-200%), color, background (none / dim / black) and edge (none / outline / shadow), with a live preview. Saved on the device and applied to captions straight away; Reset puts the defaults back.
+- **Load subtitle file.** Menu > Load subtitle file picks a local .srt, .vtt or .ass file and plays it with your style.
+- **My sources.** Menu > Source > Add my own source: type video addresses you have the right to watch (your own server or a licensed service), one per line, using {id} and {episode}; they are ranked and failed over like any other source.
+- Settings menu on the top-right three-dot button (Source, Subtitle style, Load subtitle file, Playback speed).
+
+### Notes
+- The built-in provider is still a set of public sample videos (so ranking, failover and subtitles can be tried). Real streaming providers are not included.
+
 ## [1.7.0] - 2026-11-14
 
 Video player.

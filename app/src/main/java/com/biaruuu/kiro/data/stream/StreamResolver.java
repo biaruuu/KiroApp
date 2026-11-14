@@ -1,0 +1,138 @@
+package com.biaruuu.kiro.data.stream;
+
+import android.content.Context;
+
+import androidx.annotation.NonNull;
+
+import com.biaruuu.kiro.core.NativeCore;
+import com.biaruuu.kiro.data.AniListApi;
+import com.biaruuu.kiro.data.HttpClientProvider;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+/**
+ * Asks every provider at the same time, measures how fast each address answers, drops the ones
+ * that don't, and orders the rest best first (resolution and speed, scored in Rust). The player
+ * plays the first and falls back to the next one if it fails.
+ */
+public final class StreamResolver {
+
+    private static final ExecutorService POOL = Executors.newCachedThreadPool();
+    private static final int PROVIDER_TIMEOUT_S = 8;
+    private static final int PROBE_TIMEOUT_S = 5;
+
+    private StreamResolver() {
+    }
+
+    @NonNull
+    public static AniListApi.Cancelable resolve(
+            @NonNull Context context,
+            @NonNull StreamRequest request,
+            @NonNull AniListApi.Callback<List<StreamSource>> callback) {
+        final AtomicBoolean cancelled = new AtomicBoolean(false);
+        final Context app = context.getApplicationContext();
+        POOL.execute(() -> {
+            try {
+                List<StreamSource> ranked = run(app, request);
+                if (!cancelled.get()) {
+                    callback.onSuccess(ranked);
+                }
+            } catch (Exception e) {
+                if (!cancelled.get()) {
+                    callback.onError(e);
+                }
+            }
+        });
+        return () -> cancelled.set(true);
+    }
+
+    private static List<StreamSource> run(Context context, StreamRequest request) throws Exception {
+        // 1. All providers at once.
+        List<StreamProvider> providers = new ArrayList<>();
+        providers.add(new SampleProvider(context));
+        providers.add(new CustomProvider(context));
+
+        List<Callable<List<StreamSource>>> tasks = new ArrayList<>();
+        for (StreamProvider p : providers) {
+            tasks.add(() -> p.resolve(request));
+        }
+        List<StreamSource> candidates = new ArrayList<>();
+        for (Future<List<StreamSource>> f : POOL.invokeAll(tasks, PROVIDER_TIMEOUT_S, TimeUnit.SECONDS)) {
+            try {
+                candidates.addAll(f.get());
+            } catch (Exception ignored) {
+                // A provider that fails or times out is simply skipped.
+            }
+        }
+
+        // 2. Measure every address at once.
+        List<Callable<StreamSource>> probes = new ArrayList<>();
+        for (StreamSource s : candidates) {
+            probes.add(() -> probe(s));
+        }
+        List<StreamSource> alive = new ArrayList<>();
+        for (Future<StreamSource> f : POOL.invokeAll(probes, PROBE_TIMEOUT_S, TimeUnit.SECONDS)) {
+            try {
+                StreamSource s = f.get();
+                if (s != null) {
+                    alive.add(s);
+                }
+            } catch (Exception ignored) {
+                // Unreachable: dropped.
+            }
+        }
+
+        // 3. Best first.
+        int[] heights = new int[alive.size()];
+        int[] latencies = new int[alive.size()];
+        boolean[] hls = new boolean[alive.size()];
+        for (int i = 0; i < alive.size(); i++) {
+            heights[i] = alive.get(i).getHeight();
+            latencies[i] = alive.get(i).getLatencyMs();
+            hls[i] = alive.get(i).isHls();
+        }
+        int[] order = NativeCore.rankStreams(heights, latencies, hls);
+        List<StreamSource> ranked = new ArrayList<>();
+        for (int index : order) {
+            if (index >= 0 && index < alive.size()) {
+                ranked.add(alive.get(index));
+            }
+        }
+        return ranked;
+    }
+
+    /** Time to the first byte. Local files count as instant; unreachable addresses return null. */
+    private static StreamSource probe(StreamSource source) throws Exception {
+        if (!source.getUrl().startsWith("http")) {
+            return source.withLatency(0);
+        }
+        OkHttpClient client = HttpClientProvider.get().newBuilder()
+                .callTimeout(PROBE_TIMEOUT_S - 1, TimeUnit.SECONDS)
+                .build();
+        Request request = new Request.Builder()
+                .url(source.getUrl())
+                .header("Range", "bytes=0-1")
+                .build();
+        long start = System.nanoTime();
+        try (Response r = client.newCall(request).execute()) {
+            if (!r.isSuccessful()) {
+                return null;
+            }
+            int ms = (int) ((System.nanoTime() - start) / 1_000_000L);
+            return source.withLatency(ms);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+}

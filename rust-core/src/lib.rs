@@ -6,6 +6,7 @@
 //! - `season_for_month` : month number -> AniList season enum string
 //! - `format_countdown` : seconds left -> "in 3d 4h 12m 5s" (ticks every second on the details page)
 //! - `compact_count` : 1234 -> "1.2K"
+//! - `rank_streams` : orders candidate video sources by quality and measured speed
 //! - `title_similarity` : 0-100 score of how alike two anime titles are (used to pick the right
 //!   TMDB match for a trailer)
 
@@ -124,6 +125,26 @@ pub fn compact_count(n: i32) -> String {
     }
 }
 
+/// Orders video sources best first. `spec` is "height,latency_ms,hls;height,latency_ms,hls;...".
+/// Returns the indexes of the entries, best first, as "2,0,1".
+/// Score = up to 60 points for resolution (2160p = 60) + up to 40 for speed (0 ms = 40, 4 s = 0)
+/// + 3 for HLS (adapts to the connection). Ties keep their original order.
+pub fn rank_streams(spec: &str) -> String {
+    let mut scored: Vec<(usize, f64)> = Vec::new();
+    for (i, entry) in spec.split(';').filter(|e| !e.trim().is_empty()).enumerate() {
+        let mut parts = entry.split(',').map(|p| p.trim());
+        let height: f64 = parts.next().and_then(|p| p.parse().ok()).unwrap_or(0.0);
+        let latency: f64 = parts.next().and_then(|p| p.parse().ok()).unwrap_or(4000.0);
+        let hls = parts.next() == Some("1");
+        let quality = height.clamp(0.0, 2160.0) / 2160.0 * 60.0;
+        let speed = 40.0 * (1.0 - latency.clamp(0.0, 4000.0) / 4000.0);
+        let bonus = if hls { 3.0 } else { 0.0 };
+        scored.push((i, quality + speed + bonus));
+    }
+    scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal).then(a.0.cmp(&b.0)));
+    scored.iter().map(|(i, _)| i.to_string()).collect::<Vec<_>>().join(",")
+}
+
 fn tokens(s: &str) -> Vec<String> {
     s.to_lowercase()
         .split(|c: char| !c.is_alphanumeric())
@@ -222,6 +243,19 @@ pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_compactCount<'local
     to_jstring(&mut env, &compact_count(n))
 }
 
+#[no_mangle]
+pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_rankStreamsNative<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    spec: JString<'local>,
+) -> jstring {
+    let spec: String = match env.get_string(&spec) {
+        Ok(s) => s.into(),
+        Err(_) => String::new(),
+    };
+    to_jstring(&mut env, &rank_streams(&spec))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -275,5 +309,17 @@ mod tests {
         assert_eq!(compact_count(1_234), "1.2K");
         assert_eq!(compact_count(2_000), "2K");
         assert_eq!(compact_count(3_400_000), "3.4M");
+    }
+
+    #[test]
+    fn ranks_streams() {
+        // 1080p/slow vs 720p/fast vs 480p/very fast vs unknown
+        assert_eq!(rank_streams("1080,200,0;720,100,0;480,50,0"), "0,1,2");
+        // a 1080p source that takes 4s loses to a quick 720p one
+        assert_eq!(rank_streams("1080,4000,0;720,100,0"), "1,0");
+        // HLS bonus breaks an otherwise equal tie, equal scores keep input order
+        assert_eq!(rank_streams("720,100,0;720,100,1"), "1,0");
+        assert_eq!(rank_streams("720,100,0;720,100,0"), "0,1");
+        assert_eq!(rank_streams(""), "");
     }
 }

@@ -1,3 +1,5 @@
+@file:OptIn(androidx.media3.common.util.UnstableApi::class)
+
 package com.biaruuu.kiro.ui.player
 
 import android.app.Activity
@@ -5,12 +7,18 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import android.widget.Toast
+import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -31,7 +39,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,7 +66,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,6 +83,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
@@ -76,6 +91,10 @@ import androidx.media3.common.Tracks
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.biaruuu.kiro.R
+import com.biaruuu.kiro.data.stream.StreamRepository
+import com.biaruuu.kiro.data.stream.StreamRequest
+import com.biaruuu.kiro.data.stream.StreamSettings
+import com.biaruuu.kiro.data.stream.StreamSource
 import com.biaruuu.kiro.ui.detail.DetailViewModel
 import com.biaruuu.kiro.ui.detail.releasedEpisodes
 import com.biaruuu.kiro.ui.theme.KiroPurple
@@ -86,7 +105,7 @@ private val PanelBackground = Color(0xFF161616)
 private val TrackGrey = Color(0xFF5C5C5E)
 private val MutedText = Color(0xFF8E8E93)
 
-private enum class Panel { Tracks, Episodes, Speed }
+private enum class Panel { Menu, Tracks, Episodes, Speed, Sources, SubStyle }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -152,18 +171,98 @@ fun PlayerScreen(
     var seeking by remember { mutableStateOf(false) }
     var retry by remember { mutableIntStateOf(0) }
 
+    var sources by remember { mutableStateOf<List<StreamSource>>(emptyList()) }
+    var sourceIndex by remember { mutableIntStateOf(0) }
+    var resolving by remember { mutableStateOf(true) }
+    var userSubs by remember { mutableStateOf<List<Pair<Uri, String>>>(emptyList()) }
+    var pendingSeek by remember { mutableLongStateOf(0L) }
+    var subStyle by remember { mutableStateOf(SubtitleStyleStore.load(context)) }
+    var playerView by remember { mutableStateOf<PlayerView?>(null) }
+    var showSourceDialog by remember { mutableStateOf(false) }
+    val latestSources by rememberUpdatedState(sources)
+    val latestIndex by rememberUpdatedState(sourceIndex)
+
+    val pickSubtitle = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            val name = uri.lastPathSegment.orEmpty().lowercase()
+            val mime = when {
+                name.endsWith(".vtt") -> MimeTypes.TEXT_VTT
+                name.endsWith(".ass") || name.endsWith(".ssa") -> MimeTypes.TEXT_SSA
+                else -> MimeTypes.APPLICATION_SUBRIP
+            }
+            pendingSeek = exo.currentPosition
+            userSubs = userSubs + (uri to mime)
+        }
+    }
+
     fun playEpisode(number: Int) {
         current = number
         position = 0
     }
 
-    // Load (or reload) the video whenever the episode changes.
+    // 1. Ask every provider for this episode; the best (quality + speed) comes first.
     LaunchedEffect(current, retry) {
         error = null
         buffering = true
-        exo.setMediaItem(MediaItem.fromUri(PlaybackSource.urlFor(animeId, current)))
+        resolving = true
+        sources = emptyList()
+        sourceIndex = 0
+        pendingSeek = 0
+        userSubs = emptyList()
+        val request = StreamRequest(
+            animeId,
+            current,
+            ui.base?.displayTitle.orEmpty(),
+            ui.base?.titleEnglish,
+            ui.base?.titleRomaji,
+            ui.base?.seasonYear ?: 0,
+        )
+        val found = try {
+            StreamRepository.resolve(context, request)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            emptyList()
+        }
+        sources = found
+        resolving = false
+        if (found.isEmpty()) {
+            buffering = false
+            error = "No playable source found"
+        }
+    }
+
+    // 2. Play the chosen source (also when switching source or adding a subtitle file).
+    LaunchedEffect(sources, sourceIndex, userSubs) {
+        val source = sources.getOrNull(sourceIndex) ?: return@LaunchedEffect
+        val subtitles = source.subtitles.mapIndexed { i, t ->
+            MediaItem.SubtitleConfiguration.Builder(Uri.parse(t.url))
+                .setMimeType(t.mimeType)
+                .setLanguage(t.language)
+                .setLabel(t.label)
+                .setSelectionFlags(if (i == 0) C.SELECTION_FLAG_DEFAULT else 0)
+                .build()
+        } + userSubs.mapIndexed { i, (uri, mime) ->
+            MediaItem.SubtitleConfiguration.Builder(uri)
+                .setMimeType(mime)
+                .setLabel("My subtitles ${i + 1}")
+                .setSelectionFlags(if (i == userSubs.lastIndex) C.SELECTION_FLAG_DEFAULT else 0)
+                .build()
+        }
+        error = null
+        buffering = true
+        exo.setMediaItem(
+            MediaItem.Builder().setUri(source.url).setSubtitleConfigurations(subtitles).build(),
+            pendingSeek,
+        )
+        pendingSeek = 0
         exo.prepare()
         exo.playWhenReady = true
+    }
+
+    // Keep the caption look in sync with the saved style.
+    LaunchedEffect(playerView, subStyle) {
+        playerView?.subtitleView?.applyKiroStyle(context, subStyle)
     }
 
     DisposableEffect(exo) {
@@ -182,7 +281,13 @@ fun PlayerScreen(
             }
 
             override fun onPlayerError(e: PlaybackException) {
-                error = "Couldn't play this video"
+                // Instant failover: try the next-best source before giving up.
+                if (latestIndex + 1 < latestSources.size) {
+                    pendingSeek = exo.currentPosition
+                    sourceIndex = latestIndex + 1
+                } else {
+                    error = "Couldn't play this video"
+                }
             }
 
             override fun onTracksChanged(t: Tracks) {
@@ -253,6 +358,7 @@ fun PlayerScreen(
                     useController = false
                     player = exo
                     keepScreenOn = true
+                    playerView = this
                 }
             },
         )
@@ -331,7 +437,7 @@ fun PlayerScreen(
                     duration = duration,
                     hasNext = nextEpisode != null,
                     onClose = onClose,
-                    onMore = { panel = Panel.Speed },
+                    onMore = { panel = Panel.Menu },
                     onTogglePlay = {
                         if (exo.isPlaying) exo.pause() else exo.play()
                         interaction++
@@ -366,6 +472,9 @@ fun PlayerScreen(
         panel?.let { open ->
             SidePanel(
                 title = when (open) {
+                    Panel.Menu -> "Settings"
+                    Panel.Sources -> "Source"
+                    Panel.SubStyle -> "Subtitle style"
                     Panel.Tracks -> "Audio & Subtitles"
                     Panel.Episodes -> "Episodes"
                     Panel.Speed -> "Playback speed"
@@ -373,6 +482,48 @@ fun PlayerScreen(
                 onClose = { panel = null },
             ) {
                 when (open) {
+                    Panel.Menu -> LazyColumn {
+                        val activeSource = sources.getOrNull(sourceIndex)
+                        item {
+                            MenuRow(
+                                "Source",
+                                activeSource?.let { "${it.providerName} · ${it.qualityLabel}" } ?: "Finding sources…",
+                            ) { panel = Panel.Sources }
+                        }
+                        item { MenuRow("Subtitle style", SubtitleOptions.fonts[subStyle.font]) { panel = Panel.SubStyle } }
+                        item {
+                            MenuRow("Load subtitle file", ".srt · .vtt · .ass") {
+                                panel = null
+                                pickSubtitle.launch(arrayOf("*/*"))
+                            }
+                        }
+                        item { MenuRow("Playback speed", if (speed == 1f) "Normal" else "${speed}x") { panel = Panel.Speed } }
+                    }
+                    Panel.Sources -> Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        if (resolving) {
+                            Text("Finding the best source…", color = MutedText, fontSize = 13.sp, modifier = Modifier.padding(20.dp))
+                        }
+                        sources.forEachIndexed { i, source ->
+                            PanelRow(
+                                label = "${source.providerName} · ${source.qualityLabel}" +
+                                    (if (source.isHls) " · HLS" else "") +
+                                    (if (i == 0) " · best" else "") +
+                                    (if (source.latencyMs >= 0) " · ${source.latencyMs} ms" else ""),
+                                selected = i == sourceIndex,
+                            ) {
+                                if (i != sourceIndex) {
+                                    pendingSeek = exo.currentPosition
+                                    sourceIndex = i
+                                }
+                                panel = null
+                            }
+                        }
+                        MenuRow("Add my own source", "your server's address") { showSourceDialog = true }
+                    }
+                    Panel.SubStyle -> SubtitleStylePanel(subStyle) { new ->
+                        subStyle = new
+                        SubtitleStyleStore.save(context, new)
+                    }
                     Panel.Tracks -> TrackList(exo, tracks) { panel = null }
                     Panel.Episodes -> LazyColumn {
                         items(episodes, key = { it.number }) { ep ->
@@ -400,6 +551,46 @@ fun PlayerScreen(
                 }
             }
         }
+    }
+
+    if (showSourceDialog) {
+        var text by remember { mutableStateOf(StreamSettings.getRaw(context)) }
+        AlertDialog(
+            onDismissRequest = { showSourceDialog = false },
+            containerColor = PanelBackground,
+            title = { Text("My sources", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text(
+                        "One address per line, for video you have the right to watch (your own server, a licensed " +
+                            "service). Use {id} for the AniList id and {episode} for the episode number, e.g. " +
+                            "https://my-server.example/{id}/{episode}.m3u8",
+                        color = MutedText,
+                        fontSize = 12.sp,
+                        lineHeight = 17.sp,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = { text = it },
+                        textStyle = TextStyle(color = Color.White, fontSize = 13.sp),
+                        minLines = 3,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    StreamSettings.setRaw(context, text)
+                    showSourceDialog = false
+                    panel = null
+                    retry++
+                }) { Text("Save", color = KiroPurple, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSourceDialog = false }) { Text("Cancel", color = Color.White) }
+            },
+        )
     }
 }
 
@@ -731,4 +922,127 @@ private fun TrackList(exo: ExoPlayer, tracks: Tracks, onDone: () -> Unit) {
             }
         }
     }
+}
+
+@Composable
+private fun MenuRow(label: String, value: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(56.dp).clickable(onClick = onClick).padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+        Text(value, color = MutedText, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** Preview plus pickers for font, size, color, background and edge. Saved as you tap. */
+@Composable
+private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -> Unit) {
+    val context = LocalContext.current
+    val typeface = remember(style.font) { SubtitleOptions.typeface(context, style.font) }
+    val textColor = Color(SubtitleOptions.colors[style.color].second)
+    val bgColor = Color(SubtitleOptions.backgrounds[style.background].second)
+    val edge = SubtitleOptions.edges[style.edge].second
+
+    Column(modifier = Modifier.verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
+        // Live preview.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .height(96.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(Color(0xFF2A2A2C)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                "I'll take back what's mine.",
+                color = textColor,
+                fontFamily = FontFamily(typeface),
+                fontSize = (16f * style.sizePercent / 100f).sp,
+                fontWeight = FontWeight.Medium,
+                style = TextStyle(
+                    shadow = when (edge) {
+                        androidx.media3.ui.CaptionStyleCompat.EDGE_TYPE_OUTLINE ->
+                            Shadow(Color.Black, Offset.Zero, 6f)
+                        androidx.media3.ui.CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW ->
+                            Shadow(Color.Black, Offset(3f, 3f), 4f)
+                        else -> null
+                    },
+                ),
+                modifier = Modifier.background(bgColor).padding(horizontal = 6.dp, vertical = 2.dp),
+            )
+        }
+
+        StyleGroup("Font") {
+            SubtitleOptions.fonts.forEachIndexed { i, name ->
+                Chip(name, style.font == i) { onChange(style.copy(font = i)) }
+            }
+        }
+        StyleGroup("Size") {
+            Chip("–", false) {
+                onChange(style.copy(sizePercent = (style.sizePercent - SubtitleOptions.SIZE_STEP).coerceAtLeast(SubtitleOptions.MIN_SIZE)))
+            }
+            Text("${style.sizePercent}%", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Chip("+", false) {
+                onChange(style.copy(sizePercent = (style.sizePercent + SubtitleOptions.SIZE_STEP).coerceAtMost(SubtitleOptions.MAX_SIZE)))
+            }
+        }
+        StyleGroup("Color") {
+            SubtitleOptions.colors.forEachIndexed { i, (name, _) ->
+                Chip(name, style.color == i) { onChange(style.copy(color = i)) }
+            }
+        }
+        StyleGroup("Background") {
+            SubtitleOptions.backgrounds.forEachIndexed { i, (name, _) ->
+                Chip(name, style.background == i) { onChange(style.copy(background = i)) }
+            }
+        }
+        StyleGroup("Edge") {
+            SubtitleOptions.edges.forEachIndexed { i, (name, _) ->
+                Chip(name, style.edge == i) { onChange(style.copy(edge = i)) }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Reset to default",
+            color = Color.White,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier
+                .padding(horizontal = 20.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .clickable { onChange(SubtitleStyle()) }
+                .padding(vertical = 8.dp),
+        )
+    }
+}
+
+@Composable
+private fun StyleGroup(title: String, content: @Composable () -> Unit) {
+    Column(modifier = Modifier.padding(top = 10.dp)) {
+        Text(title, color = MutedText, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 20.dp))
+        Spacer(Modifier.height(6.dp))
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) { content() }
+    }
+}
+
+@Composable
+private fun Chip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Text(
+        label,
+        color = if (selected) Color.White else Color(0xFFD0D0D4),
+        fontSize = 13.sp,
+        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+        maxLines = 1,
+        modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (selected) KiroPurple else Color(0xFF2A2A2C))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 7.dp),
+    )
 }

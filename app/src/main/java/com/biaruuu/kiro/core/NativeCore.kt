@@ -26,6 +26,36 @@ object NativeCore {
     external fun seasonForMonth(month: Int): String?
 
     @JvmStatic
+    external fun rankStreamsNative(spec: String): String?
+
+    /**
+     * Orders video sources best first by resolution and measured speed (scored in Rust). Returns
+     * the indexes into the given arrays.
+     */
+    @JvmStatic
+    fun rankStreams(heights: IntArray, latenciesMs: IntArray, hls: BooleanArray): IntArray {
+        val spec = heights.indices.joinToString(";") { i ->
+            "${heights[i]},${latenciesMs[i]},${if (hls[i]) 1 else 0}"
+        }
+        if (nativeAvailable) {
+            val r = try {
+                rankStreamsNative(spec)
+            } catch (_: Throwable) {
+                null
+            }
+            if (r != null) {
+                return r.split(",").filter { it.isNotEmpty() }.map { it.toInt() }.toIntArray()
+            }
+        }
+        fun score(i: Int): Double {
+            val quality = heights[i].coerceIn(0, 2160) / 2160.0 * 60.0
+            val speed = 40.0 * (1.0 - latenciesMs[i].coerceIn(0, 4000) / 4000.0)
+            return quality + speed + if (hls[i]) 3.0 else 0.0
+        }
+        return heights.indices.sortedWith(compareByDescending<Int> { score(it) }.thenBy { it }).toIntArray()
+    }
+
+    @JvmStatic
     external fun formatCountdown(seconds: Long): String?
 
     @JvmStatic
