@@ -169,6 +169,17 @@ public final class AnimeDetail {
         return trailerYoutubeId;
     }
 
+    /** Number of the next episode that has not aired yet, or 0 when none is scheduled. */
+    public int getNextEpisode() {
+        return nextEpisode;
+    }
+
+    /** Unix seconds when the next episode airs, or 0 when unknown. */
+    public long getNextAiringAt() {
+        Long at = nextEpisode > 0 ? airTimes.get(nextEpisode) : null;
+        return at != null ? at : 0L;
+    }
+
     /** Every known trailer (YouTube ids), best first. */
     @NonNull
     public List<String> getTrailerIds() {

@@ -37,6 +37,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +51,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.pointerInput
@@ -179,6 +181,23 @@ private fun DetailContent(
         if (newestFirst) list.asReversed() else list
     }
 
+    // Only episodes that have aired are listed; the next one gets a live countdown instead.
+    val nextEp = detail?.nextEpisode ?: 0
+    val nextAt = detail?.nextAiringAt ?: 0L
+    val released = remember(episodes, nextEp, anime.status) {
+        when {
+            nextEp > 0 -> episodes.filter { it.number < nextEp }
+            anime.status == "NOT_YET_RELEASED" -> emptyList()
+            else -> episodes
+        }
+    }
+    val nowSeconds by produceState(System.currentTimeMillis() / 1000) {
+        while (true) {
+            delay(15_000)
+            value = System.currentTimeMillis() / 1000
+        }
+    }
+
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         // ---- Hero: the trailer fills it, with rating, title and genres over the video ----
         item(key = "hero") {
@@ -213,8 +232,17 @@ private fun DetailContent(
                         )
                     }
                 }
-                // Flat dim so the text stays readable (no gradient).
-                Box(modifier = Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.32f)))
+                // Darkens only the lower part (behind rating and title) and melts into the page.
+                Box(
+                    modifier = Modifier.matchParentSize().background(
+                        Brush.verticalGradient(
+                            0f to Color.Transparent,
+                            0.5f to Color.Transparent,
+                            0.78f to Bg.copy(alpha = 0.72f),
+                            1f to Bg,
+                        ),
+                    ),
+                )
                 // Swallows taps so the video behind never shows YouTube's own controls.
                 Box(modifier = Modifier.matchParentSize().pointerInput(Unit) { detectTapGestures { } })
 
@@ -228,24 +256,24 @@ private fun DetailContent(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(4.dp))
                                     .background(Color.Black.copy(alpha = 0.6f))
-                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    .padding(horizontal = 6.dp, vertical = 3.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Icon(
                                     painter = painterResource(R.drawable.fluent_star_filled),
                                     contentDescription = null,
                                     tint = Color.White,
-                                    modifier = Modifier.size(14.dp),
+                                    modifier = Modifier.size(12.dp),
                                 )
-                                Spacer(Modifier.width(4.dp))
-                                Text(rate, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.width(3.dp))
+                                Text(rate, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                         Spacer(Modifier.weight(1f))
                         if (trailerId != null && trailerPlaying) {
                             Box(
                                 modifier = Modifier
-                                    .size(36.dp)
+                                    .size(24.dp)
                                     .clip(CircleShape)
                                     .background(Color.Black.copy(alpha = 0.55f))
                                     .clickable { muted = !muted },
@@ -257,23 +285,23 @@ private fun DetailContent(
                                     ),
                                     contentDescription = if (muted) "Unmute" else "Mute",
                                     tint = Color.White,
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(14.dp),
                                 )
                             }
                         }
                     }
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(8.dp))
                     Text(
                         anime.displayTitle,
                         color = Color.White,
-                        fontSize = 26.sp,
-                        lineHeight = 30.sp,
+                        fontSize = 24.sp,
+                        lineHeight = 29.sp,
                         fontWeight = FontWeight.Bold,
                     )
                     val genres = genreLine(anime)
                     if (genres.isNotEmpty()) {
-                        Spacer(Modifier.height(8.dp))
-                        Text(genres, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Normal)
+                        Spacer(Modifier.height(6.dp))
+                        Text(genres, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Normal)
                     }
                 }
             }
@@ -299,11 +327,11 @@ private fun DetailContent(
                             modifier = Modifier.size(20.dp),
                         )
                         Spacer(Modifier.width(6.dp))
-                        Text("Play", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                        Text("Play", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                     }
                 }
                 Spacer(Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                     ActionButton(
                         label = "My List",
                         icon = if (inList) R.drawable.fluent_checkmark_regular else R.drawable.fluent_add_regular,
@@ -337,16 +365,16 @@ private fun DetailContent(
                         Text(
                             text,
                             color = MutedText,
-                            fontSize = 14.sp,
-                            lineHeight = 22.sp,
+                            fontSize = 11.sp,
+                            lineHeight = 18.sp,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
                             "More",
                             color = Color.White,
-                            fontSize = 14.sp,
-                            lineHeight = 22.sp,
+                            fontSize = 11.sp,
+                            lineHeight = 18.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
@@ -366,7 +394,7 @@ private fun DetailContent(
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 16.dp, vertical = 12.dp)
-                        .height(36.dp)
+                        .height(32.dp)
                         .clip(RoundedCornerShape(4.dp))
                         .border(BorderStroke(1.dp, MutedText), RoundedCornerShape(4.dp))
                         .clickable { showSeasons = true }
@@ -408,7 +436,7 @@ private fun DetailContent(
                     Text(
                         if (newestFirst) "Newest" else "Oldest",
                         color = MutedText,
-                        fontSize = 15.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Normal,
                     )
                     Spacer(Modifier.width(4.dp))
@@ -420,11 +448,11 @@ private fun DetailContent(
                     )
                 }
                 Spacer(Modifier.weight(1f))
-                if (detail != null && episodes.isNotEmpty()) {
+                if (detail != null && released.isNotEmpty()) {
                     Text(
-                        "${episodes.size} Episodes",
+                        "${released.size} Episodes",
                         color = MutedText,
-                        fontSize = 15.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Normal,
                     )
                     Spacer(Modifier.width(6.dp))
@@ -460,7 +488,18 @@ private fun DetailContent(
             }
         }
 
-        items(episodes, key = { it.number }, contentType = { "episode" }) { episode ->
+        if (nextEp > 0) {
+            item(key = "countdown") {
+                val still = episodes.firstOrNull { it.number == nextEp }?.thumbnailUrl
+                CountdownRow(
+                    number = nextEp,
+                    label = if (nextAt > 0) countdownLabel(nextAt - nowSeconds) else "Coming soon",
+                    image = still ?: anime.heroUrl,
+                )
+            }
+        }
+
+        items(released, key = { it.number }, contentType = { "episode" }) { episode ->
             EpisodeRow(episode, fallbackImage = anime.heroUrl, onClick = comingSoon)
         }
 
@@ -490,12 +529,44 @@ private fun DetailContent(
 @Composable
 private fun ActionButton(label: String, icon: Int, tint: Color, onClick: () -> Unit) {
     Column(
-        modifier = Modifier.widthIn(min = 52.dp).clip(RoundedCornerShape(6.dp)).clickable(onClick = onClick).padding(vertical = 6.dp),
+        modifier = Modifier.clip(RoundedCornerShape(6.dp)).clickable(onClick = onClick).padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(28.dp))
-        Spacer(Modifier.height(6.dp))
-        Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Normal)
+        Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.height(5.dp))
+        Text(label, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Normal)
+    }
+}
+
+@Composable
+private fun CountdownRow(number: Int, label: String, image: String?) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .width(120.dp)
+                .height(68.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(ThumbBackground),
+        ) {
+            if (image != null) {
+                AsyncImage(
+                    model = image,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)))
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Episode $number", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(4.dp))
+            Text(label, color = KiroPurple, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        }
     }
 }
 

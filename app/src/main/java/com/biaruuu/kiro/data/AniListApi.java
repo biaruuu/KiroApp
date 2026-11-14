@@ -109,7 +109,7 @@ public final class AniListApi {
                     + " trailer { id site }"
                     + " studios(isMain: true) { nodes { name } }"
                     + " stats { scoreDistribution { amount } }"
-                    + " nextAiringEpisode { episode }"
+                    + " nextAiringEpisode { episode airingAt }"
                     + " streamingEpisodes { title thumbnail }"
                     + " airingSchedule(perPage: 100) { nodes { episode airingAt } }"
                     + " relations { edges { relationType node { id type title { romaji english } } } }"
@@ -448,6 +448,9 @@ public final class AniListApi {
             if (node != null && node.optInt("episode", 0) > 0) {
                 airTimes.put(node.optInt("episode"), node.optLong("airingAt", 0L));
             }
+        }
+        if (next != null && next.optLong("airingAt", 0L) > 0) {
+            airTimes.put(intOrZero(next, "episode"), next.optLong("airingAt", 0L));
         }
         b.airTimes = airTimes;
 

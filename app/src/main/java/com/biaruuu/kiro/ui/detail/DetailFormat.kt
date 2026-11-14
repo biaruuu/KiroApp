@@ -71,3 +71,17 @@ fun creditRows(detail: AnimeDetail): List<Pair<String, String>> {
 
 fun shareText(anime: Anime): String =
     "${anime.displayTitle} - https://anilist.co/anime/${anime.id}"
+
+/** "in 3d 4h 12m", "in 4h 12m", "in 12m"; "Airing now" once the time has come. */
+fun countdownLabel(secondsLeft: Long): String {
+    if (secondsLeft <= 0) return "Airing now"
+    val days = secondsLeft / 86_400
+    val hours = (secondsLeft % 86_400) / 3_600
+    val minutes = (secondsLeft % 3_600) / 60
+    return buildString {
+        append("in ")
+        if (days > 0) append("${days}d ")
+        if (days > 0 || hours > 0) append("${hours}h ")
+        append("${maxOf(minutes, if (days == 0L && hours == 0L) 1 else 0)}m")
+    }
+}

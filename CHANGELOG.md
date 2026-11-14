@@ -4,6 +4,17 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.6.6] - 2026-11-14
+
+Details page styling matched to the reference, plus a next-episode countdown.
+
+### Added
+- **Next episode countdown.** Airing anime list only the episodes that have aired, followed by a card such as "Episode 7 - in 3d 4h 12m" that counts down live. Unaired episodes are no longer listed.
+
+### Changed
+- **Hero title area** now darkens behind the rating, title and genres and fades into the page, like the reference (the top of the video stays clear).
+- Text, icon and button sizes on the details page now follow the reference: smaller rating chip and mute button, 24sp title, 12sp genres, compact My List / Rating / Share row, 11sp synopsis, slimmer season dropdown.
+
 ## [1.6.5] - 2026-11-14
 
 Episode details from TMDB, like the website.
