@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.biaruuu.kiro.BuildConfig;
+import com.biaruuu.kiro.core.NativeCore;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -43,35 +44,42 @@ public final class TrailerApi {
     private TrailerApi() {
     }
 
+    /** TMDB trailers for this anime (empty when there is no key or no match). Runs off-thread. */
     @NonNull
-    public static AniListApi.Cancelable findTrailers(
-            @NonNull Anime anime,
-            int malId,
-            @Nullable String anilistYoutubeId,
-            @NonNull AniListApi.Callback<List<String>> callback) {
+    public static AniListApi.Cancelable findTmdb(
+            @NonNull Anime anime, @NonNull AniListApi.Callback<List<String>> callback) {
         final AtomicBoolean cancelled = new AtomicBoolean(false);
         POOL.execute(() -> {
-            Set<String> ids = new LinkedHashSet<>();
+            List<String> ids;
             try {
-                ids.addAll(fromTmdb(anime, cancelled));
-            } catch (Exception ignored) {
-                // Fall through to the other sources.
-            }
-            if (anilistYoutubeId != null && !anilistYoutubeId.isEmpty()) {
-                ids.add(anilistYoutubeId);
-            }
-            if (malId > 0 && !cancelled.get()) {
-                try {
-                    String mal = fromJikan(malId);
-                    if (mal != null) {
-                        ids.add(mal);
-                    }
-                } catch (Exception ignored) {
-                    // No MAL trailer.
-                }
+                ids = fromTmdb(anime, cancelled);
+            } catch (Exception e) {
+                ids = new ArrayList<>();
             }
             if (!cancelled.get()) {
-                callback.onSuccess(new ArrayList<>(ids));
+                callback.onSuccess(ids);
+            }
+        });
+        return () -> cancelled.set(true);
+    }
+
+    /** MyAnimeList trailer through Jikan (empty list when none). Runs off-thread. */
+    @NonNull
+    public static AniListApi.Cancelable findJikan(
+            int malId, @NonNull AniListApi.Callback<List<String>> callback) {
+        final AtomicBoolean cancelled = new AtomicBoolean(false);
+        POOL.execute(() -> {
+            List<String> ids = new ArrayList<>();
+            try {
+                String id = malId > 0 ? fromJikan(malId) : null;
+                if (id != null) {
+                    ids.add(id);
+                }
+            } catch (Exception ignored) {
+                // No MAL trailer.
+            }
+            if (!cancelled.get()) {
+                callback.onSuccess(ids);
             }
         });
         return () -> cancelled.set(true);
@@ -94,6 +102,8 @@ public final class TrailerApi {
         Set<String> titles = new LinkedHashSet<>();
         addTitle(titles, anime.getTitleEnglish());
         addTitle(titles, anime.getTitleRomaji());
+        final List<String> known = new ArrayList<>(titles);
+        addTitle(titles, anime.getTitleNative());
 
         int year = anime.getSeasonYear();
         for (String title : titles) {
@@ -110,7 +120,7 @@ public final class TrailerApi {
                 if (attempt == 0) {
                     url += (movie ? "&year=" : "&first_air_date_year=") + year;
                 }
-                JSONObject match = pickMatch(get(url, key), type);
+                JSONObject match = pickMatch(get(url, key), known);
                 if (match == null) {
                     continue;
                 }
@@ -129,15 +139,16 @@ public final class TrailerApi {
         }
     }
 
-    /** First result that looks like anime (Animation genre, or Japanese origin). */
+    /**
+     * Best animation result by title similarity (scored in Rust). Rejects weak matches so a
+     * trailer from a different show is never used.
+     */
     @Nullable
-    private static JSONObject pickMatch(@NonNull JSONObject search, @NonNull String type) {
+    private static JSONObject pickMatch(@NonNull JSONObject search, @NonNull List<String> known) {
         JSONArray results = search.optJSONArray("results");
-        if (results == null || results.length() == 0) {
-            return null;
-        }
-        JSONObject fallback = null;
-        for (int i = 0; i < results.length() && i < 8; i++) {
+        JSONObject best = null;
+        int bestScore = 0;
+        for (int i = 0; results != null && i < results.length() && i < 10; i++) {
             JSONObject r = results.optJSONObject(i);
             if (r == null) {
                 continue;
@@ -149,15 +160,22 @@ public final class TrailerApi {
                     animation = true;
                 }
             }
-            boolean japanese = "ja".equals(r.optString("original_language"));
-            if (animation && japanese) {
-                return r;
+            if (!animation) {
+                continue;
             }
-            if (animation && fallback == null) {
-                fallback = r;
+            int score = 0;
+            for (String field : new String[] {"name", "original_name", "title", "original_title"}) {
+                String candidate = r.optString(field, "");
+                for (String title : known) {
+                    score = Math.max(score, NativeCore.similarity(title, candidate));
+                }
+            }
+            if (score > bestScore) {
+                bestScore = score;
+                best = r;
             }
         }
-        return fallback;
+        return bestScore >= 50 ? best : null;
     }
 
     /** YouTube trailers of one TMDB title, ordered: official trailers, trailers, then the rest. */

@@ -4,6 +4,8 @@
 //! - `strip_html`   : turns AniList's HTML descriptions into clean plain text
 //! - `format_score` : 0-100 AniList score -> "8.7"
 //! - `season_for_month` : month number -> AniList season enum string
+//! - `title_similarity` : 0-100 score of how alike two anime titles are (used to pick the right
+//!   TMDB match for a trailer)
 
 use jni::objects::{JClass, JString};
 use jni::sys::{jint, jstring};
@@ -86,6 +88,30 @@ pub fn season_for_month(month: i32) -> &'static str {
     }
 }
 
+fn tokens(s: &str) -> Vec<String> {
+    s.to_lowercase()
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|t| !t.is_empty())
+        .map(str::to_string)
+        .collect()
+}
+
+/// How alike two titles are, 0-100: word overlap (Jaccard), with a boost when one title's
+/// words are all inside the other ("Attack on Titan" vs "Attack on Titan Season 2").
+pub fn title_similarity(a: &str, b: &str) -> i32 {
+    let ta = tokens(a);
+    let tb = tokens(b);
+    if ta.is_empty() || tb.is_empty() {
+        return 0;
+    }
+    let inter = ta.iter().filter(|t| tb.contains(t)).count();
+    let union = ta.len() + tb.iter().filter(|t| !ta.contains(t)).count();
+    let jaccard = inter * 100 / union;
+    let smaller = ta.len().min(tb.len());
+    let contained = if inter == smaller { 85 } else { 0 };
+    jaccard.max(contained) as i32
+}
+
 fn to_jstring(env: &mut JNIEnv, value: &str) -> jstring {
     match env.new_string(value) {
         Ok(s) => s.into_raw(),
@@ -124,6 +150,24 @@ pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_seasonForMonth<'loc
     to_jstring(&mut env, season_for_month(month))
 }
 
+#[no_mangle]
+pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_titleSimilarity<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    a: JString<'local>,
+    b: JString<'local>,
+) -> jint {
+    let a: String = match env.get_string(&a) {
+        Ok(s) => s.into(),
+        Err(_) => return -1,
+    };
+    let b: String = match env.get_string(&b) {
+        Ok(s) => s.into(),
+        Err(_) => return -1,
+    };
+    title_similarity(&a, &b)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -153,5 +197,12 @@ mod tests {
         assert_eq!(season_for_month(5), "SPRING");
         assert_eq!(season_for_month(8), "SUMMER");
         assert_eq!(season_for_month(11), "FALL");
+    }
+
+    #[test]
+    fn scores_titles() {
+        assert_eq!(title_similarity("Attack on Titan", "attack on titan"), 100);
+        assert!(title_similarity("Attack on Titan", "Attack on Titan Season 2") >= 85);
+        assert_eq!(title_similarity("Naruto", "One Piece"), 0);
     }
 }

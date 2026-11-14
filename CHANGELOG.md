@@ -4,6 +4,18 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.6.2] - 2026-11-14
+
+Faster details page and trailer fix.
+
+### Fixed
+- **The trailer no longer cuts off.** It was drawn in a small strip at the top of the hero; the video now fills the whole hero area.
+
+### Improved
+- **Much faster loading.** The page data and the trailer lookup now run at the same time instead of one after the other, and trailers appear as soon as TMDB answers.
+- **Instant reopen.** Anime you have already opened show immediately and refresh in the background, so the data (episodes, next episode, ratings) is always the live AniList data.
+- **Rust title matching.** The native Rust library scores how closely TMDB results match the anime title, so the right show's trailer is picked and a different show's trailer is never used.
+
 ## [1.6.1] - 2026-11-14
 
 Trailers now come from TMDB.

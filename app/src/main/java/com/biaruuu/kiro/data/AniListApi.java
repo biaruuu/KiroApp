@@ -241,38 +241,7 @@ public final class AniListApi {
             return () -> { };
         }
 
-        final Cancelable[] inner = new Cancelable[2];
-        inner[0] = post(DETAIL_QUERY, variables, AniListApi::parseDetail, new Callback<AnimeDetail>() {
-            @Override
-            public void onSuccess(@NonNull AnimeDetail detail) {
-                // TMDB first, then AniList's own trailer, then MyAnimeList.
-                inner[1] = TrailerApi.findTrailers(detail.getAnime(), detail.getMalId(),
-                        detail.getTrailerYoutubeId(), new Callback<java.util.List<String>>() {
-                            @Override
-                            public void onSuccess(@NonNull java.util.List<String> ids) {
-                                callback.onSuccess(ids.isEmpty() ? detail : detail.withTrailers(ids));
-                            }
-
-                            @Override
-                            public void onError(@NonNull Exception error) {
-                                // No trailer anywhere: the page still works, with a still image.
-                                callback.onSuccess(detail);
-                            }
-                        });
-            }
-
-            @Override
-            public void onError(@NonNull Exception error) {
-                callback.onError(error);
-            }
-        });
-        return () -> {
-            for (Cancelable c : inner) {
-                if (c != null) {
-                    c.cancel();
-                }
-            }
-        };
+        return post(DETAIL_QUERY, variables, AniListApi::parseDetail, callback);
     }
 
     // ---------------------------------------------------------------------------------------

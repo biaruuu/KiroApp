@@ -132,22 +132,24 @@ private fun playerHtml(videoId: String): String = """
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <style>
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-  #player {
+  #wrap {
     position: absolute; top: 50%; left: 50%;
     width: 177.78vh; min-width: 100vw;
     height: 56.25vw; min-height: 100vh;
     transform: translate(-50%, -50%) scale(1.12);
     pointer-events: none;
   }
+  #wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
 </style>
 </head>
 <body>
-<div id="player"></div>
+<div id="wrap"><div id="player"></div></div>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
   var player;
   function onYouTubeIframeAPIReady() {
     player = new YT.Player('player', {
+      width: '100%', height: '100%',
       videoId: 'VIDEO_ID',
       playerVars: {
         autoplay: 1, mute: 1, controls: 0, disablekb: 1, fs: 0, modestbranding: 1,

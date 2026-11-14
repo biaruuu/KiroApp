@@ -98,6 +98,7 @@ fun DetailScreen(
             else -> DetailContent(
                 anime = base,
                 detail = state.detail,
+                trailers = state.trailers,
                 loadingMore = state.loading,
                 onOpenAnime = onOpenAnime,
                 onMore = onMore,
@@ -133,6 +134,7 @@ private fun BackButton(onBack: () -> Unit) {
 private fun DetailContent(
     anime: Anime,
     detail: AnimeDetail?,
+    trailers: List<String>,
     loadingMore: Boolean,
     onOpenAnime: (Int) -> Unit,
     onMore: (Int) -> Unit,
@@ -147,7 +149,7 @@ private fun DetailContent(
     var rating by remember(anime.id) { mutableIntStateOf(MyListStore.getRating(context, anime.id)) }
     var muted by rememberSaveable { mutableStateOf(true) }
     // Trailers come best-first; when one cannot be embedded or never starts, try the next.
-    val trailerIds = detail?.trailerIds.orEmpty()
+    val trailerIds = trailers
     var trailerIndex by remember(trailerIds) { mutableIntStateOf(0) }
     var trailerPlaying by remember(trailerIds, trailerIndex) { mutableStateOf(false) }
     var showRating by remember { mutableStateOf(false) }

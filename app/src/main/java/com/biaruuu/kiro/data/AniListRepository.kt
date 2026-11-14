@@ -19,8 +19,23 @@ object AniListRepository {
     suspend fun search(query: String, genre: String?, sort: SortOrder, page: Int): SearchResult =
         await<SearchResult> { callback -> AniListApi.search(query, genre, sort, page, callback) }
 
+    // Kept for the whole session: reopening an anime shows instantly, then refreshes.
+    private val detailCache = java.util.concurrent.ConcurrentHashMap<Int, AnimeDetail>()
+    private val tmdbCache = java.util.concurrent.ConcurrentHashMap<Int, List<String>>()
+
+    fun cachedDetail(id: Int): AnimeDetail? = detailCache[id]
+    fun cachedTmdbTrailers(id: Int): List<String>? = tmdbCache[id]
+
     suspend fun loadDetail(id: Int): AnimeDetail =
         await<AnimeDetail> { callback -> AniListApi.loadDetail(id, callback) }
+            .also { detailCache[id] = it }
+
+    suspend fun tmdbTrailers(anime: Anime): List<String> =
+        await<List<String>> { callback -> TrailerApi.findTmdb(anime, callback) }
+            .also { if (it.isNotEmpty()) tmdbCache[anime.id] = it }
+
+    suspend fun jikanTrailers(malId: Int): List<String> =
+        await<List<String>> { callback -> TrailerApi.findJikan(malId, callback) }
 
     private suspend fun <T : Any> await(
         start: (AniListApi.Callback<T>) -> AniListApi.Cancelable,

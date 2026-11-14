@@ -25,6 +25,32 @@ object NativeCore {
     @JvmStatic
     external fun seasonForMonth(month: Int): String?
 
+    @JvmStatic
+    external fun titleSimilarity(a: String, b: String): Int
+
+    private fun words(s: String) =
+        s.lowercase().split(Regex("[^\\p{L}\\p{N}]+")).filter { it.isNotEmpty() }
+
+    /** 0-100: how alike two titles are. Rust when available, same algorithm in Kotlin otherwise. */
+    @JvmStatic
+    fun similarity(a: String, b: String): Int {
+        if (nativeAvailable) {
+            val r = try {
+                titleSimilarity(a, b)
+            } catch (_: Throwable) {
+                -1
+            }
+            if (r >= 0) return r
+        }
+        val ta = words(a)
+        val tb = words(b)
+        if (ta.isEmpty() || tb.isEmpty()) return 0
+        val inter = ta.count { it in tb }
+        val union = ta.size + tb.count { it !in ta }
+        val contained = if (inter == minOf(ta.size, tb.size)) 85 else 0
+        return maxOf(inter * 100 / union, contained)
+    }
+
     private val tagRegex = Regex("<[^>]*>")
     private val brRegex = Regex("<br\\s*/?>", RegexOption.IGNORE_CASE)
 
