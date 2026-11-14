@@ -245,22 +245,20 @@ public final class AniListApi {
         inner[0] = post(DETAIL_QUERY, variables, AniListApi::parseDetail, new Callback<AnimeDetail>() {
             @Override
             public void onSuccess(@NonNull AnimeDetail detail) {
-                if (detail.getTrailerYoutubeId() != null || detail.getMalId() <= 0) {
-                    callback.onSuccess(detail);
-                    return;
-                }
-                inner[1] = TrailerApi.findYoutubeId(detail.getMalId(), new Callback<String>() {
-                    @Override
-                    public void onSuccess(@NonNull String youtubeId) {
-                        callback.onSuccess(detail.withTrailer(youtubeId));
-                    }
+                // TMDB first, then AniList's own trailer, then MyAnimeList.
+                inner[1] = TrailerApi.findTrailers(detail.getAnime(), detail.getMalId(),
+                        detail.getTrailerYoutubeId(), new Callback<java.util.List<String>>() {
+                            @Override
+                            public void onSuccess(@NonNull java.util.List<String> ids) {
+                                callback.onSuccess(ids.isEmpty() ? detail : detail.withTrailers(ids));
+                            }
 
-                    @Override
-                    public void onError(@NonNull Exception error) {
-                        // No trailer anywhere: the page still works, with a still image.
-                        callback.onSuccess(detail);
-                    }
-                });
+                            @Override
+                            public void onError(@NonNull Exception error) {
+                                // No trailer anywhere: the page still works, with a still image.
+                                callback.onSuccess(detail);
+                            }
+                        });
             }
 
             @Override

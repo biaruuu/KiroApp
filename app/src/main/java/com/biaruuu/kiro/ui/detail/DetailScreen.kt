@@ -34,6 +34,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -66,6 +67,7 @@ import com.biaruuu.kiro.data.EpisodeInfo
 import com.biaruuu.kiro.data.MyListStore
 import com.biaruuu.kiro.ui.components.ErrorState
 import com.biaruuu.kiro.ui.theme.KiroPurple
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private val Bg = Color(0xFF121212)
@@ -144,14 +146,16 @@ private fun DetailContent(
     var inList by remember(anime.id) { mutableStateOf(MyListStore.isInList(context, anime.id)) }
     var rating by remember(anime.id) { mutableIntStateOf(MyListStore.getRating(context, anime.id)) }
     var muted by rememberSaveable { mutableStateOf(true) }
-    var trailerPlaying by remember(detail?.trailerYoutubeId) { mutableStateOf(false) }
-    var trailerFailed by remember(detail?.trailerYoutubeId) { mutableStateOf(false) }
+    // Trailers come best-first; when one cannot be embedded or never starts, try the next.
+    val trailerIds = detail?.trailerIds.orEmpty()
+    var trailerIndex by remember(trailerIds) { mutableIntStateOf(0) }
+    var trailerPlaying by remember(trailerIds, trailerIndex) { mutableStateOf(false) }
     var showRating by remember { mutableStateOf(false) }
     var showSeasons by remember { mutableStateOf(false) }
     var newestFirst by rememberSaveable { mutableStateOf(false) }
     var expanded by rememberSaveable { mutableStateOf(false) }
 
-    val trailerId = detail?.trailerYoutubeId?.takeIf { it.isNotBlank() && !trailerFailed }
+    val trailerId = trailerIds.getOrNull(trailerIndex)
     val comingSoon = { Toast.makeText(context, "Streaming is coming soon", Toast.LENGTH_SHORT).show() }
 
     val episodes = remember(detail, newestFirst) {
@@ -171,17 +175,24 @@ private fun DetailContent(
                 )
                 if (trailerId != null) {
                     val alpha by animateFloatAsState(
-                        if (trailerPlaying) 1f else 0f,
+                        if (trailerPlaying) 1f else 0.01f,
                         tween(500),
                         label = "trailer-fade",
                     )
-                    TrailerPlayer(
-                        videoId = trailerId,
-                        muted = muted,
-                        onPlaying = { trailerPlaying = true },
-                        onFailed = { trailerFailed = true },
-                        modifier = Modifier.fillMaxSize().alpha(alpha),
-                    )
+                    androidx.compose.runtime.key(trailerId) {
+                        LaunchedEffect(trailerId) {
+                            // Give each video 12 seconds to start before moving on.
+                            delay(12_000)
+                            if (!trailerPlaying) trailerIndex++
+                        }
+                        TrailerPlayer(
+                            videoId = trailerId,
+                            muted = muted,
+                            onPlaying = { trailerPlaying = true },
+                            onFailed = { trailerIndex++ },
+                            modifier = Modifier.fillMaxSize().alpha(alpha),
+                        )
+                    }
                 }
                 // Mute toggle, bottom-right, only while a trailer is on screen.
                 if (trailerId != null && trailerPlaying) {

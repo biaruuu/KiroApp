@@ -62,6 +62,21 @@ public final class Anime {
         return id;
     }
 
+    @Nullable
+    public String getTitleEnglish() {
+        return titleEnglish;
+    }
+
+    @Nullable
+    public String getTitleRomaji() {
+        return titleRomaji;
+    }
+
+    @Nullable
+    public String getTitleNative() {
+        return titleNative;
+    }
+
     /** English title if there is one, otherwise romaji, otherwise native. */
     @NonNull
     public String getDisplayTitle() {

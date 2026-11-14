@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.6.1] - 2026-11-14
+
+Trailers now come from TMDB.
+
+### Fixed
+- **Trailers on the details page now actually play.** The trailer is looked up on **TMDB** (the anime is matched by title and year, official trailers first), then AniList, then MyAnimeList. If a video can't be embedded or doesn't start within 12 seconds, the next one is tried before falling back to the banner image.
+- The trailer player now loads from a normal web origin, which fixes YouTube's "video unavailable / configuration error" in the in-app player.
+
 ## [1.6.0] - 2026-11-14
 
 Anime details page.

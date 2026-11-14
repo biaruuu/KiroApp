@@ -82,7 +82,7 @@ fun TrailerPlayer(
                 )
 
                 loadDataWithBaseURL(
-                    "https://www.youtube.com",
+                    "https://biaruuu.github.io/",
                     playerHtml(videoId),
                     "text/html",
                     "utf-8",
@@ -128,6 +128,7 @@ private fun playerHtml(videoId: String): String = """
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <style>
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
@@ -150,8 +151,7 @@ private fun playerHtml(videoId: String): String = """
       videoId: 'VIDEO_ID',
       playerVars: {
         autoplay: 1, mute: 1, controls: 0, disablekb: 1, fs: 0, modestbranding: 1,
-        rel: 0, playsinline: 1, iv_load_policy: 3, loop: 1, playlist: 'VIDEO_ID',
-        origin: 'https://www.youtube.com'
+        rel: 0, playsinline: 1, iv_load_policy: 3, loop: 1, playlist: 'VIDEO_ID'
       },
       events: {
         onReady: function (e) { e.target.mute(); e.target.playVideo(); },

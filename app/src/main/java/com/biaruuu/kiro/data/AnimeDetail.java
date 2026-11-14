@@ -19,6 +19,7 @@ public final class AnimeDetail {
         public Anime anime;
         public int malId;
         public String trailerYoutubeId;
+        public List<String> trailerIds = new ArrayList<>();
         public int ratingCount;
         public int durationMinutes;
         public String startDate = "";
@@ -40,6 +41,7 @@ public final class AnimeDetail {
     private final Anime anime;
     private final int malId;
     private final String trailerYoutubeId;
+    private final List<String> trailerIds;
     private final int ratingCount;
     private final int durationMinutes;
     private final String startDate;
@@ -55,7 +57,12 @@ public final class AnimeDetail {
     private AnimeDetail(Builder b) {
         this.anime = b.anime;
         this.malId = b.malId;
-        this.trailerYoutubeId = b.trailerYoutubeId;
+        List<String> ids = new ArrayList<>(b.trailerIds);
+        if (b.trailerYoutubeId != null && !ids.contains(b.trailerYoutubeId)) {
+            ids.add(0, b.trailerYoutubeId);
+        }
+        this.trailerIds = Collections.unmodifiableList(ids);
+        this.trailerYoutubeId = ids.isEmpty() ? null : ids.get(0);
         this.ratingCount = b.ratingCount;
         this.durationMinutes = b.durationMinutes;
         this.startDate = b.startDate;
@@ -69,6 +76,26 @@ public final class AnimeDetail {
         this.episodes = Collections.unmodifiableList(buildEpisodes());
     }
 
+    /** Same details with these trailers, best first (the player tries them in order). */
+    @NonNull
+    public AnimeDetail withTrailers(@NonNull List<String> youtubeIds) {
+        Builder b = new Builder();
+        b.anime = anime;
+        b.malId = malId;
+        b.trailerIds = new ArrayList<>(youtubeIds);
+        b.ratingCount = ratingCount;
+        b.durationMinutes = durationMinutes;
+        b.startDate = startDate;
+        b.nextEpisode = nextEpisode;
+        b.studios = new ArrayList<>(studios);
+        b.streamingEpisodes = new ArrayList<>(streamingEpisodes);
+        b.airTimes = airTimes;
+        b.related = new ArrayList<>(related);
+        b.cast = new ArrayList<>(cast);
+        b.credits = new ArrayList<>(credits);
+        return b.build();
+    }
+
     /** Same details with a different trailer (used when MyAnimeList supplies one). */
     @NonNull
     public AnimeDetail withTrailer(@Nullable String youtubeId) {
@@ -76,6 +103,7 @@ public final class AnimeDetail {
         b.anime = anime;
         b.malId = malId;
         b.trailerYoutubeId = youtubeId;
+        b.trailerIds = new ArrayList<>(trailerIds);
         b.ratingCount = ratingCount;
         b.durationMinutes = durationMinutes;
         b.startDate = startDate;
@@ -139,6 +167,12 @@ public final class AnimeDetail {
     @Nullable
     public String getTrailerYoutubeId() {
         return trailerYoutubeId;
+    }
+
+    /** Every known trailer (YouTube ids), best first. */
+    @NonNull
+    public List<String> getTrailerIds() {
+        return trailerIds;
     }
 
     /** How many people scored it on AniList. */
