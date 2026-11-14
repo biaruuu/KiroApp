@@ -132,12 +132,10 @@ private fun playerHtml(videoId: String): String = """
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <style>
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-  #wrap {
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%) scale(1.3);
-    pointer-events: none;
-  }
-  #wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+  /* The WebView is sized 16:9 by the app, so the player simply fills it. Width-based units only:
+     the WebView reported a wrong viewport height before. */
+  #wrap { position: absolute; left: 0; top: 0; width: 100vw; height: 56.25vw; pointer-events: none; }
+  #wrap iframe { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: 0; }
 </style>
 </head>
 <body>
@@ -145,20 +143,6 @@ private fun playerHtml(videoId: String): String = """
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
   var player;
-  // Cover the whole box with the 16:9 video. Measured in JS because the WebView can report its
-  // size late (CSS viewport units were stuck at the first, tiny size).
-  function fit() {
-    var w = window.innerWidth || document.documentElement.clientWidth;
-    var h = window.innerHeight || document.documentElement.clientHeight;
-    if (!w || !h) return;
-    var cw = w, ch = w * 9 / 16;
-    if (ch < h) { ch = h; cw = h * 16 / 9; }
-    var s = document.getElementById('wrap').style;
-    s.width = cw + 'px'; s.height = ch + 'px';
-  }
-  fit();
-  window.addEventListener('resize', fit);
-  setInterval(fit, 400);
   function onYouTubeIframeAPIReady() {
     player = new YT.Player('player', {
       width: '100%', height: '100%',

@@ -48,6 +48,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.pointerInput
@@ -152,6 +154,10 @@ private fun DetailContent(
     val wide = config.screenWidthDp >= 600
     val heroHeight = minOf((config.screenWidthDp * 1.18f).dp, (config.screenHeightDp * 0.56f).dp)
         .let { if (wide) minOf(it, 480.dp) else it }
+    // The video is 16:9. Make it just big enough to cover the hero (like CSS "cover"), centered
+    // and clipped, so it fills the hero from top to bottom instead of sitting in a strip.
+    val coverWidth = maxOf(config.screenWidthDp.dp, heroHeight * (16f / 9f)) * 1.08f
+    val coverHeight = coverWidth * (9f / 16f)
 
     var inList by remember(anime.id) { mutableStateOf(MyListStore.isInList(context, anime.id)) }
     var rating by remember(anime.id) { mutableIntStateOf(MyListStore.getRating(context, anime.id)) }
@@ -176,7 +182,7 @@ private fun DetailContent(
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         // ---- Hero: the trailer fills it, with rating, title and genres over the video ----
         item(key = "hero") {
-            Box(modifier = Modifier.fillMaxWidth().height(heroHeight).background(Color.Black)) {
+            Box(modifier = Modifier.fillMaxWidth().height(heroHeight).clipToBounds().background(Color.Black)) {
                 AsyncImage(
                     model = anime.heroUrl,
                     contentDescription = null,
@@ -200,7 +206,10 @@ private fun DetailContent(
                             muted = muted,
                             onPlaying = { trailerPlaying = true },
                             onFailed = { trailerIndex++ },
-                            modifier = Modifier.fillMaxSize().alpha(alpha),
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .requiredSize(coverWidth, coverHeight)
+                                .alpha(alpha),
                         )
                     }
                 }

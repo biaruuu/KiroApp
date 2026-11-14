@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.6.4] - 2026-11-14
+
+Trailer now covers the whole hero.
+
+### Fixed
+- **The trailer no longer looks cut off.** It only filled the top part of the hero and the rest was black. The player is now sized by the app (16:9, enlarged to cover the hero and clipped), so the video fills the hero from the top down to behind the title and genres, like the reference.
+
 ## [1.6.3] - 2026-11-14
 
 Details page redone to match the reference.
