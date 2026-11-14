@@ -134,9 +134,7 @@ private fun playerHtml(videoId: String): String = """
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
   #wrap {
     position: absolute; top: 50%; left: 50%;
-    width: 177.78vh; min-width: 100vw;
-    height: 56.25vw; min-height: 100vh;
-    transform: translate(-50%, -50%) scale(1.12);
+    transform: translate(-50%, -50%) scale(1.3);
     pointer-events: none;
   }
   #wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
@@ -147,6 +145,20 @@ private fun playerHtml(videoId: String): String = """
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
   var player;
+  // Cover the whole box with the 16:9 video. Measured in JS because the WebView can report its
+  // size late (CSS viewport units were stuck at the first, tiny size).
+  function fit() {
+    var w = window.innerWidth || document.documentElement.clientWidth;
+    var h = window.innerHeight || document.documentElement.clientHeight;
+    if (!w || !h) return;
+    var cw = w, ch = w * 9 / 16;
+    if (ch < h) { ch = h; cw = h * 16 / 9; }
+    var s = document.getElementById('wrap').style;
+    s.width = cw + 'px'; s.height = ch + 'px';
+  }
+  fit();
+  window.addEventListener('resize', fit);
+  setInterval(fit, 400);
   function onYouTubeIframeAPIReady() {
     player = new YT.Player('player', {
       width: '100%', height: '100%',

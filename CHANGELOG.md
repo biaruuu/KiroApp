@@ -4,6 +4,18 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.6.3] - 2026-11-14
+
+Details page redone to match the reference.
+
+### Fixed
+- **Trailer fills the hero.** It was stuck in a strip at the top; the video now covers the whole hero (sized from the real view size) and YouTube's own buttons no longer pop up over it.
+- **Episode names.** Each episode now shows its title ("1. Cruelty") plus air date and thumbnail, from MyAnimeList.
+- **Seasons are complete.** The season dropdown follows the whole franchise in both directions, so every season, part ("Season 3 Part 1", "Season 3 Part 2"), ONA and movie is listed in release order.
+
+### Changed
+- Layout now follows the reference: black status bar, rating chip, title and genres over the trailer, Play button, left-aligned My List / Rating / Share, two-line synopsis with an inline "More", muted "Oldest" sort and "N Episodes" with a download icon.
+
 ## [1.6.2] - 2026-11-14
 
 Faster details page and trailer fix.

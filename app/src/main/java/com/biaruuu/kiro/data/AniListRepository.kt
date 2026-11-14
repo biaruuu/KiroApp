@@ -30,6 +30,20 @@ object AniListRepository {
         await<AnimeDetail> { callback -> AniListApi.loadDetail(id, callback) }
             .also { detailCache[id] = it }
 
+    private val seasonCache = java.util.concurrent.ConcurrentHashMap<Int, List<SeasonEntry>>()
+    private val episodeCache = java.util.concurrent.ConcurrentHashMap<Int, List<EpisodeInfo>>()
+
+    fun cachedSeasons(id: Int): List<SeasonEntry>? = seasonCache[id]
+    fun cachedEpisodes(malId: Int): List<EpisodeInfo>? = episodeCache[malId]
+
+    suspend fun seasons(id: Int): List<SeasonEntry> =
+        await<List<SeasonEntry>> { callback -> FranchiseApi.load(id, callback) }
+            .also { seasonCache[id] = it }
+
+    suspend fun episodes(malId: Int): List<EpisodeInfo> =
+        await<List<EpisodeInfo>> { callback -> EpisodeApi.load(malId, callback) }
+            .also { if (it.isNotEmpty()) episodeCache[malId] = it }
+
     suspend fun tmdbTrailers(anime: Anime): List<String> =
         await<List<String>> { callback -> TrailerApi.findTmdb(anime, callback) }
             .also { if (it.isNotEmpty()) tmdbCache[anime.id] = it }
