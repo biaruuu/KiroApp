@@ -9,7 +9,11 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import okhttp3.Call;
 import okhttp3.MediaType;
@@ -93,6 +97,31 @@ public final class AniListApi {
                     + " media(type: ANIME, search: $search, genre: $genre, sort: $sort,"
                     + " status_in: $statusIn, isAdult: false) { ...M } } } "
                     + MEDIA_FIELDS;
+
+    private static final String DETAIL_QUERY =
+            "query Detail($id: Int) { Media(id: $id, type: ANIME) {"
+                    + " id idMal"
+                    + " title { romaji english native }"
+                    + " coverImage { extraLarge large color }"
+                    + " bannerImage description averageScore episodes duration format status"
+                    + " seasonYear genres"
+                    + " startDate { year month day }"
+                    + " trailer { id site }"
+                    + " studios(isMain: true) { nodes { name } }"
+                    + " stats { scoreDistribution { amount } }"
+                    + " nextAiringEpisode { episode }"
+                    + " streamingEpisodes { title thumbnail }"
+                    + " airingSchedule(perPage: 100) { nodes { episode airingAt } }"
+                    + " relations { edges { relationType node { id type title { romaji english } } } }"
+                    + " characters(sort: [ROLE, RELEVANCE], perPage: 6) {"
+                    + " edges { node { name { full } }"
+                    + " voiceActors(language: JAPANESE, sort: RELEVANCE) { name { full } } } }"
+                    + " staff(sort: RELEVANCE, perPage: 25) { edges { role node { name { full } } } }"
+                    + " } }";
+
+    private static final Pattern EPISODE_TITLE =
+            Pattern.compile("^(?:Episode|Ep\\.?|E)\\s*(\\d+)\\s*[-\u2013:.]*\\s*(.*)$",
+                    Pattern.CASE_INSENSITIVE);
 
     private AniListApi() {
     }
@@ -195,6 +224,57 @@ public final class AniListApi {
             int total = pageInfo != null ? pageInfo.optInt("total", 0) : 0;
             return new SearchResult(items, hasNext, total);
         }, callback);
+    }
+
+
+    /**
+     * Loads everything for the details page. If AniList has no YouTube trailer, MyAnimeList is
+     * asked for one before the result is returned.
+     */
+    @NonNull
+    public static Cancelable loadDetail(int id, @NonNull Callback<AnimeDetail> callback) {
+        JSONObject variables = new JSONObject();
+        try {
+            variables.put("id", id);
+        } catch (JSONException e) {
+            callback.onError(e);
+            return () -> { };
+        }
+
+        final Cancelable[] inner = new Cancelable[2];
+        inner[0] = post(DETAIL_QUERY, variables, AniListApi::parseDetail, new Callback<AnimeDetail>() {
+            @Override
+            public void onSuccess(@NonNull AnimeDetail detail) {
+                if (detail.getTrailerYoutubeId() != null || detail.getMalId() <= 0) {
+                    callback.onSuccess(detail);
+                    return;
+                }
+                inner[1] = TrailerApi.findYoutubeId(detail.getMalId(), new Callback<String>() {
+                    @Override
+                    public void onSuccess(@NonNull String youtubeId) {
+                        callback.onSuccess(detail.withTrailer(youtubeId));
+                    }
+
+                    @Override
+                    public void onError(@NonNull Exception error) {
+                        // No trailer anywhere: the page still works, with a still image.
+                        callback.onSuccess(detail);
+                    }
+                });
+            }
+
+            @Override
+            public void onError(@NonNull Exception error) {
+                callback.onError(error);
+            }
+        });
+        return () -> {
+            for (Cancelable c : inner) {
+                if (c != null) {
+                    c.cancel();
+                }
+            }
+        };
     }
 
     // ---------------------------------------------------------------------------------------
@@ -329,6 +409,158 @@ public final class AniListApi {
         return list;
     }
 
+
+    private static AnimeDetail parseDetail(JSONObject data) throws JSONException, IOException {
+        JSONObject m = data.optJSONObject("Media");
+        if (m == null) {
+            throw new IOException("This anime could not be found.");
+        }
+        AnimeDetail.Builder b = new AnimeDetail.Builder();
+        b.anime = parseAnime(m);
+        b.malId = intOrZero(m, "idMal");
+        b.durationMinutes = intOrZero(m, "duration");
+        b.startDate = dateLabel(m.optJSONObject("startDate"));
+
+        JSONObject trailer = m.optJSONObject("trailer");
+        if (trailer != null && "youtube".equalsIgnoreCase(str(trailer, "site"))) {
+            b.trailerYoutubeId = str(trailer, "id");
+        }
+
+        JSONObject studios = m.optJSONObject("studios");
+        if (studios != null) {
+            JSONArray nodes = studios.optJSONArray("nodes");
+            for (int i = 0; nodes != null && i < nodes.length(); i++) {
+                String name = str(nodes.optJSONObject(i), "name");
+                if (name != null) {
+                    b.studios.add(name);
+                }
+            }
+        }
+
+        JSONObject stats = m.optJSONObject("stats");
+        JSONArray distribution = stats != null ? stats.optJSONArray("scoreDistribution") : null;
+        for (int i = 0; distribution != null && i < distribution.length(); i++) {
+            JSONObject row = distribution.optJSONObject(i);
+            if (row != null) {
+                b.ratingCount += row.optInt("amount", 0);
+            }
+        }
+
+        JSONObject next = m.optJSONObject("nextAiringEpisode");
+        b.nextEpisode = next != null ? intOrZero(next, "episode") : 0;
+
+        // Streaming sites often list several copies of each episode; keep the first of each.
+        JSONArray streaming = m.optJSONArray("streamingEpisodes");
+        List<Integer> seen = new ArrayList<>();
+        for (int i = 0; streaming != null && i < streaming.length(); i++) {
+            JSONObject row = streaming.optJSONObject(i);
+            String title = str(row, "title");
+            if (title == null) {
+                continue;
+            }
+            int number = i + 1;
+            String name = title;
+            Matcher matcher = EPISODE_TITLE.matcher(title.trim());
+            if (matcher.matches()) {
+                number = Integer.parseInt(matcher.group(1));
+                name = matcher.group(2).trim();
+            }
+            if (seen.contains(number)) {
+                continue;
+            }
+            seen.add(number);
+            b.streamingEpisodes.add(new EpisodeInfo(
+                    number, name.isEmpty() ? null : name, str(row, "thumbnail"), 0, null));
+        }
+
+        JSONObject schedule = m.optJSONObject("airingSchedule");
+        JSONArray scheduleNodes = schedule != null ? schedule.optJSONArray("nodes") : null;
+        Map<Integer, Long> airTimes = new HashMap<>();
+        for (int i = 0; scheduleNodes != null && i < scheduleNodes.length(); i++) {
+            JSONObject node = scheduleNodes.optJSONObject(i);
+            if (node != null && node.optInt("episode", 0) > 0) {
+                airTimes.put(node.optInt("episode"), node.optLong("airingAt", 0L));
+            }
+        }
+        b.airTimes = airTimes;
+
+        JSONObject relations = m.optJSONObject("relations");
+        JSONArray edges = relations != null ? relations.optJSONArray("edges") : null;
+        for (int i = 0; edges != null && i < edges.length(); i++) {
+            JSONObject edge = edges.optJSONObject(i);
+            JSONObject node = edge != null ? edge.optJSONObject("node") : null;
+            String type = str(edge, "relationType");
+            if (node == null || type == null || !"ANIME".equals(str(node, "type"))) {
+                continue;
+            }
+            if (!"PREQUEL".equals(type) && !"SEQUEL".equals(type)) {
+                continue;
+            }
+            JSONObject title = node.optJSONObject("title");
+            String name = str(title, "english");
+            if (name == null) {
+                name = str(title, "romaji");
+            }
+            if (name != null && !node.isNull("id")) {
+                b.related.add(new RelatedAnime(node.optInt("id"), name, type));
+            }
+        }
+
+        JSONObject characters = m.optJSONObject("characters");
+        JSONArray characterEdges = characters != null ? characters.optJSONArray("edges") : null;
+        for (int i = 0; characterEdges != null && i < characterEdges.length(); i++) {
+            JSONObject edge = characterEdges.optJSONObject(i);
+            if (edge == null) {
+                continue;
+            }
+            JSONObject node = edge.optJSONObject("node");
+            String character = node != null ? str(node.optJSONObject("name"), "full") : null;
+            JSONArray actors = edge.optJSONArray("voiceActors");
+            String actor = (actors != null && actors.length() > 0)
+                    ? str(actors.optJSONObject(0).optJSONObject("name"), "full")
+                    : null;
+            if (actor != null && character != null) {
+                b.cast.add(actor + " as " + character);
+            }
+        }
+
+        JSONObject staff = m.optJSONObject("staff");
+        JSONArray staffEdges = staff != null ? staff.optJSONArray("edges") : null;
+        for (int i = 0; staffEdges != null && i < staffEdges.length(); i++) {
+            JSONObject edge = staffEdges.optJSONObject(i);
+            if (edge == null) {
+                continue;
+            }
+            JSONObject node = edge.optJSONObject("node");
+            String role = str(edge, "role");
+            String name = node != null ? str(node.optJSONObject("name"), "full") : null;
+            if (role != null && name != null) {
+                b.credits.add(new CreditEntry(role, name));
+            }
+        }
+        return b.build();
+    }
+
+    /** "2012.07.08", or just "2012" / "2012.07" when AniList only knows part of the date. */
+    private static String dateLabel(@Nullable JSONObject d) {
+        if (d == null) {
+            return "";
+        }
+        int year = intOrZero(d, "year");
+        int month = intOrZero(d, "month");
+        int day = intOrZero(d, "day");
+        if (year == 0) {
+            return "";
+        }
+        if (month == 0) {
+            return String.valueOf(year);
+        }
+        if (day == 0) {
+            return String.format(java.util.Locale.US, "%d.%02d", year, month);
+        }
+        return String.format(java.util.Locale.US, "%d.%02d.%02d", year, month, day);
+    }
+
     private static Anime parseAnime(JSONObject o) {
         JSONObject title = o.optJSONObject("title");
         JSONObject cover = o.optJSONObject("coverImage");
@@ -344,7 +576,7 @@ public final class AniListApi {
             }
         }
 
-        return new Anime(
+        Anime anime = new Anime(
                 o.optInt("id"),
                 str(title, "romaji"),
                 str(title, "english"),
@@ -360,6 +592,8 @@ public final class AniListApi {
                 intOrZero(o, "seasonYear"),
                 genres,
                 str(o, "status"));
+        AnimeCache.put(anime);
+        return anime;
     }
 
     /** Null-safe string read that treats JSON null as null (org.json would give "null"). */

@@ -1,6 +1,7 @@
 package com.biaruuu.kiro.ui
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -20,7 +21,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,6 +37,8 @@ import com.biaruuu.kiro.data.Anime
 import com.biaruuu.kiro.ui.components.KiroBottomBar
 import com.biaruuu.kiro.ui.components.KiroSideRail
 import com.biaruuu.kiro.ui.components.NavDestination
+import com.biaruuu.kiro.ui.detail.DetailScreen
+import com.biaruuu.kiro.ui.detail.MoreDetailScreen
 import com.biaruuu.kiro.ui.home.HomeScreen
 import com.biaruuu.kiro.ui.search.SearchScreen
 import com.biaruuu.kiro.ui.theme.KiroBackground
@@ -107,11 +113,18 @@ private fun KiroScaffold() {
     val homeListState: LazyListState = rememberLazyListState()
     val searchGridState = rememberLazyGridState()
 
-    val onAnimeClick: (Anime) -> Unit = {
-        // Details page is planned for a later release.
-        Toast.makeText(context, "${it.displayTitle}: details coming soon", Toast.LENGTH_SHORT).show()
-    }
+    // Detail pages stack on top of the tabs: "d:ID" is a details page, "m:ID" its full Detail page.
+    val backStack = rememberSaveable(
+        saver = listSaver<MutableList<String>, String>(
+            save = { it.toList() },
+            restore = { it.toMutableStateList() },
+        ),
+    ) { mutableStateListOf<String>() }
 
+    val onAnimeClick: (Anime) -> Unit = { backStack.add("d:${it.id}") }
+    BackHandler(enabled = backStack.isNotEmpty()) { backStack.removeAt(backStack.lastIndex) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         containerColor = KiroBackground,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -147,9 +160,7 @@ private fun KiroScaffold() {
                 TAB_HOME -> HomeScreen(
                     listState = homeListState,
                     onAnimeClick = onAnimeClick,
-                    onPlay = {
-                        Toast.makeText(context, "Streaming is coming in a future update", Toast.LENGTH_SHORT).show()
-                    },
+                    onPlay = onAnimeClick,
                     onNotifications = {
                         Toast.makeText(context, "No new notifications", Toast.LENGTH_SHORT).show()
                     },
@@ -167,5 +178,29 @@ private fun KiroScaffold() {
                 TAB_ME -> PlaceholderScreen("Me", contentModifier)
             }
         }
+    }
+
+    val top = backStack.lastOrNull()
+    if (top != null) {
+        val id = top.substring(2).toIntOrNull()
+        if (id != null) {
+            val overlay = Modifier.fillMaxSize().background(KiroBackground)
+            if (top.startsWith("m:")) {
+                MoreDetailScreen(
+                    animeId = id,
+                    onBack = { backStack.removeAt(backStack.lastIndex) },
+                    modifier = overlay,
+                )
+            } else {
+                DetailScreen(
+                    animeId = id,
+                    onBack = { backStack.removeAt(backStack.lastIndex) },
+                    onOpenAnime = { backStack.add("d:$it") },
+                    onMore = { backStack.add("m:$it") },
+                    modifier = overlay,
+                )
+            }
+        }
+    }
     }
 }

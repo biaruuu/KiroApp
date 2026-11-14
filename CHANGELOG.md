@@ -4,6 +4,19 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.6.0] - 2026-11-14
+
+Anime details page.
+
+### Added
+- **Details page** (tap any poster or the hero Play button):
+  - Auto-playing, looping, muted **trailer** as the hero with a speaker toggle. The trailer comes from AniList (YouTube); when AniList has none, it is looked up on **MyAnimeList** (via Jikan). If a trailer can't play, the banner image is shown instead.
+  - Rating, title, genres, a purple Play button, and **My List / Rating / Share** actions (My List and 1-5 star ratings are saved on the device; Share sends the AniList link).
+  - Synopsis with a **More** link that opens the full **Detail** page: poster, format | start date | status, synopsis, cast, credits (director, original creator, composition, character design, music, studio) and the AniList source.
+  - Season dropdown with prequels and sequels, an Oldest/Newest sort, an episode count and episode rows with thumbnails.
+  - A "Streaming is coming soon" banner; streaming itself is not available yet.
+- System back button closes details pages one step at a time.
+
 ## [1.5.0] - 2026-11-14
 
 Search redesigned to match the reference.
