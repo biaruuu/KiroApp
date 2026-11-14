@@ -54,6 +54,8 @@ fun TrailerPlayer(
 
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
+                settings.cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
+                setLayerType(View.LAYER_TYPE_HARDWARE, null)
                 // Lets the trailer start by itself, like the reference.
                 settings.mediaPlaybackRequiresUserGesture = false
 
@@ -140,25 +142,37 @@ private fun playerHtml(videoId: String): String = """
 </head>
 <body>
 <div id="wrap"><div id="player"></div></div>
+<link rel="preconnect" href="https://www.youtube.com">
+<link rel="preconnect" href="https://i.ytimg.com">
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
   var player;
+  var desiredMuted = false;
+  function hd() { try { player.setPlaybackQuality('hd1080'); } catch (e) {} }
   function onYouTubeIframeAPIReady() {
     player = new YT.Player('player', {
       width: '100%', height: '100%',
       videoId: 'VIDEO_ID',
       playerVars: {
         autoplay: 1, mute: 1, controls: 0, disablekb: 1, fs: 0, modestbranding: 1,
-        rel: 0, playsinline: 1, iv_load_policy: 3, loop: 1, playlist: 'VIDEO_ID'
+        rel: 0, playsinline: 1, iv_load_policy: 3, loop: 1, playlist: 'VIDEO_ID', vq: 'hd1080'
       },
       events: {
-        onReady: function (e) { e.target.mute(); e.target.playVideo(); },
-        onStateChange: function (e) { Kiro.onState(e.data); },
+        onReady: function (e) { e.target.mute(); hd(); e.target.playVideo(); },
+        onStateChange: function (e) {
+          if (e.data === 1) {
+            // Started muted (browsers allow that), now switch the sound on and ask for HD.
+            if (!desiredMuted) { player.unMute(); player.setVolume(100); }
+            hd();
+          } else if (e.data === 3) { hd(); }
+          Kiro.onState(e.data);
+        },
         onError: function (e) { Kiro.onError(e.data); }
       }
     });
   }
   function setMuted(m) {
+    desiredMuted = m;
     if (!player || !player.mute) return;
     if (m) { player.mute(); } else { player.unMute(); player.setVolume(100); }
   }

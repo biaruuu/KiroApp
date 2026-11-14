@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.6.7] - 2026-11-14
+
+### Changed
+- **Trailer sound starts on.** The trailer begins muted (so it can autoplay), then the sound switches on by itself as soon as it plays; the speaker button still mutes it.
+- **Trailer quality.** The player asks YouTube for 1080p (falling back to what the connection allows), and starts faster by connecting to YouTube early and using the hardware-accelerated view.
+- **Countdown is real time with seconds**, e.g. "in 3d 4h 12m 5s", ticking every second, now in white.
+- **More work moved to Rust.** The countdown text and the compact rating counts ("619.2K") are produced by the native Rust library (with unit tests), in addition to synopsis cleanup and title matching.
+
 ## [1.6.6] - 2026-11-14
 
 Details page styling matched to the reference, plus a next-episode countdown.

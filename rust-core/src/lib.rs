@@ -4,11 +4,13 @@
 //! - `strip_html`   : turns AniList's HTML descriptions into clean plain text
 //! - `format_score` : 0-100 AniList score -> "8.7"
 //! - `season_for_month` : month number -> AniList season enum string
+//! - `format_countdown` : seconds left -> "in 3d 4h 12m 5s" (ticks every second on the details page)
+//! - `compact_count` : 1234 -> "1.2K"
 //! - `title_similarity` : 0-100 score of how alike two anime titles are (used to pick the right
 //!   TMDB match for a trailer)
 
 use jni::objects::{JClass, JString};
-use jni::sys::{jint, jstring};
+use jni::sys::{jint, jlong, jstring};
 use jni::JNIEnv;
 
 /// Convert an HTML snippet (as returned by AniList) into readable plain text.
@@ -85,6 +87,40 @@ pub fn season_for_month(month: i32) -> &'static str {
         4 | 5 | 6 => "SPRING",
         7 | 8 | 9 => "SUMMER",
         _ => "FALL",
+    }
+}
+
+/// "in 3d 4h 12m 5s". Units that are zero at the front are dropped; "Airing now" when due.
+pub fn format_countdown(secs: i64) -> String {
+    if secs <= 0 {
+        return "Airing now".to_string();
+    }
+    let d = secs / 86_400;
+    let h = (secs % 86_400) / 3_600;
+    let m = (secs % 3_600) / 60;
+    let s = secs % 60;
+    let mut out = String::from("in ");
+    if d > 0 {
+        out.push_str(&format!("{d}d "));
+    }
+    if d > 0 || h > 0 {
+        out.push_str(&format!("{h}h "));
+    }
+    if d > 0 || h > 0 || m > 0 {
+        out.push_str(&format!("{m}m "));
+    }
+    out.push_str(&format!("{s}s"));
+    out
+}
+
+/// 1234 -> "1.2K", 3_400_000 -> "3.4M", small numbers unchanged.
+pub fn compact_count(n: i32) -> String {
+    if n >= 1_000_000 {
+        format!("{:.1}M", n as f64 / 1_000_000.0).replace(".0M", "M")
+    } else if n >= 1_000 {
+        format!("{:.1}K", n as f64 / 1_000.0).replace(".0K", "K")
+    } else {
+        n.to_string()
     }
 }
 
@@ -168,6 +204,24 @@ pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_titleSimilarity<'lo
     title_similarity(&a, &b)
 }
 
+#[no_mangle]
+pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_formatCountdown<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    secs: jlong,
+) -> jstring {
+    to_jstring(&mut env, &format_countdown(secs))
+}
+
+#[no_mangle]
+pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_compactCount<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    n: jint,
+) -> jstring {
+    to_jstring(&mut env, &compact_count(n))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -204,5 +258,22 @@ mod tests {
         assert_eq!(title_similarity("Attack on Titan", "attack on titan"), 100);
         assert!(title_similarity("Attack on Titan", "Attack on Titan Season 2") >= 85);
         assert_eq!(title_similarity("Naruto", "One Piece"), 0);
+    }
+
+    #[test]
+    fn formats_countdowns() {
+        assert_eq!(format_countdown(0), "Airing now");
+        assert_eq!(format_countdown(5), "in 5s");
+        assert_eq!(format_countdown(125), "in 2m 5s");
+        assert_eq!(format_countdown(3 * 86_400 + 4 * 3_600 + 12 * 60 + 5), "in 3d 4h 12m 5s");
+        assert_eq!(format_countdown(3_600), "in 1h 0m 0s");
+    }
+
+    #[test]
+    fn compacts_counts() {
+        assert_eq!(compact_count(999), "999");
+        assert_eq!(compact_count(1_234), "1.2K");
+        assert_eq!(compact_count(2_000), "2K");
+        assert_eq!(compact_count(3_400_000), "3.4M");
     }
 }

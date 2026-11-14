@@ -5,12 +5,8 @@ import com.biaruuu.kiro.data.Anime
 import com.biaruuu.kiro.data.AnimeDetail
 import java.util.Locale
 
-/** 1234 -> "1.2K", 3_400_000 -> "3.4M". */
-fun compactCount(n: Int): String = when {
-    n >= 1_000_000 -> String.format(Locale.US, "%.1fM", n / 1_000_000f).replace(".0M", "M")
-    n >= 1_000 -> String.format(Locale.US, "%.1fK", n / 1_000f).replace(".0K", "K")
-    else -> n.toString()
-}
+/** 1234 -> "1.2K", computed by the Rust core. */
+fun compactCount(n: Int): String = NativeCore.compact(n)
 
 /** AniList scores are 0-100; the design shows stars out of 5, e.g. "4.3 (1.2K)". */
 fun ratingLabel(averageScore: Int, ratingCount: Int): String? {
@@ -72,16 +68,5 @@ fun creditRows(detail: AnimeDetail): List<Pair<String, String>> {
 fun shareText(anime: Anime): String =
     "${anime.displayTitle} - https://anilist.co/anime/${anime.id}"
 
-/** "in 3d 4h 12m", "in 4h 12m", "in 12m"; "Airing now" once the time has come. */
-fun countdownLabel(secondsLeft: Long): String {
-    if (secondsLeft <= 0) return "Airing now"
-    val days = secondsLeft / 86_400
-    val hours = (secondsLeft % 86_400) / 3_600
-    val minutes = (secondsLeft % 3_600) / 60
-    return buildString {
-        append("in ")
-        if (days > 0) append("${days}d ")
-        if (days > 0 || hours > 0) append("${hours}h ")
-        append("${maxOf(minutes, if (days == 0L && hours == 0L) 1 else 0)}m")
-    }
-}
+/** "in 3d 4h 12m 5s"; "Airing now" once due. Formatted by the Rust core. */
+fun countdownLabel(secondsLeft: Long): String = NativeCore.countdown(secondsLeft)

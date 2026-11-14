@@ -26,6 +26,53 @@ object NativeCore {
     external fun seasonForMonth(month: Int): String?
 
     @JvmStatic
+    external fun formatCountdown(seconds: Long): String?
+
+    @JvmStatic
+    external fun compactCount(n: Int): String?
+
+    /** "in 3d 4h 12m 5s" (Rust), with the same output from Kotlin if the library is missing. */
+    fun countdown(secondsLeft: Long): String {
+        if (nativeAvailable) {
+            val r = try {
+                formatCountdown(secondsLeft)
+            } catch (_: Throwable) {
+                null
+            }
+            if (r != null) return r
+        }
+        if (secondsLeft <= 0) return "Airing now"
+        val d = secondsLeft / 86_400
+        val h = (secondsLeft % 86_400) / 3_600
+        val m = (secondsLeft % 3_600) / 60
+        val sec = secondsLeft % 60
+        return buildString {
+            append("in ")
+            if (d > 0) append("${d}d ")
+            if (d > 0 || h > 0) append("${h}h ")
+            if (d > 0 || h > 0 || m > 0) append("${m}m ")
+            append("${sec}s")
+        }
+    }
+
+    /** 1234 -> "1.2K" (Rust). */
+    fun compact(n: Int): String {
+        if (nativeAvailable) {
+            val r = try {
+                compactCount(n)
+            } catch (_: Throwable) {
+                null
+            }
+            if (r != null) return r
+        }
+        return when {
+            n >= 1_000_000 -> String.format(java.util.Locale.US, "%.1fM", n / 1_000_000.0).replace(".0M", "M")
+            n >= 1_000 -> String.format(java.util.Locale.US, "%.1fK", n / 1_000.0).replace(".0K", "K")
+            else -> n.toString()
+        }
+    }
+
+    @JvmStatic
     external fun titleSimilarity(a: String, b: String): Int
 
     private fun words(s: String) =

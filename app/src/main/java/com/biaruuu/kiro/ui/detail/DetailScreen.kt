@@ -163,7 +163,8 @@ private fun DetailContent(
 
     var inList by remember(anime.id) { mutableStateOf(MyListStore.isInList(context, anime.id)) }
     var rating by remember(anime.id) { mutableIntStateOf(MyListStore.getRating(context, anime.id)) }
-    var muted by rememberSaveable { mutableStateOf(true) }
+    // Sound is on as soon as the trailer plays; the speaker button mutes it.
+    var muted by rememberSaveable { mutableStateOf(false) }
     // Trailers come best-first; when one cannot be embedded or never starts, try the next.
     val trailerIds = trailers
     var trailerIndex by remember(trailerIds) { mutableIntStateOf(0) }
@@ -193,7 +194,7 @@ private fun DetailContent(
     }
     val nowSeconds by produceState(System.currentTimeMillis() / 1000) {
         while (true) {
-            delay(15_000)
+            delay(1_000)
             value = System.currentTimeMillis() / 1000
         }
     }
@@ -565,7 +566,7 @@ private fun CountdownRow(number: Int, label: String, image: String?) {
         Column(modifier = Modifier.weight(1f)) {
             Text("Episode $number", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(4.dp))
-            Text(label, color = KiroPurple, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
