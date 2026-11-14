@@ -44,6 +44,14 @@ object AniListRepository {
         await<List<EpisodeInfo>> { callback -> EpisodeApi.load(malId, callback) }
             .also { if (it.isNotEmpty()) episodeCache[malId] = it }
 
+    private val tmdbEpisodeCache = java.util.concurrent.ConcurrentHashMap<Int, List<EpisodeInfo>>()
+
+    fun cachedTmdbEpisodes(id: Int): List<EpisodeInfo>? = tmdbEpisodeCache[id]
+
+    suspend fun tmdbEpisodes(anime: Anime, startDate: String): List<EpisodeInfo> =
+        await<List<EpisodeInfo>> { callback -> TrailerApi.findTmdbEpisodes(anime, startDate, callback) }
+            .also { if (it.isNotEmpty()) tmdbEpisodeCache[anime.id] = it }
+
     suspend fun tmdbTrailers(anime: Anime): List<String> =
         await<List<String>> { callback -> TrailerApi.findTmdb(anime, callback) }
             .also { if (it.isNotEmpty()) tmdbCache[anime.id] = it }

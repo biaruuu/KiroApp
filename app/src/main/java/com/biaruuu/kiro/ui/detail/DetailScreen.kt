@@ -510,6 +510,7 @@ private fun EpisodeRow(episode: EpisodeInfo, fallbackImage: String?, onClick: ()
     ) {
         Box(
             modifier = Modifier
+                .align(Alignment.Top)
                 .width(120.dp)
                 .height(68.dp)
                 .clip(RoundedCornerShape(4.dp))
@@ -539,6 +540,18 @@ private fun EpisodeRow(episode: EpisodeInfo, fallbackImage: String?, onClick: ()
             if (!sub.isNullOrEmpty()) {
                 Spacer(Modifier.height(4.dp))
                 Text(sub, color = MutedText, fontSize = 12.sp, maxLines = 1)
+            }
+            val plot = episode.overview
+            if (!plot.isNullOrEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    plot,
+                    color = MutedText,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
         Spacer(Modifier.width(8.dp))

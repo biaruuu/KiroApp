@@ -51,6 +51,7 @@ class DetailViewModel(private val animeId: Int) : ViewModel() {
     private var anilist: List<String> = cachedDetail?.trailerIds.orEmpty()
     private var jikan: List<String> = emptyList()
     private var mal: List<EpisodeInfo> = emptyList()
+    private var tmdbEps: List<EpisodeInfo> = AniListRepository.cachedTmdbEpisodes(animeId).orEmpty()
 
     init {
         publishTrailers()
@@ -68,25 +69,47 @@ class DetailViewModel(private val animeId: Int) : ViewModel() {
      */
     private fun publishEpisodes(detail: AnimeDetail) {
         val base = detail.episodes
-        if (mal.isEmpty()) {
+        if (mal.isEmpty() && tmdbEps.isEmpty()) {
             _state.update { it.copy(episodes = base) }
             return
         }
-        val byNumber = mal.associateBy { it.number }
-        val baseByNumber = base.associateBy { it.number }
-        val numbers = (base.map { it.number } + mal.map { it.number }).distinct().sorted()
+        val malBy = mal.associateBy { it.number }
+        val tmdbBy = tmdbEps.associateBy { it.number }
+        val baseBy = base.associateBy { it.number }
+        val numbers = (base.map { it.number } + mal.map { it.number } + tmdbEps.map { it.number })
+            .distinct().sorted()
+        // TMDB first (names, plot, stills, runtime), then MyAnimeList, then AniList.
         val merged = numbers.map { n ->
-            val a = baseByNumber[n]
-            val m = byNumber[n]
+            val t = tmdbBy[n]
+            val m = malBy[n]
+            val a = baseBy[n]
             EpisodeInfo(
                 n,
-                m?.title ?: a?.title,
-                a?.thumbnailUrl ?: m?.thumbnailUrl,
-                detail.durationMinutes,
-                a?.airDate ?: m?.airDate,
+                t?.title ?: m?.title ?: a?.title,
+                t?.thumbnailUrl ?: a?.thumbnailUrl ?: m?.thumbnailUrl,
+                t?.durationMinutes?.takeIf { it > 0 } ?: detail.durationMinutes,
+                t?.airDate ?: a?.airDate ?: m?.airDate,
+                t?.overview,
             )
         }
         _state.update { it.copy(episodes = merged) }
+    }
+
+    private fun loadTmdbEpisodes(detail: AnimeDetail) {
+        if (tmdbEps.isNotEmpty()) {
+            publishEpisodes(detail)
+            return
+        }
+        viewModelScope.launch {
+            try {
+                tmdbEps = AniListRepository.tmdbEpisodes(detail.anime, detail.startDate)
+                publishEpisodes(detail)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Falls back to MyAnimeList / AniList names.
+            }
+        }
     }
 
     private fun loadEpisodeNames(detail: AnimeDetail) {
@@ -128,7 +151,10 @@ class DetailViewModel(private val animeId: Int) : ViewModel() {
         _state.value.base?.let { baseReady.complete(it) }
 
         loadSeasons()
-        cachedDetail?.let { loadEpisodeNames(it) }
+        cachedDetail?.let {
+            loadEpisodeNames(it)
+            loadTmdbEpisodes(it)
+        }
 
         viewModelScope.launch {
             try {
@@ -139,6 +165,7 @@ class DetailViewModel(private val animeId: Int) : ViewModel() {
                 publishTrailers()
                 publishEpisodes(detail)
                 loadEpisodeNames(detail)
+                loadTmdbEpisodes(detail)
                 if (tmdb.isEmpty() && anilist.isEmpty() && jikan.isEmpty()) {
                     jikan = try {
                         AniListRepository.jikanTrailers(detail.malId)

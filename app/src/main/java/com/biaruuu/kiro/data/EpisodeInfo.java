@@ -11,6 +11,7 @@ public final class EpisodeInfo {
     private final String thumbnailUrl;
     private final int durationMinutes;
     private final String airDate;
+    private final String overview;
 
     public EpisodeInfo(
             int number,
@@ -18,11 +19,28 @@ public final class EpisodeInfo {
             @Nullable String thumbnailUrl,
             int durationMinutes,
             @Nullable String airDate) {
+        this(number, title, thumbnailUrl, durationMinutes, airDate, null);
+    }
+
+    public EpisodeInfo(
+            int number,
+            @Nullable String title,
+            @Nullable String thumbnailUrl,
+            int durationMinutes,
+            @Nullable String airDate,
+            @Nullable String overview) {
+        this.overview = overview;
         this.number = number;
         this.title = title;
         this.thumbnailUrl = thumbnailUrl;
         this.durationMinutes = durationMinutes;
         this.airDate = airDate;
+    }
+
+    /** Short plot of the episode, or null. */
+    @Nullable
+    public String getOverview() {
+        return overview;
     }
 
     public int getNumber() {

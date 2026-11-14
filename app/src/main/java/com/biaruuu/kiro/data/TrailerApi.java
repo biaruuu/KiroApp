@@ -16,6 +16,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.time.LocalDate;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -41,6 +43,8 @@ public final class TrailerApi {
     private static final String JIKAN = "https://api.jikan.moe/v4/anime/";
     private static final ExecutorService POOL = Executors.newCachedThreadPool();
 
+    private static final ConcurrentHashMap<Integer, Integer> TV_IDS = new ConcurrentHashMap<>();
+
     private TrailerApi() {
     }
 
@@ -58,6 +62,30 @@ public final class TrailerApi {
             }
             if (!cancelled.get()) {
                 callback.onSuccess(ids);
+            }
+        });
+        return () -> cancelled.set(true);
+    }
+
+    /**
+     * Episodes of this anime's season from TMDB: names, overviews, stills, runtime and air dates.
+     * [startDate] is AniList's "2012.07.08" (or "2012.07", "2012", "").
+     */
+    @NonNull
+    public static AniListApi.Cancelable findTmdbEpisodes(
+            @NonNull Anime anime,
+            @NonNull String startDate,
+            @NonNull AniListApi.Callback<List<EpisodeInfo>> callback) {
+        final AtomicBoolean cancelled = new AtomicBoolean(false);
+        POOL.execute(() -> {
+            List<EpisodeInfo> list;
+            try {
+                list = episodesFromTmdb(anime, startDate, cancelled);
+            } catch (Exception e) {
+                list = new ArrayList<>();
+            }
+            if (!cancelled.get()) {
+                callback.onSuccess(list);
             }
         });
         return () -> cancelled.set(true);
@@ -83,6 +111,136 @@ public final class TrailerApi {
             }
         });
         return () -> cancelled.set(true);
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // TMDB episodes
+    // ---------------------------------------------------------------------------------------
+
+    @Nullable
+    private static LocalDate parseStart(@NonNull String s) {
+        try {
+            String[] p = s.trim().split("\\.");
+            if (p.length == 3) {
+                return LocalDate.of(Integer.parseInt(p[0]), Integer.parseInt(p[1]), Integer.parseInt(p[2]));
+            }
+            if (p.length == 2) {
+                return LocalDate.of(Integer.parseInt(p[0]), Integer.parseInt(p[1]), 1);
+            }
+            if (p.length == 1 && !p[0].isEmpty()) {
+                return LocalDate.of(Integer.parseInt(p[0]), 1, 1);
+            }
+        } catch (Exception ignored) {
+            // Unknown start date.
+        }
+        return null;
+    }
+
+    @Nullable
+    private static LocalDate parseIso(@Nullable String s) {
+        try {
+            return s == null || s.length() < 10 ? null : LocalDate.parse(s.substring(0, 10));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** TMDB id of the series this anime belongs to (later seasons are matched without a year). */
+    private static int tvIdFor(@NonNull Anime anime, @NonNull String key, @NonNull AtomicBoolean cancelled)
+            throws Exception {
+        Integer cached = TV_IDS.get(anime.getId());
+        if (cached != null) {
+            return cached;
+        }
+        Set<String> titles = new LinkedHashSet<>();
+        addTitle(titles, anime.getTitleEnglish());
+        addTitle(titles, anime.getTitleRomaji());
+        final List<String> known = new ArrayList<>(titles);
+        addTitle(titles, anime.getTitleNative());
+        for (String title : titles) {
+            if (cancelled.get()) {
+                break;
+            }
+            String url = TMDB + "/search/tv?query=" + URLEncoder.encode(title, "UTF-8")
+                    + "&include_adult=false";
+            JSONObject match = pickMatch(get(url, key), known);
+            if (match != null) {
+                TV_IDS.put(anime.getId(), match.optInt("id"));
+                return match.optInt("id");
+            }
+        }
+        return 0;
+    }
+
+    @NonNull
+    private static List<EpisodeInfo> episodesFromTmdb(
+            @NonNull Anime anime, @NonNull String startDate, @NonNull AtomicBoolean cancelled)
+            throws Exception {
+        List<EpisodeInfo> out = new ArrayList<>();
+        String key = BuildConfig.TMDB_API_KEY;
+        if (key == null || key.isEmpty() || "MOVIE".equals(anime.getFormat())) {
+            return out;
+        }
+        int tvId = tvIdFor(anime, key, cancelled);
+        if (tvId == 0 || cancelled.get()) {
+            return out;
+        }
+        LocalDate start = parseStart(startDate);
+
+        // Which TMDB season is this? The last one that began on or before this anime started.
+        JSONArray seasons = get(TMDB + "/tv/" + tvId, key).optJSONArray("seasons");
+        int chosen = -1;
+        LocalDate chosenDate = null;
+        for (int i = 0; seasons != null && i < seasons.length(); i++) {
+            JSONObject sn = seasons.optJSONObject(i);
+            if (sn == null || sn.optInt("season_number") <= 0) {
+                continue;
+            }
+            LocalDate air = parseIso(sn.optString("air_date", null));
+            if (chosen == -1) {
+                chosen = sn.optInt("season_number");
+                chosenDate = air;
+            }
+            if (start != null && air != null && !air.isAfter(start.plusDays(45))
+                    && (chosenDate == null || air.isAfter(chosenDate) || !chosenDate.isAfter(air))) {
+                chosen = sn.optInt("season_number");
+                chosenDate = air;
+            }
+        }
+        if (chosen < 0) {
+            return out;
+        }
+
+        JSONArray eps = get(TMDB + "/tv/" + tvId + "/season/" + chosen, key).optJSONArray("episodes");
+        int limit = anime.getEpisodes() > 0 ? anime.getEpisodes() : Integer.MAX_VALUE;
+        int number = 0;
+        for (int i = 0; eps != null && i < eps.length() && number < limit; i++) {
+            JSONObject e = eps.optJSONObject(i);
+            if (e == null) {
+                continue;
+            }
+            LocalDate air = parseIso(e.optString("air_date", null));
+            // Split seasons ("Part 2") start part-way through the TMDB season.
+            if (start != null && air != null && air.isBefore(start.minusDays(14))) {
+                continue;
+            }
+            number++;
+            String name = e.optString("name", "").trim();
+            if (name.matches("(?i)episode\\s*\\d+")) {
+                name = "";
+            }
+            String still = e.isNull("still_path") ? "" : e.optString("still_path", "");
+            String overview = e.optString("overview", "").trim();
+            out.add(new EpisodeInfo(
+                    number,
+                    name.isEmpty() ? null : name,
+                    still.isEmpty() ? null : "https://image.tmdb.org/t/p/w300" + still,
+                    e.isNull("runtime") ? 0 : e.optInt("runtime"),
+                    air == null ? null : String.format(Locale.US, "%04d.%02d.%02d",
+                            air.getYear(), air.getMonthValue(), air.getDayOfMonth()),
+                    overview.isEmpty() ? null : overview));
+        }
+        return out;
     }
 
     // ---------------------------------------------------------------------------------------

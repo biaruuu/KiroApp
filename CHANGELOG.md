@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.6.5] - 2026-11-14
+
+Episode details from TMDB, like the website.
+
+### Added
+- **Episode details from TMDB**: each episode shows its title, short plot, runtime, air date and screenshot, matched to the right season (including split seasons such as "Part 2"). MyAnimeList and AniList are still used as backups when TMDB has nothing.
+
 ## [1.6.4] - 2026-11-14
 
 Trailer now covers the whole hero.
