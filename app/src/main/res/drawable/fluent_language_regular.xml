@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hand-drawn outline icon (stroke based) in the Fluent style. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:pathData="M4,4 H20 V20 H4 Z" android:strokeColor="#FF212121" android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeWidth="1.7" />
+    <path android:pathData="M8,17 L12,7 L16,17 M9.4,13.6 H14.6" android:strokeColor="#FF212121" android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeWidth="1.7" />
+</vector>

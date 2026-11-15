@@ -72,6 +72,7 @@ import com.biaruuu.kiro.R
 import com.biaruuu.kiro.data.Anime
 import com.biaruuu.kiro.data.AnimeDetail
 import com.biaruuu.kiro.data.EpisodeInfo
+import com.biaruuu.kiro.data.AppSettings
 import com.biaruuu.kiro.data.MyListStore
 import com.biaruuu.kiro.data.SeasonEntry
 import com.biaruuu.kiro.ui.components.ErrorState
@@ -206,7 +207,7 @@ private fun DetailContent(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
                 )
-                if (trailerId != null) {
+                if (trailerId != null && AppSettings.autoplayPreviews(context)) {
                     val alpha by animateFloatAsState(
                         if (trailerPlaying) 1f else 0.01f,
                         tween(500),

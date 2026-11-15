@@ -1,10 +1,13 @@
 package com.biaruuu.kiro.ui.auth
 
+import android.content.Intent
+import android.net.Uri
 import android.util.Patterns
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,19 +17,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -35,35 +38,60 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.biaruuu.kiro.R
+import com.biaruuu.kiro.data.AppSettings
 import com.biaruuu.kiro.data.auth.AuthRepository
 import com.biaruuu.kiro.data.auth.AuthState
+import com.biaruuu.kiro.data.auth.GoogleSignIn
+import com.biaruuu.kiro.ui.components.PageTopBar
+import com.biaruuu.kiro.ui.theme.AppFont
 import com.biaruuu.kiro.ui.theme.KiroBackground
 import com.biaruuu.kiro.ui.theme.KiroPurple
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
-private val Field = Color(0xFF1E1E22)
-private val Muted = Color(0xFF9A9AA5)
+private val Muted = Color(0xFF9A9A9F)
+private val HintGray = Color(0xFF5E5E63)
+private val ButtonGray = Color(0xFF2E2E30)
+private val BoxBorder = Color(0xFF3A3A3E)
 private val ErrorRed = Color(0xFFFF6B6B)
+private const val REPO_URL = "https://github.com/biaruuu/KiroApp"
 
 /**
- * Shows [content] once the user is signed in with a verified email. When Firebase isn't set up
- * in this build, sign-in is skipped and [content] shows straight away.
+ * Shows [content] once the user is signed in with a verified email, or chose to look around as a
+ * guest. When Firebase isn't set up in this build, sign-in is skipped entirely.
  */
 @Composable
 fun AuthGate(content: @Composable () -> Unit) {
@@ -74,192 +102,449 @@ fun AuthGate(content: @Composable () -> Unit) {
         return
     }
     val state by AuthRepository.state.collectAsState()
+    val guest by AuthRepository.guest.collectAsState()
     when (val s = state) {
         AuthState.Loading -> Box(Modifier.fillMaxSize().background(KiroBackground))
-        AuthState.SignedOut -> AuthScreen()
+        AuthState.SignedOut -> if (guest) content() else LoginFlow()
         is AuthState.NeedsVerification -> VerifyScreen(s.email)
         is AuthState.SignedIn -> content()
     }
 }
 
-private const val MODE_LOGIN = 0
-private const val MODE_SIGNUP = 1
-private const val MODE_FORGOT = 2
+@Composable
+private fun LoginFlow() {
+    var screen by rememberSaveable { mutableIntStateOf(0) }
+    if (screen == 0) {
+        WelcomeScreen(onEmail = { screen = 1 })
+    } else {
+        EmailFlow(onBack = { screen = 0 })
+    }
+}
+
+/** Keeps page content a comfortable width on tablets and in landscape. */
+@Composable
+private fun CenteredPage(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Box(modifier = modifier.fillMaxSize().background(KiroBackground), contentAlignment = Alignment.TopCenter) {
+        Box(modifier = Modifier.widthIn(max = 520.dp).fillMaxSize()) { content() }
+    }
+}
+
+// ---------------------------------------------------------------- Welcome
 
 @Composable
-private fun AuthFrame(content: @Composable () -> Unit) {
-    Box(
-        modifier = Modifier.fillMaxSize().background(KiroBackground).statusBarsPadding().navigationBarsPadding().imePadding(),
-        contentAlignment = Alignment.TopCenter,
-    ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = 480.dp)
+private fun WelcomeScreen(onEmail: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val lastLogin = remember { AppSettings.lastLogin(context) }
+    var busy by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    CenteredPage {
+        // Soft purple glow behind the wordmark; the page itself stays flat dark.
+        Box(
+            Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 32.dp),
+                .background(
+                    Brush.verticalGradient(
+                        0f to Color(0xFF2B2452),
+                        0.55f to Color(0xFF181628),
+                        1f to KiroBackground,
+                    ),
+                ),
+        )
+        Column(
+            modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text("KIRO", color = KiroPurple, fontSize = 44.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp)
-            Spacer(Modifier.height(32.dp))
-            content()
+            Row(modifier = Modifier.fillMaxWidth().height(56.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End) {
+                Box(
+                    modifier = Modifier.size(56.dp).clickable { AuthRepository.continueAsGuest() },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.fluent_dismiss_regular),
+                        contentDescription = "Skip",
+                        tint = Color.White,
+                        modifier = Modifier.size(32.dp),
+                    )
+                }
+            }
+            Spacer(Modifier.weight(1f))
+            Text("KIRO", color = KiroPurple, fontSize = 60.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
+            Spacer(Modifier.height(14.dp))
+            Text(
+                "Discover your favorite anime and\ncustomize your library.",
+                color = Color(0xFFB4B4BA),
+                fontSize = 18.sp,
+                lineHeight = 28.sp,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(44.dp))
+
+            Box(Modifier.fillMaxWidth()) {
+                WideButton(
+                    label = "Continue with Email",
+                    icon = R.drawable.fluent_mail_filled,
+                    iconTint = Color.White,
+                    container = KiroPurple,
+                    onClick = onEmail,
+                )
+                if (lastLogin == "email") LastLoginBubble(Modifier.align(Alignment.TopCenter))
+            }
+            Box(Modifier.padding(horizontal = 16.dp, vertical = 22.dp).fillMaxWidth().height(1.dp).background(BoxBorder))
+            Box(Modifier.fillMaxWidth()) {
+                WideButton(
+                    label = "Continue with Google",
+                    icon = R.drawable.google_g_logo,
+                    iconTint = null,
+                    container = ButtonGray,
+                    busy = busy,
+                    onClick = {
+                        if (!busy) {
+                            busy = true
+                            error = null
+                            scope.launch {
+                                val r = GoogleSignIn.signIn(context)
+                                busy = false
+                                if (r == null) AppSettings.setLastLogin(context, "google")
+                                else if (r.isNotEmpty()) error = r
+                            }
+                        }
+                    },
+                )
+                if (lastLogin == "google") LastLoginBubble(Modifier.align(Alignment.TopCenter))
+            }
+            error?.let {
+                Spacer(Modifier.height(12.dp))
+                Text(it, color = ErrorRed, fontSize = 14.sp, textAlign = TextAlign.Center)
+            }
+            Spacer(Modifier.height(24.dp))
+            val link = SpanStyle(textDecoration = TextDecoration.Underline)
+            Text(
+                buildAnnotatedString {
+                    append("By creating an account, you agree to the ")
+                    withStyle(link) { append("Terms of Use") }
+                    append(" and ")
+                    withStyle(link) { append("Privacy Policy") }
+                    append(".")
+                },
+                color = Color(0xFF77777C),
+                fontSize = 14.sp,
+                lineHeight = 22.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .clickable { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(REPO_URL))) },
+            )
+            Spacer(Modifier.height(16.dp))
         }
     }
 }
 
 @Composable
-private fun AuthScreen() {
-    var mode by rememberSaveable { mutableIntStateOf(MODE_LOGIN) }
-    var name by rememberSaveable { mutableStateOf("") }
+private fun LastLoginBubble(modifier: Modifier = Modifier) {
+    Column(modifier = modifier.offset(y = (-26).dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            "Last login",
+            color = Color.Black,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.background(Color.White, RoundedCornerShape(6.dp)).padding(horizontal = 14.dp, vertical = 7.dp),
+        )
+        Canvas(Modifier.size(width = 14.dp, height = 7.dp)) {
+            val p = Path().apply {
+                moveTo(0f, 0f)
+                lineTo(size.width, 0f)
+                lineTo(size.width / 2f, size.height)
+                close()
+            }
+            drawPath(p, Color.White)
+        }
+    }
+}
+
+@Composable
+private fun WideButton(
+    label: String,
+    icon: Int,
+    iconTint: Color?,
+    container: Color,
+    onClick: () -> Unit,
+    busy: Boolean = false,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(container)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (iconTint != null) {
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.align(Alignment.CenterStart).padding(start = 22.dp).size(28.dp),
+            )
+        } else {
+            androidx.compose.foundation.Image(
+                painter = painterResource(icon),
+                contentDescription = null,
+                modifier = Modifier.align(Alignment.CenterStart).padding(start = 22.dp).size(26.dp),
+            )
+        }
+        if (busy) {
+            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(22.dp))
+        } else {
+            Text(label, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+// ---------------------------------------------------------------- Email flow
+
+@Composable
+private fun EmailFlow(onBack: () -> Unit) {
+    val context = LocalContext.current
+    var step by rememberSaveable { mutableIntStateOf(0) }
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
+    var signUp by rememberSaveable { mutableStateOf(false) }
     var showPassword by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var info by remember { mutableStateOf<String?>(null) }
 
-    fun switchTo(m: Int) {
-        mode = m
+    BackHandler {
         error = null
         info = null
+        if (step == 1) step = 0 else onBack()
     }
 
+    val emailOk = Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
+    val passwordOk = if (signUp) password.length >= 6 else password.isNotEmpty()
+    val canContinue = if (step == 0) emailOk else passwordOk && !busy
+
     fun submit() {
+        if (step == 0) {
+            if (emailOk) step = 1
+            return
+        }
+        if (!canContinue) return
+        busy = true
         error = null
         info = null
-        if (mode == MODE_SIGNUP && name.trim().length < 2) {
-            error = "Enter a username."
-            return
-        }
-        if (!Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()) {
-            error = "Enter a valid email address."
-            return
-        }
-        if (mode != MODE_FORGOT && password.length < 6) {
-            error = "Password must be at least 6 characters."
-            return
-        }
-        busy = true
         val done: (String?) -> Unit = { err ->
             busy = false
             error = err
-            // Success on sign-in / sign-up moves to the next screen by itself.
-            if (err == null && mode == MODE_FORGOT) info = "If an account exists, a reset link is on its way."
+            if (err == null) AppSettings.setLastLogin(context, "email")
         }
-        when (mode) {
-            MODE_LOGIN -> AuthRepository.signIn(email, password, done)
-            MODE_SIGNUP -> AuthRepository.signUp(name, email, password, done)
-            else -> AuthRepository.resetPassword(email, done)
-        }
+        if (signUp) AuthRepository.signUp(email, password, done) else AuthRepository.signIn(email, password, done)
     }
 
-    AuthFrame {
-        Text(
-            when (mode) {
-                MODE_LOGIN -> "Welcome back"
-                MODE_SIGNUP -> "Create your account"
-                else -> "Reset your password"
-            },
-            color = Color.White,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-        )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            when (mode) {
-                MODE_LOGIN -> "Sign in to keep watching."
-                MODE_SIGNUP -> "We'll email you a link to verify your address."
-                else -> "Enter your email and we'll send a reset link."
-            },
-            color = Muted,
-            fontSize = 15.sp,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(24.dp))
-
-        if (mode == MODE_SIGNUP) {
-            AuthField(name, { name = it }, "Username")
-            Spacer(Modifier.height(12.dp))
-        }
-        AuthField(email, { email = it }, "Email", keyboardType = KeyboardType.Email)
-        if (mode != MODE_FORGOT) {
-            Spacer(Modifier.height(12.dp))
-            AuthField(
-                password, { password = it }, "Password",
-                keyboardType = KeyboardType.Password,
-                transformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                trailing = {
-                    TextButton(onClick = { showPassword = !showPassword }) {
-                        Text(if (showPassword) "Hide" else "Show", color = Muted, fontSize = 13.sp)
+    CenteredPage {
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
+            PageTopBar(
+                title = if (step == 0) "Continue with email" else if (signUp) "Create account" else "Log in",
+                onBack = {
+                    error = null
+                    info = null
+                    if (step == 1) step = 0 else onBack()
+                },
+            )
+            Column(modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp)) {
+                if (step == 0) {
+                    Text("Email", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    UnderlineField(
+                        value = email,
+                        onChange = { email = it },
+                        hint = "Enter email",
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next,
+                        onImeAction = { submit() },
+                    )
+                    Spacer(Modifier.height(18.dp))
+                    CheckBox("Include a valid email format (e.g. @email.com)", emailOk)
+                } else {
+                    Text(email.trim(), color = Muted, fontSize = 15.sp)
+                    Spacer(Modifier.height(18.dp))
+                    Text("Password", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    UnderlineField(
+                        value = password,
+                        onChange = { password = it },
+                        hint = "Enter password",
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done,
+                        onImeAction = { submit() },
+                        transformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailing = {
+                            Text(
+                                if (showPassword) "Hide" else "Show",
+                                color = Muted,
+                                fontSize = 15.sp,
+                                modifier = Modifier.clickable { showPassword = !showPassword }.padding(8.dp),
+                            )
+                        },
+                    )
+                    if (signUp) {
+                        Spacer(Modifier.height(18.dp))
+                        CheckBox("Use at least 6 characters", password.length >= 6)
                     }
-                },
-            )
-        }
-
-        error?.let {
-            Spacer(Modifier.height(12.dp))
-            Text(it, color = ErrorRed, fontSize = 14.sp, textAlign = TextAlign.Center)
-        }
-        info?.let {
-            Spacer(Modifier.height(12.dp))
-            Text(it, color = Color(0xFF7BD88F), fontSize = 14.sp, textAlign = TextAlign.Center)
-        }
-
-        Spacer(Modifier.height(20.dp))
-        PrimaryButton(
-            label = when (mode) {
-                MODE_LOGIN -> "Sign in"
-                MODE_SIGNUP -> "Sign up"
-                else -> "Send reset link"
-            },
-            busy = busy,
-            onClick = { if (!busy) submit() },
-        )
-
-        Spacer(Modifier.height(12.dp))
-        if (mode == MODE_LOGIN) {
-            TextButton(onClick = { switchTo(MODE_FORGOT) }) { Text("Forgot password?", color = Muted) }
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                when (mode) {
-                    MODE_LOGIN -> "New to Kiro?"
-                    MODE_SIGNUP -> "Already have an account?"
-                    else -> "Remembered it?"
-                },
-                color = Muted,
-                fontSize = 15.sp,
-            )
-            TextButton(onClick = { switchTo(if (mode == MODE_LOGIN) MODE_SIGNUP else MODE_LOGIN) }) {
-                Text(
-                    if (mode == MODE_LOGIN) "Sign up" else "Sign in",
-                    color = KiroPurple,
-                    fontWeight = FontWeight.Bold,
-                )
+                    error?.let {
+                        Spacer(Modifier.height(16.dp))
+                        Text(it, color = ErrorRed, fontSize = 15.sp)
+                    }
+                    info?.let {
+                        Spacer(Modifier.height(16.dp))
+                        Text(it, color = Color(0xFF7BD88F), fontSize = 15.sp)
+                    }
+                    Spacer(Modifier.height(20.dp))
+                    if (!signUp) {
+                        Text(
+                            "Forgot password?",
+                            color = Muted,
+                            fontSize = 15.sp,
+                            textDecoration = TextDecoration.Underline,
+                            modifier = Modifier.clickable {
+                                error = null
+                                AuthRepository.resetPassword(email) { err ->
+                                    if (err == null) info = "If an account exists, a reset link is on its way."
+                                    else error = err
+                                }
+                            },
+                        )
+                        Spacer(Modifier.height(14.dp))
+                    }
+                    Text(
+                        if (signUp) "Already have an account? Log in" else "New to Kiro? Create account",
+                        color = KiroPurple,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clickable {
+                            signUp = !signUp
+                            error = null
+                            info = null
+                        },
+                    )
+                }
             }
+            PrimaryButton(
+                label = if (step == 0) "Next" else if (signUp) "Sign up" else "Log in",
+                enabled = canContinue,
+                busy = busy,
+                onClick = { submit() },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+            )
         }
     }
 }
 
 @Composable
+private fun UnderlineField(
+    value: String,
+    onChange: (String) -> Unit,
+    hint: String,
+    keyboardType: KeyboardType,
+    imeAction: ImeAction,
+    onImeAction: () -> Unit,
+    transformation: VisualTransformation = VisualTransformation.None,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    val focus = remember { FocusRequester() }
+    var focused by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+    val style = TextStyle(color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, fontFamily = AppFont)
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BasicTextField(
+                value = value,
+                onValueChange = onChange,
+                singleLine = true,
+                textStyle = style,
+                cursorBrush = SolidColor(KiroPurple),
+                visualTransformation = transformation,
+                keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
+                keyboardActions = KeyboardActions(onNext = { onImeAction() }, onDone = { onImeAction() }),
+                modifier = Modifier.weight(1f).focusRequester(focus).onFocusChanged { focused = it.isFocused },
+                decorationBox = { inner ->
+                    Box(Modifier.padding(vertical = 16.dp)) {
+                        if (value.isEmpty()) Text(hint, color = HintGray, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                        inner()
+                    }
+                },
+            )
+            trailing?.invoke()
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(if (focused) KiroPurple else BoxBorder))
+    }
+}
+
+@Composable
+private fun CheckBox(text: String, ok: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, BoxBorder, RoundedCornerShape(4.dp))
+            .background(Color(0xFF151515), RoundedCornerShape(4.dp))
+            .padding(horizontal = 16.dp, vertical = 18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.fluent_checkmark_regular),
+            contentDescription = null,
+            tint = if (ok) KiroPurple else HintGray,
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(Modifier.size(14.dp))
+        Text(text, color = Color(0xFFB4B4BA), fontSize = 16.sp)
+    }
+}
+
+@Composable
+private fun PrimaryButton(
+    label: String,
+    enabled: Boolean,
+    busy: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .background(if (enabled) KiroPurple else ButtonGray)
+            .clickable(
+                enabled = enabled && !busy,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (busy) {
+            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(22.dp))
+        } else {
+            Text(label, color = if (enabled) Color.White else HintGray, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+// ---------------------------------------------------------------- Verify email
+
+@Composable
 private fun VerifyScreen(email: String) {
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
+    var good by remember { mutableStateOf(false) }
     var cooldown by remember { mutableIntStateOf(30) }
 
-    // Count down before "Resend" can be used again.
     LaunchedEffect(cooldown) {
         if (cooldown > 0) {
             delay(1000)
             cooldown--
-        }
-    }
-
-    fun check() {
-        busy = true
-        AuthRepository.checkVerified { ok ->
-            busy = false
-            if (!ok) message = "Not verified yet. Open the link in the email first."
         }
     }
 
@@ -273,89 +558,68 @@ private fun VerifyScreen(email: String) {
         onDispose { owner.lifecycle.removeObserver(observer) }
     }
 
-    AuthFrame {
-        Text("Verify your email", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(10.dp))
-        Text(
-            "We sent a verification link to\n$email\nOpen it, then come back here.",
-            color = Muted,
-            fontSize = 15.sp,
-            textAlign = TextAlign.Center,
-            lineHeight = 22.sp,
-        )
-        message?.let {
-            Spacer(Modifier.height(14.dp))
-            Text(it, color = if (it.startsWith("Verification email")) Color(0xFF7BD88F) else ErrorRed, fontSize = 14.sp, textAlign = TextAlign.Center)
-        }
-        Spacer(Modifier.height(24.dp))
-        PrimaryButton("I've verified", busy) { if (!busy) check() }
-        Spacer(Modifier.height(8.dp))
-        TextButton(
-            enabled = cooldown == 0,
-            onClick = {
-                cooldown = 30
-                AuthRepository.resendVerification { err ->
-                    message = err ?: "Verification email sent again."
+    CenteredPage {
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+            PageTopBar("Verify your email", onBack = null)
+            Column(
+                modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+            ) {
+                Text(
+                    "We sent a verification link to",
+                    color = Muted,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(email, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(6.dp))
+                Text("Open it, then come back here.", color = Muted, fontSize = 16.sp, textAlign = TextAlign.Center)
+                message?.let {
+                    Spacer(Modifier.height(18.dp))
+                    Text(it, color = if (good) Color(0xFF7BD88F) else ErrorRed, fontSize = 15.sp, textAlign = TextAlign.Center)
                 }
-            },
-        ) {
-            Text(if (cooldown > 0) "Resend email ($cooldown)" else "Resend email", color = if (cooldown > 0) Muted else KiroPurple)
-        }
-        TextButton(onClick = { AuthRepository.signOut() }) { Text("Use a different account", color = Muted) }
-    }
-}
-
-@Composable
-private fun AuthField(
-    value: String,
-    onChange: (String) -> Unit,
-    label: String,
-    keyboardType: KeyboardType = KeyboardType.Text,
-    transformation: VisualTransformation = VisualTransformation.None,
-    trailing: (@Composable () -> Unit)? = null,
-) {
-    TextField(
-        value = value,
-        onValueChange = onChange,
-        singleLine = true,
-        label = { Text(label) },
-        visualTransformation = transformation,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        trailingIcon = trailing,
-        shape = RoundedCornerShape(6.dp),
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = Field,
-            unfocusedContainerColor = Field,
-            focusedIndicatorColor = KiroPurple,
-            unfocusedIndicatorColor = Color.Transparent,
-            cursorColor = KiroPurple,
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            focusedLabelColor = Muted,
-            unfocusedLabelColor = Muted,
-        ),
-        modifier = Modifier.fillMaxWidth(),
-    )
-}
-
-@Composable
-private fun PrimaryButton(label: String, busy: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp)
-            .background(KiroPurple, RoundedCornerShape(6.dp))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (busy) {
-            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(22.dp))
-        } else {
-            Text(label, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(28.dp))
+                Text(
+                    if (cooldown > 0) "Resend email ($cooldown)" else "Resend email",
+                    color = if (cooldown > 0) HintGray else KiroPurple,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .clickable(enabled = cooldown == 0) {
+                            cooldown = 30
+                            AuthRepository.resendVerification { err ->
+                                good = err == null
+                                message = err ?: "Verification email sent again."
+                            }
+                        }
+                        .padding(10.dp),
+                )
+                Text(
+                    "Use a different account",
+                    color = Muted,
+                    fontSize = 15.sp,
+                    textDecoration = TextDecoration.Underline,
+                    modifier = Modifier.clickable { AuthRepository.signOut() }.padding(10.dp),
+                )
+            }
+            PrimaryButton(
+                label = "I've verified",
+                enabled = true,
+                busy = busy,
+                onClick = {
+                    busy = true
+                    AuthRepository.checkVerified { ok ->
+                        busy = false
+                        if (!ok) {
+                            good = false
+                            message = "Not verified yet. Open the link in the email first."
+                        }
+                    }
+                },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+            )
         }
     }
 }

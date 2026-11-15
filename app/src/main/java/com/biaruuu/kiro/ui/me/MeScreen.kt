@@ -1,0 +1,187 @@
+package com.biaruuu.kiro.ui.me
+
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.biaruuu.kiro.BuildConfig
+import com.biaruuu.kiro.R
+import com.biaruuu.kiro.data.auth.AuthRepository
+import com.biaruuu.kiro.data.auth.AuthState
+import com.biaruuu.kiro.ui.theme.KiroPurple
+
+private val Muted = Color(0xFF8E8E93)
+private val Hairline = Color(0xFF2B2B2F)
+const val REPO_URL = "https://github.com/biaruuu/KiroApp"
+
+/** The Me tab: account header and the settings list. [onOpen] pushes a settings page. */
+@Composable
+fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val configured = remember { AuthRepository.isConfigured(context) }
+    val state by AuthRepository.state.collectAsState()
+    val signedIn = state as? AuthState.SignedIn
+
+    Box(modifier = modifier.statusBarsPadding(), contentAlignment = Alignment.TopCenter) {
+        Column(
+            modifier = Modifier
+                .widthIn(max = 560.dp)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
+        ) {
+            Spacer(Modifier.height(48.dp))
+
+            // Header: avatar + greeting. Tapping it opens the account page (or the login screen).
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        when {
+                            signedIn != null -> onOpen("account")
+                            configured -> AuthRepository.requestLogin()
+                        }
+                    },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier.size(52.dp).clip(CircleShape).background(KiroPurple),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        (signedIn?.name?.firstOrNull() ?: 'K').uppercase(),
+                        color = Color.White,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                }
+                Spacer(Modifier.size(14.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        if (signedIn != null) "Hello, ${signedIn.name}!" else "Hello, guest!",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        when {
+                            signedIn != null -> signedIn.email
+                            configured -> "Log in to sync your account"
+                            else -> "Accounts aren't set up in this build"
+                        },
+                        color = Muted,
+                        fontSize = 15.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                if (signedIn != null || configured) Chevron()
+            }
+
+            Spacer(Modifier.height(32.dp))
+            Text("Settings", color = Muted, fontSize = 15.sp)
+            Spacer(Modifier.height(8.dp))
+            SettingsRow(R.drawable.fluent_alert_regular, "Notification") {
+                Toast.makeText(context, "No new notifications", Toast.LENGTH_SHORT).show()
+            }
+            SettingsRow(R.drawable.fluent_arrow_download_regular, "Download") { onOpen("download") }
+            SettingsRow(R.drawable.fluent_play_circle_regular, "Play") { onOpen("play") }
+            SettingsRow(R.drawable.fluent_language_regular, "Language") { onOpen("language") }
+
+            Box(Modifier.padding(vertical = 14.dp).fillMaxWidth().height(1.dp).background(Hairline))
+
+            SettingsRow(R.drawable.fluent_help_circle_regular, "Help Center") {
+                openUrl(context, "$REPO_URL/issues")
+            }
+            SettingsRow(R.drawable.fluent_headset_regular, "Contact us") {
+                openUrl(context, "$REPO_URL/issues/new")
+            }
+            SettingsRow(R.drawable.fluent_document_regular, "License") { onOpen("license") }
+            SettingsRow(R.drawable.fluent_phone_regular, "Version", value = BuildConfig.VERSION_NAME.substringBefore('-')) {
+                onOpen("version")
+            }
+            Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+private fun openUrl(context: android.content.Context, url: String) {
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    } catch (_: Exception) {
+        Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+    }
+}
+
+@Composable
+private fun Chevron() {
+    Icon(
+        painter = painterResource(R.drawable.fluent_chevron_right_regular),
+        contentDescription = null,
+        tint = Color.White,
+        modifier = Modifier.size(30.dp),
+    )
+}
+
+@Composable
+private fun SettingsRow(@DrawableRes icon: Int, label: String, value: String? = null, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start,
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(26.dp),
+        )
+        Spacer(Modifier.size(16.dp))
+        Text(label, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+        if (value != null) {
+            Text(value, color = Muted, fontSize = 17.sp)
+            Spacer(Modifier.size(4.dp))
+        }
+        Chevron()
+    }
+}

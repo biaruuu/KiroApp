@@ -35,7 +35,8 @@ import androidx.compose.ui.unit.sp
 import com.biaruuu.kiro.R
 import com.biaruuu.kiro.data.Anime
 import com.biaruuu.kiro.ui.auth.AuthGate
-import com.biaruuu.kiro.ui.auth.MeScreen
+import com.biaruuu.kiro.ui.me.MeScreen
+import com.biaruuu.kiro.ui.me.SettingsPage
 import com.biaruuu.kiro.ui.components.KiroBottomBar
 import com.biaruuu.kiro.ui.components.KiroSideRail
 import com.biaruuu.kiro.ui.components.NavDestination
@@ -185,7 +186,7 @@ private fun KiroScaffold() {
                     refreshKey = backStack.size,
                     modifier = contentModifier,
                 )
-                TAB_ME -> MeScreen(contentModifier)
+                TAB_ME -> MeScreen(onOpen = { backStack.add("s:$it") }, modifier = contentModifier)
             }
         }
     }
@@ -194,7 +195,13 @@ private fun KiroScaffold() {
     if (top != null) {
         val parts = top.split(":")
         val id = parts.getOrNull(1)?.toIntOrNull()
-        if (id != null) {
+        if (parts[0] == "s") {
+            SettingsPage(
+                page = parts.getOrNull(1) ?: "",
+                onBack = { backStack.removeAt(backStack.lastIndex) },
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else if (id != null) {
             val overlay = Modifier.fillMaxSize().background(KiroBackground)
             val pop = { backStack.removeAt(backStack.lastIndex) }
             when (parts[0]) {

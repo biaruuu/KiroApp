@@ -4,6 +4,23 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.16.0] - 2026-11-16
+
+Login and Me tab redesign.
+
+### Added
+- **Welcome screen** with Continue with Email and Continue with Google, a "Last login" hint and a close button to look around as a guest.
+- **Continue with email** flow: email step with a live format check, then password (log in or create account), forgot password.
+- **Google sign-in** through Credential Manager and Firebase.
+- **Me tab**: greeting header, Settings list (Notification, Download, Play, Language) and Help Center, Contact us, License and Version.
+- **Account Setting** with Logout confirmation and Delete account.
+- **Play setting**: Autoplay previews now turns the details-page trailer on or off.
+- **Download setting**: Wi-Fi only and Video quality (saved for when downloads arrive).
+- **Version** page checks GitHub for the latest release and opens it from Update Now.
+
+### Changed
+- Sign-up no longer asks for a username; your name is taken from your email.
+
 ## [1.15.0] - 2026-11-16
 
 Accounts.

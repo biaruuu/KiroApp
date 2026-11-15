@@ -10,7 +10,8 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
+import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,7 +21,7 @@ sealed interface AuthState {
     data object Loading : AuthState
     data object SignedOut : AuthState
     data class NeedsVerification(val email: String) : AuthState
-    data class SignedIn(val email: String, val name: String) : AuthState
+    data class SignedIn(val email: String, val name: String, val google: Boolean) : AuthState
 }
 
 /**
@@ -54,7 +55,11 @@ object AuthRepository {
         _state.value = when {
             user == null -> AuthState.SignedOut
             !user.isEmailVerified -> AuthState.NeedsVerification(user.email.orEmpty())
-            else -> AuthState.SignedIn(user.email.orEmpty(), user.displayName.orEmpty())
+            else -> {
+                val email = user.email.orEmpty()
+                val name = user.displayName?.takeIf { it.isNotBlank() } ?: email.substringBefore('@')
+                AuthState.SignedIn(email, name, user.providerData.any { it.providerId == "google.com" })
+            }
         }
     }
 
@@ -64,7 +69,7 @@ object AuthRepository {
             .addOnCompleteListener { t -> onDone(if (t.isSuccessful) null else message(t.exception)) }
     }
 
-    fun signUp(name: String, email: String, password: String, onDone: (String?) -> Unit) {
+    fun signUp(email: String, password: String, onDone: (String?) -> Unit) {
         val auth = FirebaseAuth.getInstance()
         auth.createUserWithEmailAndPassword(email.trim(), password).addOnCompleteListener { t ->
             val user = t.result?.user
@@ -72,7 +77,6 @@ object AuthRepository {
                 onDone(message(t.exception))
                 return@addOnCompleteListener
             }
-            user.updateProfile(UserProfileChangeRequest.Builder().setDisplayName(name.trim()).build())
             user.sendEmailVerification()
             // The state listener already moved us to the "verify your email" screen.
             onDone(null)
@@ -110,8 +114,48 @@ object AuthRepository {
         }
     }
 
+    /** Signs in with the ID token Google handed back (Google accounts are already verified). */
+    fun signInWithGoogle(idToken: String, onDone: (String?) -> Unit) {
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+        FirebaseAuth.getInstance().signInWithCredential(credential)
+            .addOnCompleteListener { t -> onDone(if (t.isSuccessful) null else message(t.exception)) }
+    }
+
     fun signOut() {
         FirebaseAuth.getInstance().signOut()
+        _guest.value = false
+    }
+
+    /** Permanently deletes the account. Firebase wants a recent sign-in for this. */
+    fun deleteAccount(onDone: (String?) -> Unit) {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null) {
+            onDone("You are signed out.")
+            return
+        }
+        user.delete().addOnCompleteListener { t ->
+            if (t.isSuccessful) {
+                _guest.value = false
+                onDone(null)
+            } else if (t.exception is FirebaseAuthRecentLoginRequiredException) {
+                onDone("For security, log out, log in again, then delete your account.")
+            } else {
+                onDone(message(t.exception))
+            }
+        }
+    }
+
+    private val _guest = MutableStateFlow(false)
+
+    /** True while the user chose to look around without an account. */
+    val guest: StateFlow<Boolean> = _guest.asStateFlow()
+
+    fun continueAsGuest() {
+        _guest.value = true
+    }
+
+    fun requestLogin() {
+        _guest.value = false
     }
 
     private fun message(e: Exception?): String = when (e) {

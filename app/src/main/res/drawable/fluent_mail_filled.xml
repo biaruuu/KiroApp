@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Filled envelope: the flap is cut out of the body (even-odd). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillType="evenOdd" android:fillColor="#FF212121"
+        android:pathData="M3,5.5 H21 V18.5 H3 Z M4.4,7 L12,12.8 L19.6,7 L19.6,8.9 L12,14.7 L4.4,8.9 Z" />
+</vector>
