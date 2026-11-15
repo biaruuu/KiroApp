@@ -112,7 +112,7 @@ private val MutedText = Color(0xFF8E8E93)
 
 private const val NO_SOURCE = "This episode isn't available right now"
 
-private enum class Panel { Menu, Tracks, Episodes, Speed, Quality, SubStyle, SubDelay, SubUrl, Boost, Hdr }
+private enum class Panel { Menu, Tracks, Episodes, Speed, Quality, SubStyle, Boost, Hdr }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -218,25 +218,9 @@ fun PlayerScreen(
     var sourceIndex by remember { mutableIntStateOf(0) }
     var resolving by remember { mutableStateOf(true) }
     var pendingSeek by remember { mutableLongStateOf(0L) }
-    var userSubs by remember { mutableStateOf<List<Pair<Uri, String>>>(emptyList()) }
     val prefs = remember { context.getSharedPreferences("kiro_user_data", android.content.Context.MODE_PRIVATE) }
-    // Subtitle delay is remembered per anime; the applied value lags so quick taps reload once.
-    var subDelayMs by remember { mutableIntStateOf(prefs.getInt("subtitle_delay_$animeId", 0)) }
-    var appliedDelayMs by remember { mutableIntStateOf(subDelayMs) }
     var boostDb by remember { mutableIntStateOf(prefs.getInt("audio_boost_db", 0)) }
     var hdrOn by remember { mutableStateOf(prefs.getBoolean("hdr_tunneling", false)) }
-    var urlError by remember { mutableStateOf<String?>(null) }
-    val pickSubtitle = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            try {
-                context.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            } catch (_: Exception) {
-                // Not every provider allows keeping access; we only need it for this session.
-            }
-            pendingSeek = exo.currentPosition
-            userSubs = userSubs + (uri to "My subtitles")
-        }
-    }
     var subStyle by remember { mutableStateOf(SubtitleStyleStore.load(context)) }
     var playerView by remember { mutableStateOf<PlayerView?>(null) }
     var quality by remember { mutableIntStateOf(0) } // 0 = Auto, otherwise a video height
@@ -256,7 +240,6 @@ fun PlayerScreen(
         sources = emptyList()
         sourceIndex = 0
         pendingSeek = WatchHistory.positionFor(context, animeId, current)
-        userSubs = emptyList()
         val request = StreamRequest(
             animeId,
             current,
@@ -283,31 +266,14 @@ fun PlayerScreen(
     }
 
     // 2. Play the chosen source (also when switching source or adding a subtitle file).
-    LaunchedEffect(sources, sourceIndex, userSubs, appliedDelayMs) {
+    LaunchedEffect(sources, sourceIndex) {
         val source = sources.getOrNull(sourceIndex) ?: return@LaunchedEffect
-        val delay = appliedDelayMs.toLong()
         val subtitles = source.subtitles.mapIndexed { i, t ->
-            // With a delay the file is rewritten with shifted times (WebVTT); otherwise used as is.
-            val shifted = if (delay != 0L) {
-                try { SubtitleFiles.prepare(context, t.url, delay) } catch (_: Exception) { null }
-            } else null
-            MediaItem.SubtitleConfiguration.Builder(shifted ?: Uri.parse(t.url))
-                .setMimeType(if (shifted != null) MimeTypes.TEXT_VTT else t.mimeType)
+            MediaItem.SubtitleConfiguration.Builder(Uri.parse(t.url))
+                .setMimeType(t.mimeType)
                 .setLanguage(t.language)
                 .setLabel(t.label)
                 .setSelectionFlags(if (i == 0) C.SELECTION_FLAG_DEFAULT else 0)
-                .build()
-        } + userSubs.mapIndexedNotNull { i, (uri, _) ->
-            val local = try {
-                SubtitleFiles.prepare(context, uri.toString(), delay)
-            } catch (e: Exception) {
-                urlError = e.message
-                return@mapIndexedNotNull null
-            }
-            MediaItem.SubtitleConfiguration.Builder(local)
-                .setMimeType(MimeTypes.TEXT_VTT)
-                .setLabel("My subtitles ${i + 1}")
-                .setSelectionFlags(if (i == userSubs.lastIndex) C.SELECTION_FLAG_DEFAULT else 0)
                 .build()
         }
         error = null
@@ -327,16 +293,6 @@ fun PlayerScreen(
         mediaEpisode = current
         exo.prepare()
         exo.playWhenReady = true
-    }
-
-    // Quick +/- taps are applied once, a moment after the last one.
-    LaunchedEffect(subDelayMs) {
-        prefs.edit().putInt("subtitle_delay_$animeId", subDelayMs).apply()
-        if (subDelayMs != appliedDelayMs) {
-            delay(700)
-            pendingSeek = exo.currentPosition
-            appliedDelayMs = subDelayMs
-        }
     }
 
     // Audio booster: Android's LoudnessEnhancer on the player's audio session (+10 / +20 dB).
@@ -603,8 +559,6 @@ fun PlayerScreen(
                     Panel.Menu -> ""
                     Panel.Quality -> "Quality"
                     Panel.SubStyle -> "Subtitle style"
-                    Panel.SubDelay -> "Subtitle delay"
-                    Panel.SubUrl -> "Subtitle from web"
                     Panel.Boost -> "Audio boost"
                     Panel.Hdr -> "HDR & Dolby Vision"
                     Panel.Tracks -> "Audio & Subtitles"
@@ -625,14 +579,6 @@ fun PlayerScreen(
                                 "${subStyle.font} · ${SubtitleOptions.sizes[subStyle.size].first} · ${SubtitleOptions.backgrounds[subStyle.background].first}",
                             ) { panel = Panel.SubStyle }
                         }
-                        item {
-                            MenuRow(
-                                "Subtitle delay",
-                                if (subDelayMs == 0) "In sync" else "${if (subDelayMs > 0) "+" else ""}$subDelayMs ms",
-                            ) { panel = Panel.SubDelay }
-                        }
-                        item { MenuRow("Load subtitle file", ".srt / .vtt") { panel = null; pickSubtitle.launch(arrayOf("*/*")) } }
-                        item { MenuRow("Subtitle from web", "URL") { urlError = null; panel = Panel.SubUrl } }
                         item { MenuRow("Audio boost", if (boostDb == 0) "Off" else "+$boostDb dB") { panel = Panel.Boost } }
                         item { MenuRow("HDR & Dolby Vision", if (hdrOn) "On" else "Auto") { panel = Panel.Hdr } }
                         item { MenuRow("Playback speed", if (speed == 1f) "Normal" else "${speed}x") { panel = Panel.Speed } }
@@ -661,69 +607,6 @@ fun PlayerScreen(
                         SubtitleStyleStore.save(context, new)
                     }
                     Panel.Tracks -> Unit
-                    Panel.SubDelay -> Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
-                        Text(
-                            "Subtitles early or late? Move them in steps of 250 ms. Saved for this anime.",
-                            color = Color(0xFFB3B3B3), fontSize = 13.sp,
-                        )
-                        Spacer(Modifier.height(20.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                            StepButton("−") { subDelayMs = (subDelayMs - 250).coerceAtLeast(-30000) }
-                            Text(
-                                if (subDelayMs == 0) "In sync" else "${if (subDelayMs > 0) "+" else ""}$subDelayMs ms",
-                                color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.weight(1f),
-                            )
-                            StepButton("+") { subDelayMs = (subDelayMs + 250).coerceAtMost(30000) }
-                        }
-                        Spacer(Modifier.height(20.dp))
-                        Text(
-                            "Reset",
-                            color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .border(1.dp, Color(0xFF5C5C5E), RoundedCornerShape(6.dp))
-                                .clickable { subDelayMs = 0 }
-                                .padding(horizontal = 22.dp, vertical = 10.dp),
-                        )
-                    }
-                    Panel.SubUrl -> {
-                        var url by remember { mutableStateOf("") }
-                        Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
-                            Text("Paste the address of an .srt or .vtt file.", color = Color(0xFFB3B3B3), fontSize = 13.sp)
-                            Spacer(Modifier.height(14.dp))
-                            androidx.compose.material3.OutlinedTextField(
-                                value = url,
-                                onValueChange = { url = it },
-                                singleLine = true,
-                                placeholder = { Text("https://…/subtitles.srt", color = Color(0xFF8E8E93)) },
-                                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                                    focusedTextColor = Color.White, unfocusedTextColor = Color.White,
-                                    focusedBorderColor = KiroPurple, unfocusedBorderColor = Color(0xFF5C5C5E),
-                                ),
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                            urlError?.let {
-                                Spacer(Modifier.height(8.dp))
-                                Text(it, color = Color(0xFFFF6B6B), fontSize = 12.sp)
-                            }
-                            Spacer(Modifier.height(16.dp))
-                            Text(
-                                "Add",
-                                color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(KiroPurple)
-                                    .clickable(enabled = url.startsWith("http")) {
-                                        pendingSeek = exo.currentPosition
-                                        userSubs = userSubs + (Uri.parse(url.trim()) to "My subtitles")
-                                        panel = null
-                                    }
-                                    .padding(horizontal = 26.dp, vertical = 10.dp),
-                            )
-                        }
-                    }
                     Panel.Boost -> LazyColumn {
                         items(listOf(0, 10, 20)) { db ->
                             PanelRow(label = if (db == 0) "Off" else "+$db dB", selected = boostDb == db) {
@@ -1322,20 +1205,6 @@ private fun TrackColumn(title: String, labels: List<String>, picked: Int, onPick
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun StepButton(label: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(48.dp)
-            .clip(CircleShape)
-            .border(1.dp, Color(0xFF5C5C5E), CircleShape)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
     }
 }
 

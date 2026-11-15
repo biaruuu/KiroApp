@@ -154,7 +154,8 @@ fun SubtitleView.applyKiroStyle(context: Context, style: SubtitleStyle) {
             SubtitleOptions.backgrounds[style.background].second,
             Color.TRANSPARENT,
             SubtitleOptions.edges[style.edge].second,
-            Color.BLACK,
+            // The reference's subtle shadow is black at 85% opacity; the outline is solid black.
+            if (SubtitleOptions.edges[style.edge].second == CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW) Color.argb(0xD9, 0, 0, 0) else Color.BLACK,
             SubtitleOptions.typeface(context, style.font),
         ),
     )

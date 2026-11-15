@@ -4,6 +4,16 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.13.1] - 2026-11-15
+
+Subtitles back to how they were.
+
+### Changed
+- Caption style matches Nivio exactly, including the subtle shadow colour.
+
+### Removed
+- Subtitle delay, "Load subtitle file" and "Subtitle from web". Subtitles play as before, straight from the provider.
+
 ## [1.13.0] - 2026-11-15
 
 Player features from Nivio.
