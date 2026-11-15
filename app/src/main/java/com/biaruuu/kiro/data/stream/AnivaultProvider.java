@@ -3,6 +3,7 @@ package com.biaruuu.kiro.data.stream;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.biaruuu.kiro.core.NativeCore;
 import com.biaruuu.kiro.data.HttpClientProvider;
 
 import org.json.JSONArray;
@@ -36,7 +37,7 @@ public final class AnivaultProvider implements StreamProvider {
 
     public static final String BASE_URL = "https://kiroapp-api.onrender.com";
 
-    private static final String[] SOURCES = {"anikoto", "megaplay", "desidub", "animeheaven"};
+    private static final String[] SOURCES = {"megaplay", "anikoto", "desidub"};
     private static final String[] AUDIO = {"sub", "dub"};
     private static final int FIRST_RESULT_WAIT_S = 28;
     private static final int GRACE_MS = 3500;
@@ -120,8 +121,15 @@ public final class AnivaultProvider implements StreamProvider {
 
     @Nullable
     private static StreamSource fetch(OkHttpClient client, StreamRequest req, String source, String audio) {
+        // MegaPlay is keyed by the MAL id of this exact season, so it can't pick the wrong one.
+        // The title-searching sources are checked against the season first (see seasonMatches).
+        boolean byMal = "megaplay".equals(source) && req.getMalId() > 0;
+        String idParam = byMal ? "malId=" + req.getMalId() : "anilistId=" + req.getAnimeId();
+        if (!byMal && !"megaplay".equals(source) && !seasonMatches(client, req, source)) {
+            return null;
+        }
         String url = BASE_URL + "/api/watch?source=" + source
-                + "&anilistId=" + req.getAnimeId()
+                + "&" + idParam
                 + "&ep=" + req.getEpisode()
                 + "&type=" + audio;
         try (Response r = client.newCall(new Request.Builder().url(url).build()).execute()) {
@@ -159,6 +167,36 @@ public final class AnivaultProvider implements StreamProvider {
             return new StreamSource("Anivault · " + label, stream, height, hls, subtitles(json), audio);
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    /**
+     * Title-searching sources can land on season 1 when season 2 was asked for. Ask which show
+     * the source resolved to and accept it only if its name is the same season (Rust) and it
+     * really has this episode.
+     */
+    private static boolean seasonMatches(OkHttpClient client, StreamRequest req, String source) {
+        String url = BASE_URL + "/api/episodes?anilistId=" + req.getAnimeId() + "&source=" + source;
+        try (Response r = client.newCall(new Request.Builder().url(url).build()).execute()) {
+            if (!r.isSuccessful() || r.body() == null) {
+                return false;
+            }
+            JSONObject json = new JSONObject(r.body().string());
+            String site = json.optString("siteId", "");
+            int count = json.optInt("count", 0);
+            if (site.isEmpty() || count < req.getEpisode()) {
+                return false;
+            }
+            String[] names = {req.getTitle(), req.getTitleEnglish(), req.getTitleRomaji()};
+            int best = 0;
+            for (String n : names) {
+                if (n != null && !n.isEmpty()) {
+                    best = Math.max(best, NativeCore.seasonMatch(n, site));
+                }
+            }
+            return best >= 65;
+        } catch (Exception e) {
+            return false;
         }
     }
 

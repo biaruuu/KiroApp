@@ -12,6 +12,8 @@ public final class StreamRequest {
     private final String titleEnglish;
     private final String titleRomaji;
     private final int year;
+    private final int malId;
+    private final int totalEpisodes;
 
     public StreamRequest(
             int animeId,
@@ -19,13 +21,17 @@ public final class StreamRequest {
             @NonNull String title,
             @Nullable String titleEnglish,
             @Nullable String titleRomaji,
-            int year) {
+            int year,
+            int malId,
+            int totalEpisodes) {
         this.animeId = animeId;
         this.episode = episode;
         this.title = title;
         this.titleEnglish = titleEnglish;
         this.titleRomaji = titleRomaji;
         this.year = year;
+        this.malId = malId;
+        this.totalEpisodes = totalEpisodes;
     }
 
     public int getAnimeId() {
@@ -53,5 +59,15 @@ public final class StreamRequest {
 
     public int getYear() {
         return year;
+    }
+
+    /** MyAnimeList id of this exact season (0 if unknown). */
+    public int getMalId() {
+        return malId;
+    }
+
+    /** Episode count of this season from AniList (0 if unknown). */
+    public int getTotalEpisodes() {
+        return totalEpisodes;
     }
 }

@@ -56,6 +56,49 @@ object NativeCore {
     }
 
     @JvmStatic
+    external fun seasonMatchNative(a: String, b: String): Int
+
+    private val FILLER = setOf("season", "part", "cour", "the", "no", "wa", "ga", "tv", "anime", "dub", "sub", "s")
+
+    private fun seasonTokens(s: String): List<String> = s.lowercase()
+        .split(Regex("[^\\p{L}\\p{N}]+"))
+        .mapNotNull { t ->
+            if (t.isEmpty() || t in FILLER) return@mapNotNull null
+            val m = Regex("^(\\d+)(st|nd|rd|th)?$").find(t)
+            if (m != null) {
+                val d = m.groupValues[1]
+                if (d.length > 2 && d.length != 4) null else d
+            } else t
+        }
+        .distinct()
+        .sorted()
+
+    /**
+     * 0-100: do two titles name the same season? Has no "one contains the other" boost and
+     * penalises a season number that is on only one side, so a season 2 request can't match
+     * the season 1 page. Rust when available, same algorithm in Kotlin otherwise.
+     */
+    @JvmStatic
+    fun seasonMatch(a: String, b: String): Int {
+        if (nativeAvailable) {
+            val r = try {
+                seasonMatchNative(a, b)
+            } catch (_: Throwable) {
+                -1
+            }
+            if (r >= 0) return r
+        }
+        val ta = seasonTokens(a)
+        val tb = seasonTokens(b)
+        if (ta.isEmpty() || tb.isEmpty()) return 0
+        val inter = ta.count { it in tb }
+        val union = ta.size + tb.count { it !in ta }
+        val score = inter * 100 / union
+        fun nums(v: List<String>) = v.filter { it.length <= 2 && it.all(Char::isDigit) }
+        return if (nums(ta) != nums(tb)) score / 2 else score
+    }
+
+    @JvmStatic
     external fun formatCountdown(seconds: Long): String?
 
     @JvmStatic

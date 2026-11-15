@@ -93,7 +93,6 @@ import androidx.media3.ui.PlayerView
 import com.biaruuu.kiro.R
 import com.biaruuu.kiro.data.stream.StreamRepository
 import com.biaruuu.kiro.data.stream.StreamRequest
-import com.biaruuu.kiro.data.stream.StreamSettings
 import com.biaruuu.kiro.data.stream.StreamSource
 import com.biaruuu.kiro.ui.detail.DetailViewModel
 import com.biaruuu.kiro.ui.detail.releasedEpisodes
@@ -105,9 +104,9 @@ private val PanelBackground = Color(0xFF161616)
 private val TrackGrey = Color(0xFF5C5C5E)
 private val MutedText = Color(0xFF8E8E93)
 
-private const val NO_SOURCE = "No streaming source is set up yet"
+private const val NO_SOURCE = "This episode isn't available right now"
 
-private enum class Panel { Menu, Tracks, Episodes, Speed, Sources, SubStyle }
+private enum class Panel { Menu, Tracks, Episodes, Speed, Quality }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -178,24 +177,11 @@ fun PlayerScreen(
     var resolving by remember { mutableStateOf(true) }
     var userSubs by remember { mutableStateOf<List<Pair<Uri, String>>>(emptyList()) }
     var pendingSeek by remember { mutableLongStateOf(0L) }
-    var subStyle by remember { mutableStateOf(SubtitleStyleStore.load(context)) }
+    val subStyle = remember { SubtitleStyle() } // fixed default look, not editable
     var playerView by remember { mutableStateOf<PlayerView?>(null) }
-    var showSourceDialog by remember { mutableStateOf(false) }
+    var quality by remember { mutableIntStateOf(0) } // 0 = Auto, otherwise a video height
     val latestSources by rememberUpdatedState(sources)
     val latestIndex by rememberUpdatedState(sourceIndex)
-
-    val pickSubtitle = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            val name = uri.lastPathSegment.orEmpty().lowercase()
-            val mime = when {
-                name.endsWith(".vtt") -> MimeTypes.TEXT_VTT
-                name.endsWith(".ass") || name.endsWith(".ssa") -> MimeTypes.TEXT_SSA
-                else -> MimeTypes.APPLICATION_SUBRIP
-            }
-            pendingSeek = exo.currentPosition
-            userSubs = userSubs + (uri to mime)
-        }
-    }
 
     fun playEpisode(number: Int) {
         current = number
@@ -218,6 +204,8 @@ fun PlayerScreen(
             ui.base?.titleEnglish,
             ui.base?.titleRomaji,
             ui.base?.seasonYear ?: 0,
+            ui.detail?.malId ?: 0,
+            ui.base?.episodes ?: 0,
         )
         val found = try {
             StreamRepository.resolve(context, request)
@@ -253,6 +241,8 @@ fun PlayerScreen(
         }
         error = null
         buffering = true
+        quality = 0
+        applyQuality(exo, 0)
         exo.setMediaItem(
             MediaItem.Builder().setUri(source.url).setSubtitleConfigurations(subtitles).build(),
             pendingSeek,
@@ -396,29 +386,7 @@ fun PlayerScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(message, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                if (message == NO_SOURCE) {
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        "Add the address of a video source you have the right to use.",
-                        color = MutedText,
-                        fontSize = 12.sp,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        "Add my source",
-                        color = Color.White,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(KiroPurple)
-                            .clickable { showSourceDialog = true }
-                            .padding(horizontal = 24.dp, vertical = 8.dp),
-                    )
-                    Spacer(Modifier.height(10.dp))
-                } else {
-                    Spacer(Modifier.height(12.dp))
-                }
+                Spacer(Modifier.height(12.dp))
                 Text(
                     "Retry",
                     color = Color.White,
@@ -497,8 +465,7 @@ fun PlayerScreen(
             SidePanel(
                 title = when (open) {
                     Panel.Menu -> "Settings"
-                    Panel.Sources -> "Source"
-                    Panel.SubStyle -> "Subtitle style"
+                    Panel.Quality -> "Quality"
                     Panel.Tracks -> "Audio & Subtitles"
                     Panel.Episodes -> "Episodes"
                     Panel.Speed -> "Playback speed"
@@ -507,51 +474,29 @@ fun PlayerScreen(
             ) {
                 when (open) {
                     Panel.Menu -> LazyColumn {
-                        val activeSource = sources.getOrNull(sourceIndex)
                         item {
-                            MenuRow(
-                                "Source",
-                                activeSource?.let { "${it.providerName} · ${it.qualityLabel}" } ?: "Finding sources…",
-                            ) { panel = Panel.Sources }
-                        }
-                        item {
-                            MenuRow(
-                                "Subtitle style",
-                                "${subStyle.font} · ${SubtitleOptions.sizes[subStyle.size].first} · ${SubtitleOptions.backgrounds[subStyle.background].first}",
-                            ) { panel = Panel.SubStyle }
-                        }
-                        item {
-                            MenuRow("Load subtitle file", ".srt · .vtt · .ass") {
-                                panel = null
-                                pickSubtitle.launch(arrayOf("*/*"))
-                            }
+                            MenuRow("Quality", if (quality == 0) "Auto" else "${quality}p") { panel = Panel.Quality }
                         }
                         item { MenuRow("Playback speed", if (speed == 1f) "Normal" else "${speed}x") { panel = Panel.Speed } }
                     }
-                    Panel.Sources -> Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                        if (resolving) {
-                            Text("Finding the best source…", color = MutedText, fontSize = 13.sp, modifier = Modifier.padding(20.dp))
-                        }
-                        sources.forEachIndexed { i, source ->
-                            PanelRow(
-                                label = "${source.providerName}" + (if (source.audio.isNotEmpty()) " · ${source.audio.replaceFirstChar { it.uppercase() }}" else "") + " · ${source.qualityLabel}" +
-                                    (if (source.isHls) " · HLS" else "") +
-                                    (if (i == 0) " · best" else "") +
-                                    (if (source.latencyMs >= 0) " · ${source.latencyMs} ms" else ""),
-                                selected = i == sourceIndex,
-                            ) {
-                                if (i != sourceIndex) {
-                                    pendingSeek = exo.currentPosition
-                                    sourceIndex = i
+                    Panel.Quality -> {
+                        val heights = remember(tracks) { videoHeights(tracks) }
+                        LazyColumn {
+                            item {
+                                PanelRow(label = "Auto", selected = quality == 0) {
+                                    quality = 0
+                                    applyQuality(exo, 0)
+                                    panel = null
                                 }
-                                panel = null
+                            }
+                            items(heights) { h ->
+                                PanelRow(label = "${h}p", selected = quality == h) {
+                                    quality = h
+                                    applyQuality(exo, h)
+                                    panel = null
+                                }
                             }
                         }
-                        MenuRow("Add my own source", "your server's address") { showSourceDialog = true }
-                    }
-                    Panel.SubStyle -> SubtitleStylePanel(subStyle) { new ->
-                        subStyle = new
-                        SubtitleStyleStore.save(context, new)
                     }
                     Panel.Tracks -> TrackList(exo, tracks) { panel = null }
                     Panel.Episodes -> LazyColumn {
@@ -581,46 +526,25 @@ fun PlayerScreen(
             }
         }
     }
+}
 
-    if (showSourceDialog) {
-        var text by remember { mutableStateOf(StreamSettings.getRaw(context)) }
-        AlertDialog(
-            onDismissRequest = { showSourceDialog = false },
-            containerColor = PanelBackground,
-            title = { Text("My sources", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
-            text = {
-                Column {
-                    Text(
-                        "One address per line, for video you have the right to watch (your own server, a licensed " +
-                            "service). Use {id} for the AniList id and {episode} for the episode number, e.g. " +
-                            "https://my-server.example/{id}/{episode}.m3u8",
-                        color = MutedText,
-                        fontSize = 12.sp,
-                        lineHeight = 17.sp,
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(
-                        value = text,
-                        onValueChange = { text = it },
-                        textStyle = TextStyle(color = Color.White, fontSize = 13.sp),
-                        minLines = 3,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    StreamSettings.setRaw(context, text)
-                    showSourceDialog = false
-                    panel = null
-                    retry++
-                }) { Text("Save", color = KiroPurple, fontWeight = FontWeight.Bold) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showSourceDialog = false }) { Text("Cancel", color = Color.White) }
-            },
-        )
+/** Distinct video heights the stream offers, tallest first. */
+private fun videoHeights(tracks: Tracks): List<Int> {
+    val out = sortedSetOf<Int>()
+    tracks.groups.filter { it.type == C.TRACK_TYPE_VIDEO }.forEach { g ->
+        for (i in 0 until g.length) {
+            val h = g.getTrackFormat(i).height
+            if (g.isTrackSupported(i) && h > 0) out += h
+        }
     }
+    return out.toList().sortedDescending()
+}
+
+/** 0 = Auto (adapts to the connection); otherwise the best track at or below that height. */
+private fun applyQuality(exo: ExoPlayer, height: Int) {
+    val p = exo.trackSelectionParameters.buildUpon()
+    if (height == 0) p.clearVideoSizeConstraints() else p.setMaxVideoSize(Int.MAX_VALUE, height)
+    exo.trackSelectionParameters = p.build()
 }
 
 @Composable

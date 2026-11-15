@@ -4,6 +4,18 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.9.1] - 2026-11-15
+
+Correct season every time, plus a simpler player menu.
+
+### Fixed
+- **Season 2 played season 1 episode 1.** Some sources find a show by searching its title and could land on the first season. Each source is now checked against the exact season before it is used: the name of the show it found must be the same season (scored in Rust, with unit tests) and it must really have the requested episode, otherwise it is skipped. MegaPlay is now asked by the MAL id of that exact season, so it can never pick another one.
+
+### Changed
+- **Quality picker** in the player menu: Auto (adapts to your network) or any resolution the stream offers (for example 1080p, 720p, 480p).
+- Servers are chosen fully automatically (best quality, fastest) and failover on its own. Server and provider names are no longer shown anywhere.
+- Subtitles now always use the default Kiro style; the subtitle style editor, subtitle file loader and "My sources" are removed from the player.
+
 ## [1.9.0] - 2026-11-15
 
 Real streaming through the Anivault API, with the best server picked automatically.

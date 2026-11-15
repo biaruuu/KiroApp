@@ -169,6 +169,58 @@ pub fn title_similarity(a: &str, b: &str) -> i32 {
     jaccard.max(contained) as i32
 }
 
+/// Words that carry no identity for a season match.
+fn is_filler(t: &str) -> bool {
+    matches!(t, "season" | "part" | "cour" | "the" | "no" | "wa" | "ga" | "tv" | "anime" | "dub" | "sub" | "s")
+}
+
+/// "2nd" -> "2", "ii" stays; long digit runs (site ids) are dropped.
+fn season_token(t: &str) -> Option<String> {
+    let t = t.trim();
+    if t.is_empty() || is_filler(t) {
+        return None;
+    }
+    let digits: String = t.chars().take_while(|c| c.is_ascii_digit()).collect();
+    let rest = &t[digits.len()..];
+    if !digits.is_empty() && matches!(rest, "" | "st" | "nd" | "rd" | "th") {
+        return if digits.len() > 2 && digits.len() != 4 { None } else { Some(digits) };
+    }
+    Some(t.to_string())
+}
+
+/// 0-100: do these two titles name the SAME season? Unlike `title_similarity` there is no
+/// "one contains the other" boost, so "Show" never matches "Show: Second Arc" (that is how a
+/// season 2 request ended up playing season 1). Extra words on either side lower the score.
+pub fn season_match(a: &str, b: &str) -> i32 {
+    let norm = |s: &str| -> Vec<String> {
+        let mut v: Vec<String> = s
+            .to_lowercase()
+            .split(|c: char| !c.is_alphanumeric())
+            .filter_map(season_token)
+            .collect();
+        v.sort();
+        v.dedup();
+        v
+    };
+    let ta = norm(a);
+    let tb = norm(b);
+    if ta.is_empty() || tb.is_empty() {
+        return 0;
+    }
+    let inter = ta.iter().filter(|t| tb.contains(t)).count();
+    let union = ta.len() + tb.iter().filter(|t| !ta.contains(t)).count();
+    let score = (inter * 100 / union) as i32;
+    // A season number on one side only ("Show 2" vs "Show") means a different season.
+    let nums = |v: &Vec<String>| -> Vec<String> {
+        v.iter().filter(|t| t.len() <= 2 && t.chars().all(|c| c.is_ascii_digit())).cloned().collect()
+    };
+    if nums(&ta) != nums(&tb) {
+        score / 2
+    } else {
+        score
+    }
+}
+
 fn to_jstring(env: &mut JNIEnv, value: &str) -> jstring {
     match env.new_string(value) {
         Ok(s) => s.into_raw(),
@@ -226,6 +278,24 @@ pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_titleSimilarity<'lo
 }
 
 #[no_mangle]
+pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_seasonMatchNative<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    a: JString<'local>,
+    b: JString<'local>,
+) -> jint {
+    let a: String = match env.get_string(&a) {
+        Ok(s) => s.into(),
+        Err(_) => return -1,
+    };
+    let b: String = match env.get_string(&b) {
+        Ok(s) => s.into(),
+        Err(_) => return -1,
+    };
+    season_match(&a, &b)
+}
+
+#[no_mangle]
 pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_formatCountdown<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
@@ -259,6 +329,15 @@ pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_rankStreamsNative<'
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn season_match_tells_seasons_apart() {
+        assert!(season_match("Jujutsu Kaisen Season 2", "jujutsu-kaisen-2nd-season-18413") >= 90);
+        assert!(season_match("Jujutsu Kaisen", "jujutsu-kaisen-2nd-season-18413") < 50);
+        assert!(season_match("Jujutsu Kaisen", "jujutsu-kaisen-18413") >= 90);
+        assert!(season_match("Demon Slayer: Entertainment District Arc", "demon-slayer-kimetsu-no-yaiba-1234") < 50);
+        assert_eq!(season_match("", "x"), 0);
+    }
 
     #[test]
     fn strips_tags_and_entities() {

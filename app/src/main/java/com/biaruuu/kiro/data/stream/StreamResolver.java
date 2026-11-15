@@ -61,7 +61,6 @@ public final class StreamResolver {
         // 1. All providers at once.
         List<StreamProvider> providers = new ArrayList<>();
         providers.add(new AnivaultProvider());
-        providers.add(new CustomProvider(context));
 
         List<Callable<List<StreamSource>>> tasks = new ArrayList<>();
         for (StreamProvider p : providers) {
