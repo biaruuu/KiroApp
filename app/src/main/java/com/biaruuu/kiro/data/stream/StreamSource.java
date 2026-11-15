@@ -15,6 +15,7 @@ public final class StreamSource {
     private final boolean hls;
     private final List<SubtitleTrack> subtitles;
     private final int latencyMs;
+    private final String audio;
 
     public StreamSource(
             @NonNull String providerName,
@@ -22,11 +23,23 @@ public final class StreamSource {
             int height,
             boolean hls,
             @NonNull List<SubtitleTrack> subtitles) {
-        this(providerName, url, height, hls, subtitles, -1);
+        this(providerName, url, height, hls, subtitles, "", -1);
+    }
+
+    public StreamSource(
+            @NonNull String providerName,
+            @NonNull String url,
+            int height,
+            boolean hls,
+            @NonNull List<SubtitleTrack> subtitles,
+            @NonNull String audio) {
+        this(providerName, url, height, hls, subtitles, audio, -1);
     }
 
     private StreamSource(
-            String providerName, String url, int height, boolean hls, List<SubtitleTrack> subtitles, int latencyMs) {
+            String providerName, String url, int height, boolean hls, List<SubtitleTrack> subtitles,
+            String audio, int latencyMs) {
+        this.audio = audio;
         this.providerName = providerName;
         this.url = url;
         this.height = height;
@@ -37,7 +50,7 @@ public final class StreamSource {
 
     @NonNull
     public StreamSource withLatency(int ms) {
-        return new StreamSource(providerName, url, height, hls, subtitles, ms);
+        return new StreamSource(providerName, url, height, hls, subtitles, audio, ms);
     }
 
     @NonNull
@@ -67,6 +80,16 @@ public final class StreamSource {
     /** Measured time to the first byte, in ms; -1 if not measured. */
     public int getLatencyMs() {
         return latencyMs;
+    }
+
+    /** "sub", "dub", or empty when the provider doesn't say. */
+    @NonNull
+    public String getAudio() {
+        return audio;
+    }
+
+    public boolean isDub() {
+        return "dub".equals(audio);
     }
 
     @NonNull

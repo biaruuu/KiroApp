@@ -29,8 +29,8 @@ import okhttp3.Response;
 public final class StreamResolver {
 
     private static final ExecutorService POOL = Executors.newCachedThreadPool();
-    private static final int PROVIDER_TIMEOUT_S = 8;
-    private static final int PROBE_TIMEOUT_S = 5;
+    private static final int PROVIDER_TIMEOUT_S = 32;
+    private static final int PROBE_TIMEOUT_S = 8;
 
     private StreamResolver() {
     }
@@ -60,6 +60,7 @@ public final class StreamResolver {
     private static List<StreamSource> run(Context context, StreamRequest request) throws Exception {
         // 1. All providers at once.
         List<StreamProvider> providers = new ArrayList<>();
+        providers.add(new AnivaultProvider());
         providers.add(new CustomProvider(context));
 
         List<Callable<List<StreamSource>>> tasks = new ArrayList<>();
@@ -102,12 +103,16 @@ public final class StreamResolver {
             hls[i] = alive.get(i).isHls();
         }
         int[] order = NativeCore.rankStreams(heights, latencies, hls);
+        // Subtitled first (the default), dubbed after; best-first order is kept inside each group.
         List<StreamSource> ranked = new ArrayList<>();
+        List<StreamSource> dubs = new ArrayList<>();
         for (int index : order) {
             if (index >= 0 && index < alive.size()) {
-                ranked.add(alive.get(index));
+                StreamSource s = alive.get(index);
+                (s.isDub() ? dubs : ranked).add(s);
             }
         }
+        ranked.addAll(dubs);
         return ranked;
     }
 
@@ -126,12 +131,20 @@ public final class StreamResolver {
         long start = System.nanoTime();
         try (Response r = client.newCall(request).execute()) {
             if (!r.isSuccessful()) {
-                return null;
+                return trusted(source);
             }
             int ms = (int) ((System.nanoTime() - start) / 1_000_000L);
             return source.withLatency(ms);
         } catch (Exception e) {
-            return null;
+            return trusted(source);
         }
+    }
+
+    /**
+     * Addresses from the Anivault API were already checked by the provider (it read the playlist),
+     * so a slow probe only ranks them last instead of dropping them. Other addresses are dropped.
+     */
+    private static StreamSource trusted(StreamSource source) {
+        return source.getProviderName().startsWith("Anivault") ? source.withLatency(4000) : null;
     }
 }

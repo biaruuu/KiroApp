@@ -4,6 +4,20 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.9.0] - 2026-11-15
+
+Real streaming through the Anivault API, with the best server picked automatically.
+
+### Added
+- **Anivault provider** (`kiroapp-api.onrender.com`). Each episode asks Anikoto, MegaPlay, DesiDub and AnimeHeaven at the same time, for both sub and dub. Playback starts as soon as the first source answers (a short grace period lets the others join), so one slow server never holds you up.
+- **Best quality, fastest server, automatically.** The sharpest resolution is read from each HLS playlist, every address is timed, and the ranking (Rust) puts the best first. Subtitled sources come before dubbed ones. If a server fails, the player **fails over to the next** one by itself.
+- **Subtitles from the API** are loaded with the stream (English first) and use your subtitle style.
+- **Source list** in the player menu now shows server, Sub/Dub, quality and speed, and lets you pick any of them.
+- The streaming server is **woken at app start**, so the first episode doesn't wait for a cold start.
+
+### Changed
+- Addresses from Anivault are never dropped for a slow speed test; they are ranked last instead.
+
 ## [1.8.1] - 2026-11-15
 
 Subtitle style revamp and no more sample video.

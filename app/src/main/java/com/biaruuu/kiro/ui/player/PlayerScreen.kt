@@ -534,7 +534,7 @@ fun PlayerScreen(
                         }
                         sources.forEachIndexed { i, source ->
                             PanelRow(
-                                label = "${source.providerName} · ${source.qualityLabel}" +
+                                label = "${source.providerName}" + (if (source.audio.isNotEmpty()) " · ${source.audio.replaceFirstChar { it.uppercase() }}" else "") + " · ${source.qualityLabel}" +
                                     (if (source.isHls) " · HLS" else "") +
                                     (if (i == 0) " · best" else "") +
                                     (if (source.latencyMs >= 0) " · ${source.latencyMs} ms" else ""),
