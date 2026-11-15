@@ -40,6 +40,7 @@ import com.biaruuu.kiro.ui.components.NavDestination
 import com.biaruuu.kiro.ui.detail.DetailScreen
 import com.biaruuu.kiro.ui.detail.MoreDetailScreen
 import com.biaruuu.kiro.ui.home.HomeScreen
+import com.biaruuu.kiro.ui.library.LibraryScreen
 import com.biaruuu.kiro.ui.player.PlayerScreen
 import com.biaruuu.kiro.ui.search.SearchScreen
 import com.biaruuu.kiro.ui.theme.KiroBackground
@@ -176,7 +177,12 @@ private fun KiroScaffold() {
                 )
 
                 TAB_PEEK -> PlaceholderScreen("Peek", contentModifier)
-                TAB_LIBRARY -> PlaceholderScreen("Library", contentModifier)
+                TAB_LIBRARY -> LibraryScreen(
+                    onOpenAnime = { backStack.add("d:$it") },
+                    onContinue = { id, ep -> backStack.add("p:$id:$ep") },
+                    refreshKey = backStack.size,
+                    modifier = contentModifier,
+                )
                 TAB_ME -> PlaceholderScreen("Me", contentModifier)
             }
         }

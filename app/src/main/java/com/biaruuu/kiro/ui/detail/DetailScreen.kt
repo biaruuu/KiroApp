@@ -501,7 +501,7 @@ private fun DetailContent(
             current = rating,
             onSelect = {
                 rating = it
-                MyListStore.setRating(context, anime.id, it)
+                MyListStore.setRating(context, anime, it)
             },
             onDismiss = { showRating = false },
         )

@@ -4,6 +4,20 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.14.0] - 2026-11-16
+
+The Library tab.
+
+### Added
+- **Library** with four tabs: Recently Watched, My List, Download and Rated.
+- **Recently Watched**: your episodes with progress bars; tap to resume, the (i) button opens the anime's details.
+- **My List** and **Rated** posters grid with sorting (Recently added, Recently updated, Highest average rating).
+- Long-press a title in Recently Watched, My List or Rated to remove it.
+- Ratings now remember the title and poster so they can appear in Rated.
+
+### Notes
+- Download shows its empty state only; offline downloads are not available yet.
+
 ## [1.13.1] - 2026-11-15
 
 Subtitles back to how they were.
