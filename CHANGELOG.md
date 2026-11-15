@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.9.6] - 2026-11-15
+
+### Changed
+- **Audio & Subtitles** is now a dark rounded card with two columns (Audio and Subtitles, with "Off"), check marks, a close X and **Cancel / Apply** buttons. Your picks only take effect when you press Apply.
+- **The three-dot menu** is now pure black with compact rows (label, value, chevron) and just a close X, like the reference. Quality, Subtitle style and Playback speed open as black panels too.
+
 ## [1.9.5] - 2026-11-15
 
 ### Changed

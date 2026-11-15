@@ -21,8 +21,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.draw.rotate
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -467,9 +470,9 @@ fun PlayerScreen(
 
         // ---- Side panels ----
         panel?.let { open ->
-            SidePanel(
+            if (open == Panel.Tracks) TracksDialog(exo, tracks) { panel = null } else SidePanel(
                 title = when (open) {
-                    Panel.Menu -> "Settings"
+                    Panel.Menu -> ""
                     Panel.Quality -> "Quality"
                     Panel.SubStyle -> "Subtitle style"
                     Panel.Tracks -> "Audio & Subtitles"
@@ -514,7 +517,7 @@ fun PlayerScreen(
                         subStyle = new
                         SubtitleStyleStore.save(context, new)
                     }
-                    Panel.Tracks -> TrackList(exo, tracks) { panel = null }
+                    Panel.Tracks -> Unit
                     Panel.Episodes -> LazyColumn {
                         items(episodes, key = { it.number }) { ep ->
                             PanelRow(
@@ -784,7 +787,7 @@ private fun SidePanel(title: String, onClose: () -> Unit, content: @Composable (
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.5f))
+            .background(Color.Black.copy(alpha = 0.7f))
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClose),
     ) {
         Column(
@@ -792,7 +795,7 @@ private fun SidePanel(title: String, onClose: () -> Unit, content: @Composable (
                 .align(Alignment.CenterEnd)
                 .fillMaxHeight()
                 .width(340.dp)
-                .background(PanelBackground)
+                .background(Color.Black)
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
                 .padding(top = 12.dp),
         ) {
@@ -801,6 +804,7 @@ private fun SidePanel(title: String, onClose: () -> Unit, content: @Composable (
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                if (title.isEmpty()) Spacer(Modifier.weight(1f))
                 Icon(
                     painter = painterResource(R.drawable.fluent_dismiss_regular),
                     contentDescription = "Close",
@@ -840,54 +844,156 @@ private fun PanelRow(label: String, selected: Boolean, onClick: () -> Unit) {
     }
 }
 
-/** Audio tracks and subtitles the video offers, with an "Off" choice for subtitles. */
+/**
+ * Audio & Subtitles as a dark rounded card with two columns. Picks are held until Apply;
+ * Cancel (or the X) closes without changing anything.
+ */
 @Composable
-private fun TrackList(exo: ExoPlayer, tracks: Tracks, onDone: () -> Unit) {
-    data class Choice(val label: String, val type: Int, val group: Tracks.Group?, val index: Int, val selected: Boolean)
+private fun TracksDialog(exo: ExoPlayer, tracks: Tracks, onClose: () -> Unit) {
+    class Choice(val label: String, val group: Tracks.Group?, val index: Int, val selected: Boolean)
 
-    val choices = remember(tracks) {
+    fun build(type: Int, withOff: Boolean): List<Choice> {
         val out = mutableListOf<Choice>()
-        for (type in listOf(C.TRACK_TYPE_AUDIO, C.TRACK_TYPE_TEXT)) {
-            val groups = tracks.groups.filter { it.type == type }
-            if (groups.isEmpty()) continue
-            if (type == C.TRACK_TYPE_TEXT) {
-                out += Choice("Subtitles off", type, null, -1, groups.none { it.isSelected })
-            }
-            groups.forEach { group ->
-                for (i in 0 until group.length) {
-                    if (!group.isTrackSupported(i)) continue
-                    val format = group.getTrackFormat(i)
-                    val name = format.label
-                        ?: format.language?.let { Locale.forLanguageTag(it).displayLanguage }?.takeIf { it.isNotBlank() }
-                        ?: (if (type == C.TRACK_TYPE_AUDIO) "Audio" else "Subtitles") + " ${out.size + 1}"
-                    out += Choice(name, type, group, i, group.isTrackSelected(i))
-                }
+        val groups = tracks.groups.filter { it.type == type }
+        if (withOff) out += Choice("Off", null, -1, groups.none { it.isSelected })
+        val fallback = if (type == C.TRACK_TYPE_AUDIO) "Audio" else "Subtitles"
+        var n = 0
+        groups.forEach { group ->
+            for (i in 0 until group.length) {
+                if (!group.isTrackSupported(i)) continue
+                n++
+                val format = group.getTrackFormat(i)
+                val name = format.label
+                    ?: format.language?.let { Locale.forLanguageTag(it).displayLanguage }?.takeIf { it.isNotBlank() }
+                    ?: "$fallback $n"
+                out += Choice(name, group, i, group.isTrackSelected(i))
             }
         }
-        out.toList()
+        return out
     }
 
-    if (choices.isEmpty()) {
-        Text(
-            "This video has no other audio or subtitle tracks.",
-            color = MutedText,
-            fontSize = 13.sp,
-            modifier = Modifier.padding(20.dp),
-        )
-        return
-    }
-    LazyColumn {
-        items(choices) { c ->
-            PanelRow(label = c.label, selected = c.selected) {
-                val params = exo.trackSelectionParameters.buildUpon()
-                if (c.group == null) {
-                    params.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
-                } else {
-                    params.setTrackTypeDisabled(c.type, false)
-                    params.setOverrideForType(TrackSelectionOverride(c.group.mediaTrackGroup, c.index))
+    val audio = remember(tracks) { build(C.TRACK_TYPE_AUDIO, false) }
+    val subs = remember(tracks) { build(C.TRACK_TYPE_TEXT, true) }
+    var pickAudio by remember(tracks) { mutableIntStateOf(audio.indexOfFirst { it.selected }.coerceAtLeast(0)) }
+    var pickSub by remember(tracks) { mutableIntStateOf(subs.indexOfFirst { it.selected }.coerceAtLeast(0)) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.7f))
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClose),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.86f)
+                .widthIn(max = 780.dp)
+                .fillMaxHeight(0.88f)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFF141414))
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { },
+        ) {
+            Column(modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp, vertical = 20.dp)) {
+                Row(modifier = Modifier.weight(1f)) {
+                    TrackColumn("Audio", audio.map { it.label }, pickAudio, { pickAudio = it }, Modifier.weight(1f))
+                    Spacer(Modifier.width(24.dp))
+                    TrackColumn("Subtitles", subs.map { it.label }, pickSub, { pickSub = it }, Modifier.weight(1f))
+                    Spacer(Modifier.width(28.dp))
                 }
-                exo.trackSelectionParameters = params.build()
-                onDone()
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "Cancel",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .border(1.dp, Color(0xFF5C5C5E), RoundedCornerShape(6.dp))
+                            .clickable(onClick = onClose)
+                            .padding(horizontal = 22.dp, vertical = 10.dp),
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        "Apply",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(KiroPurple)
+                            .clickable {
+                                val params = exo.trackSelectionParameters.buildUpon()
+                                audio.getOrNull(pickAudio)?.group?.let { g ->
+                                    params.setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
+                                    params.setOverrideForType(TrackSelectionOverride(g.mediaTrackGroup, audio[pickAudio].index))
+                                }
+                                subs.getOrNull(pickSub)?.let { c ->
+                                    if (c.group == null) {
+                                        params.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+                                    } else {
+                                        params.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                                        params.setOverrideForType(TrackSelectionOverride(c.group.mediaTrackGroup, c.index))
+                                    }
+                                }
+                                exo.trackSelectionParameters = params.build()
+                                onClose()
+                            }
+                            .padding(horizontal = 26.dp, vertical = 10.dp),
+                    )
+                }
+            }
+            Icon(
+                painter = painterResource(R.drawable.fluent_dismiss_regular),
+                contentDescription = "Close",
+                tint = Color.White,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onClose),
+            )
+        }
+    }
+}
+
+@Composable
+private fun TrackColumn(title: String, labels: List<String>, picked: Int, onPick: (Int) -> Unit, modifier: Modifier) {
+    Column(modifier = modifier) {
+        Text(title, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 10.dp))
+        if (labels.isEmpty()) {
+            Text("None available", color = Color(0xFF8E8E93), fontSize = 14.sp, modifier = Modifier.padding(start = 40.dp, top = 8.dp))
+        }
+        LazyColumn {
+            items(labels.size) { i ->
+                val selected = i == picked
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(46.dp).clickable { onPick(i) },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(modifier = Modifier.width(40.dp)) {
+                        if (selected) {
+                            Icon(
+                                painter = painterResource(R.drawable.fluent_checkmark_regular),
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp),
+                            )
+                        }
+                    }
+                    Text(
+                        labels[i],
+                        color = if (selected) Color.White else Color(0xFFB3B3B3),
+                        fontSize = 16.sp,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
@@ -896,11 +1002,17 @@ private fun TrackList(exo: ExoPlayer, tracks: Tracks, onDone: () -> Unit) {
 @Composable
 private fun MenuRow(label: String, value: String, onClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(56.dp).clickable(onClick = onClick).padding(horizontal = 20.dp),
+        modifier = Modifier.fillMaxWidth().height(52.dp).clickable(onClick = onClick).padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
-        Text(value, color = MutedText, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+        Text(value, color = Color(0xFFB3B3B3), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 150.dp))
+        Icon(
+            painter = painterResource(R.drawable.fluent_chevron_left_regular),
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.padding(start = 6.dp).size(16.dp).rotate(180f),
+        )
     }
 }
 
