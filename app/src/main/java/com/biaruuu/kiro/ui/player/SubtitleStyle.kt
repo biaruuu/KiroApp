@@ -26,7 +26,7 @@ data class SubtitleStyle(
 )
 
 object SubtitleOptions {
-    /** Netflix captions use Trebuchet MS, which Android doesn't ship; Open Sans is the closest bundled match. */
+    /** Netflix-style captions: the real Trebuchet MS file is bundled. */
     const val DEFAULT_FONT = "Trebuchet MS"
     const val CUSTOM = "Custom"
 
@@ -34,8 +34,8 @@ object SubtitleOptions {
     private data class Face(val asset: String?, val weight: Int)
 
     private val faces = linkedMapOf(
-        DEFAULT_FONT to Face("fonts/opensans.ttf", 600),
-        "Roboto (System)" to Face(null, 0),
+        DEFAULT_FONT to Face("fonts/trebuchet.ttf", 0),
+        "Roboto" to Face(null, 0),
         "Inter" to Face("fonts/inter.ttf", 600),
         "Open Sans" to Face("fonts/opensans.ttf", 600),
         "Poppins" to Face("fonts/poppins_medium.ttf", 0),
@@ -50,6 +50,9 @@ object SubtitleOptions {
 
     /** Same four sizes as the reference: Small, Medium, Large, Extra Large (14/18/24/30 on a base of 18). */
     val sizes = listOf("Small" to 14f, "Medium" to 18f, "Large" to 24f, "Extra Large" to 30f)
+
+    /** The reference draws captions at 1.1x the chosen size, in dp. */
+    const val TEXT_SCALE = 1.1f
     val backgrounds = listOf(
         "Transparent" to Color.TRANSPARENT,
         "Semi-Transparent" to Color.argb(0x88, 0, 0, 0),
@@ -92,11 +95,11 @@ object SubtitleOptions {
     fun typeface(context: Context, font: String): Typeface = cache.getOrPut(font) {
         val bold = if (Build.VERSION.SDK_INT >= 28) 600 else 0
         when (font) {
-            "Roboto (System)" ->
+            "Roboto" ->
                 if (bold > 0) Typeface.create(Typeface.SANS_SERIF, bold, false) else Typeface.SANS_SERIF
             CUSTOM -> customFile(context).takeIf { it.exists() }?.let {
                 try {
-                    Typeface.createFromFile(it)
+                    Typeface.create(Typeface.createFromFile(it), Typeface.BOLD)
                 } catch (_: Exception) {
                     null
                 }
@@ -105,7 +108,9 @@ object SubtitleOptions {
                 try {
                     val builder = Typeface.Builder(context.assets, face.asset!!)
                     if (face.weight > 0) builder.setFontVariationSettings("'wght' ${face.weight}")
-                    builder.build()
+                    val tf = builder.build()
+                    // Static regular files (Trebuchet MS) get the same semi-bold look as the others.
+                    if (font == DEFAULT_FONT && tf != null) Typeface.create(tf, Typeface.BOLD) else tf
                 } catch (_: Exception) {
                     null
                 }
@@ -153,6 +158,12 @@ fun SubtitleView.applyKiroStyle(context: Context, style: SubtitleStyle) {
             SubtitleOptions.typeface(context, style.font),
         ),
     )
-    // 5.33% of the video height is the normal size (Medium).
-    setFractionalTextSize(0.0533f * SubtitleOptions.sizes[style.size].second / 18f)
+    // Same as the reference: size x 1.1 in dp, 24dp from the sides and 20dp above the bottom.
+    setFixedTextSize(
+        android.util.TypedValue.COMPLEX_UNIT_DIP,
+        SubtitleOptions.sizes[style.size].second * SubtitleOptions.TEXT_SCALE,
+    )
+    val d = context.resources.displayMetrics.density
+    setBottomPaddingFraction(0f)
+    setPadding((24 * d).toInt(), 0, (24 * d).toInt(), (20 * d).toInt())
 }

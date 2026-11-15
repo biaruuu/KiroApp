@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.9.5] - 2026-11-15
+
+### Changed
+- **Captions now follow the Nivio style exactly:** white text at 1.1x the chosen size (Small 14, Medium 18, Large 24, Extra Large 30), semi-bold, 24dp from the sides and 20dp above the bottom; Transparent / Semi-Transparent / Solid backgrounds; None / Subtle Shadow / Outline text styles.
+- **Real Trebuchet MS** (your font file) is bundled and is the default caption font, shown in its own typeface in the list.
+- Font list matches the reference: Trebuchet MS, Roboto, Inter, Open Sans, Poppins, Montserrat, Cinzel, Roboto Mono, Comic Neue, and Custom (load your own .ttf / .otf). A custom font gets the same semi-bold look.
+
 ## [1.9.4] - 2026-11-15
 
 ### Changed
