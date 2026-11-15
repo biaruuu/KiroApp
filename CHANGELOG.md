@@ -4,6 +4,15 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.12.0] - 2026-11-15
+
+### Added
+- **FFmpeg native audio decoders** (C/C++ through the NDK, bundled for arm64-v8a, armeabi-v7a and x86_64). When a phone can't decode a stream's audio (AC3, E-AC3, DTS, FLAC, ALAC and others), FFmpeg decodes it in software instead of leaving the video silent. Phone decoders are still tried first, so there is no cost for normal streams.
+
+### Not added (and why)
+- **libass (styled ASS subtitles):** the streaming API only provides WebVTT/SRT subtitles, so there is nothing for libass to render yet.
+- **dav1d (software AV1):** no prebuilt, published build is available for this player version; it would need a separate native build.
+
 ## [1.11.0] - 2026-11-15
 
 Performance release.

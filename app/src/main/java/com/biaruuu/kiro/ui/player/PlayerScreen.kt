@@ -158,7 +158,13 @@ fun PlayerScreen(
     val title = episode?.heading ?: ui.base?.displayTitle.orEmpty()
     val nextEpisode = episodes.firstOrNull { it.number > current }
 
-    val exo = remember { ExoPlayer.Builder(context).build() }
+    val exo = remember {
+        // Phone decoders first; the bundled FFmpeg decoders only step in for audio the phone
+        // can't play (AC3, E-AC3, DTS, FLAC...), so a stream is never silent.
+        val renderers = androidx.media3.exoplayer.DefaultRenderersFactory(context)
+            .setExtensionRendererMode(androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
+        ExoPlayer.Builder(context, renderers).build()
+    }
     // The player listener lives for the whole screen, so it must read the latest values.
     val latestEpisodes by rememberUpdatedState(episodes)
     val latestCurrent by rememberUpdatedState(current)
