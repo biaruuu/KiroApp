@@ -117,6 +117,9 @@ public final class StreamResolver {
 
     /** Time to the first byte. Local files count as instant; unreachable addresses return null. */
     private static StreamSource probe(StreamSource source) throws Exception {
+        if (source.getLatencyMs() >= 0) {
+            return source; // the provider already timed it
+        }
         if (!source.getUrl().startsWith("http")) {
             return source.withLatency(0);
         }

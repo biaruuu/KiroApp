@@ -4,6 +4,16 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.9.2] - 2026-11-15
+
+Videos that wouldn't play, and exact season checks.
+
+### Fixed
+- **"Couldn't play this video".** Found in the Anivault API source: its rate limit (60 requests a minute) also counted every video segment, so playback was blocked within seconds. The API now leaves video/subtitle proxying out of the limit (API change, pushed to its repo; it needs a redeploy on Render).
+- **Faster start.** MegaPlay is now looked up directly by the exact season's id instead of first searching every other site.
+- **Season check no longer rejects good matches.** Each source's episode list carries the MAL id of its season, so it is compared exactly with the season you opened; the name check (Rust) is only the fallback. A source is verified once per episode instead of per audio type.
+- Far fewer requests per episode: stream quality and speed are measured while the stream is fetched, so there is no second speed test.
+
 ## [1.9.1] - 2026-11-15
 
 Correct season every time, plus a simpler player menu.

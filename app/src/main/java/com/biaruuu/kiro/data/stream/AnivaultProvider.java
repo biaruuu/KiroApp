@@ -73,15 +73,34 @@ public final class AnivaultProvider implements StreamProvider {
                 .readTimeout(FIRST_RESULT_WAIT_S, TimeUnit.SECONDS)
                 .build();
 
-        ExecutorCompletionService<StreamSource> done = new ExecutorCompletionService<>(POOL);
-        List<Future<StreamSource>> pending = new ArrayList<>();
+        // One job per source: check it is the right season once, then ask for sub and dub together.
+        ExecutorCompletionService<List<StreamSource>> done = new ExecutorCompletionService<>(POOL);
+        List<Future<List<StreamSource>>> pending = new ArrayList<>();
         for (String source : SOURCES) {
-            for (String audio : AUDIO) {
-                final String s = source;
-                final String a = audio;
-                Callable<StreamSource> job = () -> fetch(client, request, s, a);
-                pending.add(done.submit(job));
-            }
+            final String s = source;
+            Callable<List<StreamSource>> job = () -> {
+                if (!"megaplay".equals(s) && !seasonMatches(client, request, s)) {
+                    return new ArrayList<StreamSource>();
+                }
+                List<Future<StreamSource>> audio = new ArrayList<>();
+                for (String a : AUDIO) {
+                    final String type = a;
+                    audio.add(POOL.submit(() -> fetch(client, request, s, type)));
+                }
+                List<StreamSource> found = new ArrayList<>();
+                for (Future<StreamSource> f : audio) {
+                    try {
+                        StreamSource r = f.get(FIRST_RESULT_WAIT_S, TimeUnit.SECONDS);
+                        if (r != null) {
+                            found.add(r);
+                        }
+                    } catch (Exception ignored) {
+                        // this audio type is not available here
+                    }
+                }
+                return found;
+            };
+            pending.add(done.submit(job));
         }
 
         List<StreamSource> out = new ArrayList<>();
@@ -89,22 +108,17 @@ public final class AnivaultProvider implements StreamProvider {
         int remaining = pending.size();
         try {
             while (remaining > 0) {
-                long wait = out.isEmpty()
-                        ? deadline - System.currentTimeMillis()
-                        : GRACE_MS;
+                long wait = out.isEmpty() ? deadline - System.currentTimeMillis() : GRACE_MS;
                 if (wait <= 0) {
                     break;
                 }
-                Future<StreamSource> f = done.poll(wait, TimeUnit.MILLISECONDS);
+                Future<List<StreamSource>> f = done.poll(wait, TimeUnit.MILLISECONDS);
                 if (f == null) {
                     break; // grace period over, or nothing answered in time
                 }
                 remaining--;
                 try {
-                    StreamSource s = f.get();
-                    if (s != null) {
-                        out.add(s);
-                    }
+                    out.addAll(f.get());
                 } catch (Exception ignored) {
                     // This source failed: skipped.
                 }
@@ -112,7 +126,7 @@ public final class AnivaultProvider implements StreamProvider {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
-            for (Future<StreamSource> f : pending) {
+            for (Future<List<StreamSource>> f : pending) {
                 f.cancel(true);
             }
         }
@@ -125,9 +139,6 @@ public final class AnivaultProvider implements StreamProvider {
         // The title-searching sources are checked against the season first (see seasonMatches).
         boolean byMal = "megaplay".equals(source) && req.getMalId() > 0;
         String idParam = byMal ? "malId=" + req.getMalId() : "anilistId=" + req.getAnimeId();
-        if (!byMal && !"megaplay".equals(source) && !seasonMatches(client, req, source)) {
-            return null;
-        }
         String url = BASE_URL + "/api/watch?source=" + source
                 + "&" + idParam
                 + "&ep=" + req.getEpisode()
@@ -153,18 +164,17 @@ public final class AnivaultProvider implements StreamProvider {
                 return null;
             }
 
-            int height = 0;
-            if (hls) {
-                height = bestHeight(client, stream);
-                if (height < 0) {
-                    return null; // playlist unreachable or not a playlist
-                }
+            int[] probe = hls ? readPlaylist(client, stream) : probeFile(client, stream);
+            if (probe[0] < 0) {
+                return null; // unreachable, or not a playable playlist
             }
+            int height = probe[0];
 
             String server = json.optString("server", "");
             String label = prettySource(source) + (server.isEmpty() || server.equalsIgnoreCase("MegaPlay Direct")
                     ? "" : " " + server);
-            return new StreamSource("Anivault · " + label, stream, height, hls, subtitles(json), audio);
+            return new StreamSource("Anivault · " + label, stream, height, hls, subtitles(json), audio)
+                    .withLatency(probe[1]);
         } catch (Exception e) {
             return null;
         }
@@ -187,6 +197,18 @@ public final class AnivaultProvider implements StreamProvider {
             if (site.isEmpty() || count < req.getEpisode()) {
                 return false;
             }
+            // Anikoto episode ids are "slug::num::ids::MAL id::time": an exact season check.
+            JSONArray eps = json.optJSONArray("episodes");
+            if (req.getMalId() > 0 && eps != null) {
+                for (int i = 0; i < eps.length(); i++) {
+                    JSONObject e = eps.optJSONObject(i);
+                    if (e == null) continue;
+                    String[] parts = e.optString("id", "").split("::");
+                    if (parts.length > 3 && parts[3].matches("\\d+")) {
+                        return Integer.parseInt(parts[3]) == req.getMalId();
+                    }
+                }
+            }
             String[] names = {req.getTitle(), req.getTitleEnglish(), req.getTitleRomaji()};
             int best = 0;
             for (String n : names) {
@@ -200,24 +222,37 @@ public final class AnivaultProvider implements StreamProvider {
         }
     }
 
-    /** Highest RESOLUTION in an HLS master playlist (0 if it is a plain media playlist, -1 if bad). */
-    private static int bestHeight(OkHttpClient client, String playlistUrl) {
+    /** {highest RESOLUTION (0 for a plain media playlist, -1 if bad), time to answer in ms}. */
+    private static int[] readPlaylist(OkHttpClient client, String playlistUrl) {
+        long start = System.nanoTime();
         try (Response r = client.newCall(new Request.Builder().url(playlistUrl).build()).execute()) {
+            int ms = (int) ((System.nanoTime() - start) / 1_000_000L);
             if (!r.isSuccessful() || r.body() == null) {
-                return -1;
+                return new int[]{-1, ms};
             }
             String body = r.body().string();
             if (!body.contains("#EXTM3U")) {
-                return -1;
+                return new int[]{-1, ms};
             }
             int best = 0;
             Matcher m = RESOLUTION.matcher(body);
             while (m.find()) {
                 best = Math.max(best, Integer.parseInt(m.group(1)));
             }
-            return best;
+            return new int[]{best, ms};
         } catch (Exception e) {
-            return -1;
+            return new int[]{-1, 0};
+        }
+    }
+
+    /** {0 if the file answers, -1 if not; time to first byte in ms}. */
+    private static int[] probeFile(OkHttpClient client, String url) {
+        long start = System.nanoTime();
+        try (Response r = client.newCall(new Request.Builder().url(url).header("Range", "bytes=0-1").build()).execute()) {
+            int ms = (int) ((System.nanoTime() - start) / 1_000_000L);
+            return new int[]{r.isSuccessful() ? 0 : -1, ms};
+        } catch (Exception e) {
+            return new int[]{-1, 0};
         }
     }
 
