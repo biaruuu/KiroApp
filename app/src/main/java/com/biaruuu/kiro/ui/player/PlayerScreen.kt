@@ -106,7 +106,7 @@ private val MutedText = Color(0xFF8E8E93)
 
 private const val NO_SOURCE = "This episode isn't available right now"
 
-private enum class Panel { Menu, Tracks, Episodes, Speed, Quality }
+private enum class Panel { Menu, Tracks, Episodes, Speed, Quality, SubStyle }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -177,7 +177,7 @@ fun PlayerScreen(
     var resolving by remember { mutableStateOf(true) }
     var userSubs by remember { mutableStateOf<List<Pair<Uri, String>>>(emptyList()) }
     var pendingSeek by remember { mutableLongStateOf(0L) }
-    val subStyle = remember { SubtitleStyle() } // fixed default look, not editable
+    var subStyle by remember { mutableStateOf(SubtitleStyleStore.load(context)) }
     var playerView by remember { mutableStateOf<PlayerView?>(null) }
     var quality by remember { mutableIntStateOf(0) } // 0 = Auto, otherwise a video height
     val latestSources by rememberUpdatedState(sources)
@@ -471,6 +471,7 @@ fun PlayerScreen(
                 title = when (open) {
                     Panel.Menu -> "Settings"
                     Panel.Quality -> "Quality"
+                    Panel.SubStyle -> "Subtitle style"
                     Panel.Tracks -> "Audio & Subtitles"
                     Panel.Episodes -> "Episodes"
                     Panel.Speed -> "Playback speed"
@@ -481,6 +482,12 @@ fun PlayerScreen(
                     Panel.Menu -> LazyColumn {
                         item {
                             MenuRow("Quality", if (quality == 0) "Auto" else "${quality}p") { panel = Panel.Quality }
+                        }
+                        item {
+                            MenuRow(
+                                "Subtitle style",
+                                "${subStyle.font} · ${SubtitleOptions.sizes[subStyle.size].first} · ${SubtitleOptions.backgrounds[subStyle.background].first}",
+                            ) { panel = Panel.SubStyle }
                         }
                         item { MenuRow("Playback speed", if (speed == 1f) "Normal" else "${speed}x") { panel = Panel.Speed } }
                     }
@@ -502,6 +509,10 @@ fun PlayerScreen(
                                 }
                             }
                         }
+                    }
+                    Panel.SubStyle -> SubtitleStylePanel(subStyle) { new ->
+                        subStyle = new
+                        SubtitleStyleStore.save(context, new)
                     }
                     Panel.Tracks -> TrackList(exo, tracks) { panel = null }
                     Panel.Episodes -> LazyColumn {

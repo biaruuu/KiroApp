@@ -26,14 +26,15 @@ data class SubtitleStyle(
 )
 
 object SubtitleOptions {
-    const val DEFAULT_FONT = "Netflix Sans"
+    /** Netflix captions use Trebuchet MS, which Android doesn't ship; Open Sans is the closest bundled match. */
+    const val DEFAULT_FONT = "Trebuchet MS"
     const val CUSTOM = "Custom"
 
     /** Font name, bundled file (null = not a file) and the weight to use for variable fonts. */
     private data class Face(val asset: String?, val weight: Int)
 
     private val faces = linkedMapOf(
-        DEFAULT_FONT to Face(null, 0),
+        DEFAULT_FONT to Face("fonts/opensans.ttf", 600),
         "Roboto (System)" to Face(null, 0),
         "Inter" to Face("fonts/inter.ttf", 600),
         "Open Sans" to Face("fonts/opensans.ttf", 600),
@@ -91,7 +92,6 @@ object SubtitleOptions {
     fun typeface(context: Context, font: String): Typeface = cache.getOrPut(font) {
         val bold = if (Build.VERSION.SDK_INT >= 28) 600 else 0
         when (font) {
-            DEFAULT_FONT -> ResourcesCompat.getFont(context, R.font.netflix_sans_bold)
             "Roboto (System)" ->
                 if (bold > 0) Typeface.create(Typeface.SANS_SERIF, bold, false) else Typeface.SANS_SERIF
             CUSTOM -> customFile(context).takeIf { it.exists() }?.let {

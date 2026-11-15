@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.9.4] - 2026-11-15
+
+### Changed
+- **Subtitle style is back** in the player menu: font (shown in its own typeface), size, background and text style, saved and applied instantly. Loading your own font file (.ttf / .otf) works again too.
+- **Default subtitle font is now Trebuchet MS-style.** Netflix Sans was the wrong choice (Netflix captions use Trebuchet MS). Android doesn't include Trebuchet MS and it can't be bundled, so the default uses Open Sans, the closest bundled match; load the real Trebuchet MS file with Custom Font for an exact match.
+- Server names and the source list stay hidden; streams are still picked automatically.
+
 ## [1.9.3] - 2026-11-15
 
 ### Fixed
