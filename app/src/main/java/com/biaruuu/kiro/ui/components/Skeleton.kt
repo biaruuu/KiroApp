@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -100,7 +101,7 @@ fun SearchSkeleton(columns: Int, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
         userScrollEnabled = false,
     ) {
-        items((0 until columns * 4).toList()) {
+        gridItems((0 until columns * 4).toList()) {
             Column {
                 SkeletonBox(Modifier.fillMaxWidth().aspectRatio(2f / 3f))
                 Spacer(Modifier.height(8.dp))
