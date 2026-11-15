@@ -4,6 +4,19 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.13.0] - 2026-11-15
+
+Player features from Nivio.
+
+### Added
+- **Audio boost (+10 / +20 dB)** for quiet dialogue, using Android's loudness enhancer on the player's audio. Remembered between videos.
+- **Subtitle delay** in 250 ms steps (−30 s to +30 s), saved per anime. Works on the API's subtitles and on your own files; times are rewritten and the video resumes at the same spot.
+- **Load subtitle file** (.srt / .vtt from the phone) and **Subtitle from web** (paste a link). They appear as "My subtitles" in Audio & Subtitles, follow your caption style and respect the delay.
+- **HDR & Dolby Vision** setting: Auto leaves it to the phone; On adds hardware tunneling and an HDR display mode.
+
+### Not included
+- Nivio's libmpv engine. HDR10 and Dolby Vision play through the phone's own hardware decoder in Media3, so they depend on the stream, the phone and its screen.
+
 ## [1.12.0] - 2026-11-15
 
 ### Added
