@@ -50,6 +50,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.draw.scale
 import com.biaruuu.kiro.BuildConfig
 import com.biaruuu.kiro.R
 import com.biaruuu.kiro.data.AppSettings
@@ -99,11 +101,12 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
 @Composable
 private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = Color.White, fontSize = 17.sp, modifier = Modifier.weight(1f))
+        Text(label, color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
         Switch(
+            modifier = Modifier.scale(0.92f),
             checked = checked,
             onCheckedChange = onChange,
             colors = SwitchDefaults.colors(
@@ -121,11 +124,11 @@ private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
 @Composable
 private fun ChevronRow(label: String, value: String? = null, onClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(56.dp).clickable(onClick = onClick).padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth().height(45.dp).clickable(onClick = onClick).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = Color.White, fontSize = 17.sp, modifier = Modifier.weight(1f))
-        if (value != null) Text(value, color = Muted, fontSize = 16.sp)
+        Text(label, color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
+        if (value != null) Text(value, color = Muted, fontSize = 13.sp)
         Icon(
             painter = painterResource(R.drawable.fluent_chevron_right_regular),
             contentDescription = null,
@@ -139,6 +142,7 @@ private fun ChevronRow(label: String, value: String? = null, onClick: () -> Unit
 private fun PlayPage() {
     val context = LocalContext.current
     var on by remember { mutableStateOf(AppSettings.autoplayPreviews(context)) }
+    Spacer(Modifier.height(2.dp))
     ToggleRow("Autoplay previews", on) {
         on = it
         AppSettings.setAutoplayPreviews(context, it)
@@ -153,6 +157,7 @@ private fun DownloadPage() {
     var quality by remember { mutableStateOf(AppSettings.downloadQuality(context)) }
     var sheet by remember { mutableStateOf(false) }
 
+    Spacer(Modifier.height(10.dp))
     ToggleRow("Wi-Fi only", wifi) {
         wifi = it
         AppSettings.setDownloadWifiOnly(context, it)
@@ -209,10 +214,10 @@ private fun DownloadPage() {
 @Composable
 private fun LanguagePage() {
     Row(
-        modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth().height(45.dp).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("English", color = Color.White, fontSize = 17.sp, modifier = Modifier.weight(1f))
+        Text("English", color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
         Icon(
             painter = painterResource(R.drawable.fluent_checkmark_regular),
             contentDescription = null,
@@ -236,11 +241,11 @@ private fun LicensePage() {
         "Anime data: AniList. Trailers and artwork: TMDB." to "Used under their API terms",
     )
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-        Text("Kiro is built with open-source software:", color = Muted, fontSize = 15.sp)
+        Text("Kiro is built with open-source software:", color = Muted, fontSize = 13.sp)
         Spacer(Modifier.height(16.dp))
         libs.forEach { (name, license) ->
-            Text(name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            Text(license, color = Muted, fontSize = 14.sp)
+            Text(name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(license, color = Muted, fontSize = 12.sp)
             Spacer(Modifier.height(16.dp))
         }
     }
@@ -293,16 +298,16 @@ private fun VersionPage() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text("Kiro Android", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(18.dp))
-        Text("Latest Version ${latest ?: current}", color = Color(0xFFB4B4BA), fontSize = 17.sp)
+        Text("Kiro Android", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(14.dp))
+        Text("Latest Version ${latest ?: current}", color = Color(0xFFB4B4BA), fontSize = 14.sp)
         Spacer(Modifier.height(8.dp))
-        Text("Current Version $current", color = Color(0xFFB4B4BA), fontSize = 17.sp)
-        Spacer(Modifier.height(24.dp))
+        Text("Current Version $current", color = Color(0xFFB4B4BA), fontSize = 14.sp)
+        Spacer(Modifier.height(20.dp))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp)
+                .height(48.dp)
                 .clip(RoundedCornerShape(4.dp))
                 .background(if (canUpdate) KiroPurple else DisabledGray)
                 .clickable(enabled = canUpdate) {
@@ -314,9 +319,8 @@ private fun VersionPage() {
                 },
             contentAlignment = Alignment.Center,
         ) {
-            Text("Update Now", color = if (canUpdate) Color.White else DisabledText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("Update Now", color = if (canUpdate) Color.White else DisabledText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         }
-        Spacer(Modifier.height(80.dp))
     }
 }
 
@@ -339,27 +343,29 @@ private fun AccountPage(onBack: () -> Unit) {
                     modifier = Modifier.size(22.dp),
                 )
                 Spacer(Modifier.size(10.dp))
-                Text("Email", color = Muted, fontSize = 17.sp)
+                Text("Email", color = Muted, fontSize = 12.sp)
             }
             Spacer(Modifier.height(6.dp))
-            Text(s?.email.orEmpty(), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            Box(Modifier.padding(vertical = 24.dp).fillMaxWidth().height(1.dp).background(Hairline))
+            Text(s?.email.orEmpty(), color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(22.dp))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Hairline))
+            Spacer(Modifier.height(12.dp))
             ChevronRowPadless("Logout") { confirmLogout = true }
             message?.let {
                 Spacer(Modifier.height(16.dp))
-                Text(it, color = Color(0xFFFF6B6B), fontSize = 15.sp)
+                Text(it, color = Color(0xFFFF6B6B), fontSize = 13.sp)
             }
         }
         Text(
             "Delete account",
             color = Muted,
-            fontSize = 17.sp,
+            fontSize = 14.sp,
             textDecoration = TextDecoration.Underline,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { confirmDelete = true }
-                .padding(vertical = 20.dp),
+                .padding(vertical = 18.dp),
         )
     }
 
@@ -393,10 +399,10 @@ private fun AccountPage(onBack: () -> Unit) {
 @Composable
 private fun ChevronRowPadless(label: String, onClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(56.dp).clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().height(45.dp).clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+        Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
         Icon(
             painter = painterResource(R.drawable.fluent_chevron_right_regular),
             contentDescription = null,
@@ -408,35 +414,37 @@ private fun ChevronRowPadless(label: String, onClick: () -> Unit) {
 
 @Composable
 private fun ConfirmDialog(text: String, confirm: String, onDismiss: () -> Unit, onConfirm: () -> Unit) {
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
             modifier = Modifier
+                .padding(horizontal = 24.dp)
+                .widthIn(max = 420.dp)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(6.dp))
                 .background(Color(0xFF141414))
                 .padding(24.dp),
         ) {
-            Text(text, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, lineHeight = 28.sp)
-            Spacer(Modifier.height(28.dp))
+            Text(text, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, lineHeight = 22.sp)
+            Spacer(Modifier.height(24.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "Cancel",
                     color = Color.White,
-                    fontSize = 18.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable(onClick = onDismiss).padding(horizontal = 22.dp, vertical = 14.dp),
+                    modifier = Modifier.clickable(onClick = onDismiss).padding(horizontal = 20.dp, vertical = 14.dp),
                 )
                 Spacer(Modifier.size(6.dp))
                 Text(
                     confirm,
                     color = Color.White,
-                    fontSize = 18.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
                         .background(KiroPurple)
                         .clickable(onClick = onConfirm)
-                        .padding(horizontal = 22.dp, vertical = 14.dp),
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
                 )
             }
         }

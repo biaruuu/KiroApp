@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.16.2] - 2026-11-16
+
+### Changed
+- Login, Me and settings screens resized to match Laftel's proportions: smaller text, 48 dp top bars and buttons, tighter rows, and a full-width logout dialog.
+
+### Added
+- The "Verify your email" screen now reminds you to check your spam folder.
+
 ## [1.16.1] - 2026-11-16
 
 ### Fixed

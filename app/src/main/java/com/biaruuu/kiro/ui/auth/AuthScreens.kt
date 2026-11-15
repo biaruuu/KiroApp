@@ -156,30 +156,30 @@ private fun WelcomeScreen(onEmail: () -> Unit) {
             modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Row(modifier = Modifier.fillMaxWidth().height(56.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End) {
+            Row(modifier = Modifier.fillMaxWidth().height(48.dp).padding(end = 5.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End) {
                 Box(
-                    modifier = Modifier.size(56.dp).clickable { AuthRepository.continueAsGuest() },
+                    modifier = Modifier.size(48.dp).clickable { AuthRepository.continueAsGuest() },
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.fluent_dismiss_regular),
                         contentDescription = "Skip",
                         tint = Color.White,
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }
             Spacer(Modifier.weight(1f))
-            Text("KIRO", color = KiroPurple, fontSize = 60.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
-            Spacer(Modifier.height(14.dp))
+            Text("KIRO", color = KiroPurple, fontSize = 52.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
+            Spacer(Modifier.height(10.dp))
             Text(
                 "Discover your favorite anime and\ncustomize your library.",
                 color = Color(0xFFB4B4BA),
-                fontSize = 18.sp,
-                lineHeight = 28.sp,
+                fontSize = 14.sp,
+                lineHeight = 21.sp,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(44.dp))
+            Spacer(Modifier.height(40.dp))
 
             Box(Modifier.fillMaxWidth()) {
                 WideButton(
@@ -229,27 +229,27 @@ private fun WelcomeScreen(onEmail: () -> Unit) {
                     append(".")
                 },
                 color = Color(0xFF77777C),
-                fontSize = 14.sp,
-                lineHeight = 22.sp,
+                fontSize = 12.sp,
+                lineHeight = 17.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .padding(horizontal = 12.dp)
                     .clickable { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(REPO_URL))) },
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
         }
     }
 }
 
 @Composable
 private fun LastLoginBubble(modifier: Modifier = Modifier) {
-    Column(modifier = modifier.offset(y = (-26).dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier = modifier.offset(y = (-27).dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             "Last login",
             color = Color.Black,
-            fontSize = 14.sp,
+            fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.background(Color.White, RoundedCornerShape(6.dp)).padding(horizontal = 14.dp, vertical = 7.dp),
+            modifier = Modifier.background(Color.White, RoundedCornerShape(5.dp)).padding(horizontal = 9.dp, vertical = 5.dp),
         )
         Canvas(Modifier.size(width = 14.dp, height = 7.dp)) {
             val p = Path().apply {
@@ -275,8 +275,8 @@ private fun WideButton(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp)
-            .clip(RoundedCornerShape(6.dp))
+            .height(48.dp)
+            .clip(RoundedCornerShape(4.dp))
             .background(container)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
@@ -286,19 +286,19 @@ private fun WideButton(
                 painter = painterResource(icon),
                 contentDescription = null,
                 tint = iconTint,
-                modifier = Modifier.align(Alignment.CenterStart).padding(start = 22.dp).size(28.dp),
+                modifier = Modifier.align(Alignment.CenterStart).padding(start = 22.dp).size(20.dp),
             )
         } else {
             androidx.compose.foundation.Image(
                 painter = painterResource(icon),
                 contentDescription = null,
-                modifier = Modifier.align(Alignment.CenterStart).padding(start = 22.dp).size(26.dp),
+                modifier = Modifier.align(Alignment.CenterStart).padding(start = 22.dp).size(18.dp),
             )
         }
         if (busy) {
-            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(22.dp))
+            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
         } else {
-            Text(label, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(label, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -354,9 +354,9 @@ private fun EmailFlow(onBack: () -> Unit) {
                     if (step == 1) step = 0 else onBack()
                 },
             )
-            Column(modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp)) {
+            Column(modifier = Modifier.weight(1f).fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 16.dp)) {
                 if (step == 0) {
-                    Text("Email", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text("Email", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     UnderlineField(
                         value = email,
                         onChange = { email = it },
@@ -365,12 +365,12 @@ private fun EmailFlow(onBack: () -> Unit) {
                         imeAction = ImeAction.Next,
                         onImeAction = { submit() },
                     )
-                    Spacer(Modifier.height(18.dp))
+                    Spacer(Modifier.height(16.dp))
                     CheckBox("Include a valid email format (e.g. @email.com)", emailOk)
                 } else {
-                    Text(email.trim(), color = Muted, fontSize = 15.sp)
-                    Spacer(Modifier.height(18.dp))
-                    Text("Password", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text(email.trim(), color = Muted, fontSize = 13.sp)
+                    Spacer(Modifier.height(14.dp))
+                    Text("Password", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     UnderlineField(
                         value = password,
                         onChange = { password = it },
@@ -383,29 +383,29 @@ private fun EmailFlow(onBack: () -> Unit) {
                             Text(
                                 if (showPassword) "Hide" else "Show",
                                 color = Muted,
-                                fontSize = 15.sp,
+                                fontSize = 13.sp,
                                 modifier = Modifier.clickable { showPassword = !showPassword }.padding(8.dp),
                             )
                         },
                     )
                     if (signUp) {
-                        Spacer(Modifier.height(18.dp))
+                        Spacer(Modifier.height(16.dp))
                         CheckBox("Use at least 6 characters", password.length >= 6)
                     }
                     error?.let {
                         Spacer(Modifier.height(16.dp))
-                        Text(it, color = ErrorRed, fontSize = 15.sp)
+                        Text(it, color = ErrorRed, fontSize = 13.sp)
                     }
                     info?.let {
                         Spacer(Modifier.height(16.dp))
-                        Text(it, color = Color(0xFF7BD88F), fontSize = 15.sp)
+                        Text(it, color = Color(0xFF7BD88F), fontSize = 13.sp)
                     }
                     Spacer(Modifier.height(20.dp))
                     if (!signUp) {
                         Text(
                             "Forgot password?",
                             color = Muted,
-                            fontSize = 15.sp,
+                            fontSize = 13.sp,
                             textDecoration = TextDecoration.Underline,
                             modifier = Modifier.clickable {
                                 error = null
@@ -420,7 +420,7 @@ private fun EmailFlow(onBack: () -> Unit) {
                     Text(
                         if (signUp) "Already have an account? Log in" else "New to Kiro? Create account",
                         color = KiroPurple,
-                        fontSize = 15.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.clickable {
                             signUp = !signUp
@@ -435,7 +435,7 @@ private fun EmailFlow(onBack: () -> Unit) {
                 enabled = canContinue,
                 busy = busy,
                 onClick = { submit() },
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             )
         }
     }
@@ -455,7 +455,7 @@ private fun UnderlineField(
     val focus = remember { FocusRequester() }
     var focused by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { focus.requestFocus() }
-    val style = TextStyle(color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, fontFamily = AppFont)
+    val style = TextStyle(color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = AppFont)
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
             BasicTextField(
@@ -469,8 +469,8 @@ private fun UnderlineField(
                 keyboardActions = KeyboardActions(onNext = { onImeAction() }, onDone = { onImeAction() }),
                 modifier = Modifier.weight(1f).focusRequester(focus).onFocusChanged { focused = it.isFocused },
                 decorationBox = { inner ->
-                    Box(Modifier.padding(vertical = 16.dp)) {
-                        if (value.isEmpty()) Text(hint, color = HintGray, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    Box(Modifier.padding(vertical = 12.dp)) {
+                        if (value.isEmpty()) Text(hint, color = HintGray, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         inner()
                     }
                 },
@@ -482,23 +482,25 @@ private fun UnderlineField(
 }
 
 @Composable
-private fun CheckBox(text: String, ok: Boolean) {
+private fun CheckBox(text: String, ok: Boolean, icon: Boolean = true) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .border(1.dp, BoxBorder, RoundedCornerShape(4.dp))
             .background(Color(0xFF151515), RoundedCornerShape(4.dp))
-            .padding(horizontal = 16.dp, vertical = 18.dp),
+            .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            painter = painterResource(R.drawable.fluent_checkmark_regular),
-            contentDescription = null,
-            tint = if (ok) KiroPurple else HintGray,
-            modifier = Modifier.size(24.dp),
-        )
-        Spacer(Modifier.size(14.dp))
-        Text(text, color = Color(0xFFB4B4BA), fontSize = 16.sp)
+        if (icon) {
+            Icon(
+                painter = painterResource(R.drawable.fluent_checkmark_regular),
+                contentDescription = null,
+                tint = if (ok) KiroPurple else HintGray,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.size(8.dp))
+        }
+        Text(text, color = Color(0xFFB4B4BA), fontSize = 13.sp)
     }
 }
 
@@ -513,7 +515,7 @@ private fun PrimaryButton(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp)
+            .height(48.dp)
             .clip(RoundedCornerShape(4.dp))
             .background(if (enabled) KiroPurple else ButtonGray)
             .clickable(
@@ -525,9 +527,9 @@ private fun PrimaryButton(
         contentAlignment = Alignment.Center,
     ) {
         if (busy) {
-            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(22.dp))
+            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
         } else {
-            Text(label, color = if (enabled) Color.White else HintGray, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(label, color = if (enabled) Color.White else HintGray, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -569,22 +571,24 @@ private fun VerifyScreen(email: String) {
                 Text(
                     "We sent a verification link to",
                     color = Muted,
-                    fontSize = 16.sp,
+                    fontSize = 13.sp,
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(6.dp))
-                Text(email, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                Text(email, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(6.dp))
-                Text("Open it, then come back here.", color = Muted, fontSize = 16.sp, textAlign = TextAlign.Center)
+                Text("Open it, then come back here.", color = Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(18.dp))
+                CheckBox("Please check your spam folder if you don't see the email.", false, icon = false)
                 message?.let {
-                    Spacer(Modifier.height(18.dp))
-                    Text(it, color = if (good) Color(0xFF7BD88F) else ErrorRed, fontSize = 15.sp, textAlign = TextAlign.Center)
+                    Spacer(Modifier.height(14.dp))
+                    Text(it, color = if (good) Color(0xFF7BD88F) else ErrorRed, fontSize = 13.sp, textAlign = TextAlign.Center)
                 }
                 Spacer(Modifier.height(28.dp))
                 Text(
                     if (cooldown > 0) "Resend email ($cooldown)" else "Resend email",
                     color = if (cooldown > 0) HintGray else KiroPurple,
-                    fontSize = 16.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
                         .clickable(enabled = cooldown == 0) {
@@ -599,7 +603,7 @@ private fun VerifyScreen(email: String) {
                 Text(
                     "Use a different account",
                     color = Muted,
-                    fontSize = 15.sp,
+                    fontSize = 13.sp,
                     textDecoration = TextDecoration.Underline,
                     modifier = Modifier.clickable { AuthRepository.signOut() }.padding(10.dp),
                 )
@@ -618,7 +622,7 @@ private fun VerifyScreen(email: String) {
                         }
                     }
                 },
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             )
         }
     }

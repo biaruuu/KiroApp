@@ -64,7 +64,7 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
         ) {
-            Spacer(Modifier.height(48.dp))
+            Spacer(Modifier.height(52.dp))
 
             // Header: avatar + greeting. Tapping it opens the account page (or the login screen).
             Row(
@@ -85,7 +85,7 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
                     Text(
                         (signedIn?.name?.firstOrNull() ?: 'K').uppercase(),
                         color = Color.White,
-                        fontSize = 24.sp,
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Black,
                     )
                 }
@@ -94,7 +94,7 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
                     Text(
                         if (signedIn != null) "Hello, ${signedIn.name}!" else "Hello, guest!",
                         color = Color.White,
-                        fontSize = 20.sp,
+                        fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -106,7 +106,7 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
                             else -> "Accounts aren't set up in this build"
                         },
                         color = Muted,
-                        fontSize = 15.sp,
+                        fontSize = 12.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -115,8 +115,8 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
             }
 
             Spacer(Modifier.height(32.dp))
-            Text("Settings", color = Muted, fontSize = 15.sp)
-            Spacer(Modifier.height(8.dp))
+            Text("Settings", color = Muted, fontSize = 14.sp)
+            Spacer(Modifier.height(6.dp))
             SettingsRow(R.drawable.fluent_alert_regular, "Notification") {
                 Toast.makeText(context, "No new notifications", Toast.LENGTH_SHORT).show()
             }
@@ -124,7 +124,7 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
             SettingsRow(R.drawable.fluent_play_circle_regular, "Play") { onOpen("play") }
             SettingsRow(R.drawable.fluent_language_regular, "Language") { onOpen("language") }
 
-            Box(Modifier.padding(vertical = 14.dp).fillMaxWidth().height(1.dp).background(Hairline))
+            Box(Modifier.padding(vertical = 12.dp).fillMaxWidth().height(1.dp).background(Hairline))
 
             SettingsRow(R.drawable.fluent_help_circle_regular, "Help Center") {
                 openUrl(context, "$REPO_URL/issues")
@@ -155,7 +155,7 @@ private fun Chevron() {
         painter = painterResource(R.drawable.fluent_chevron_right_regular),
         contentDescription = null,
         tint = Color.White,
-        modifier = Modifier.size(30.dp),
+        modifier = Modifier.size(28.dp),
     )
 }
 
@@ -164,7 +164,7 @@ private fun SettingsRow(@DrawableRes icon: Int, label: String, value: String? = 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp)
+            .height(45.dp)
             .clip(RoundedCornerShape(6.dp))
             .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
@@ -174,12 +174,12 @@ private fun SettingsRow(@DrawableRes icon: Int, label: String, value: String? = 
             painter = painterResource(icon),
             contentDescription = null,
             tint = Color.White,
-            modifier = Modifier.size(26.dp),
+            modifier = Modifier.size(22.dp),
         )
-        Spacer(Modifier.size(16.dp))
-        Text(label, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+        Spacer(Modifier.size(6.dp))
+        Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
         if (value != null) {
-            Text(value, color = Muted, fontSize = 17.sp)
+            Text(value, color = Muted, fontSize = 13.sp)
             Spacer(Modifier.size(4.dp))
         }
         Chevron()
