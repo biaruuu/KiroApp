@@ -894,9 +894,10 @@ private fun EpisodeRow(ep: EpisodeInfo, playing: Boolean, onClick: () -> Unit) {
                     )
                 }
             }
-            if (!ep.overview.isNullOrBlank()) {
+            val plot = ep.overview
+            if (!plot.isNullOrBlank()) {
                 Text(
-                    ep.overview,
+                    plot,
                     color = Color(0xFFB3B3B3),
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
