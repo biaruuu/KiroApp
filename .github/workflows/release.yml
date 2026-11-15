@@ -76,6 +76,17 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         if: steps.version.outputs.exists == 'false'
 
+      - name: Add Firebase config
+        if: steps.version.outputs.exists == 'false'
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+          else
+            echo "GOOGLE_SERVICES_JSON secret not set: building with sign-in turned off."
+          fi
+
       - name: Build release APK
         if: steps.version.outputs.exists == 'false'
         env:

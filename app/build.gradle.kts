@@ -4,6 +4,12 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// Firebase is switched on only when app/google-services.json is present (CI writes it from the
+// GOOGLE_SERVICES_JSON secret). Without it the app builds and runs with sign-in turned off.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "com.biaruuu.kiro"
     compileSdk = 35
@@ -12,8 +18,8 @@ android {
         applicationId = "com.biaruuu.kiro"
         minSdk = 26
         targetSdk = 35
-        versionCode = 32
-        versionName = "1.14.0"
+        versionCode = 33
+        versionName = "1.15.0"
         // TMDB key: GitHub secret TMDB_API_KEY in CI, or -PTMDB_API_KEY / env var locally.
         val tmdbKey = (System.getenv("TMDB_API_KEY") ?: project.findProperty("TMDB_API_KEY") as String? ?: "").trim()
         buildConfigField("String", "TMDB_API_KEY", "\"$tmdbKey\"")
@@ -89,6 +95,8 @@ dependencies {
     implementation("androidx.media3:media3-ui:1.5.1")
     // FFmpeg (native C/C++) software audio decoders: AC3, E-AC3, DTS, FLAC, Opus, Vorbis, ALAC...
     implementation("org.jellyfin.media3:media3-ffmpeg-decoder:1.5.0+1")
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-auth")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 }

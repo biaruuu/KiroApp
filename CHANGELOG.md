@@ -4,6 +4,19 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.15.0] - 2026-11-16
+
+Accounts.
+
+### Added
+- **Login / Sign up** with email and password on Firebase Authentication, with a username.
+- **Email verification**: a link is emailed at sign-up and the app stays locked until it is confirmed (it continues on its own when you come back from your mail app). Resend is available after 30 seconds.
+- **Forgot password** reset email.
+- **Me tab** shows your account and a Sign out button.
+
+### Setup
+- Sign-in turns on only when the build has `google-services.json` (CI writes it from the `GOOGLE_SERVICES_JSON` secret). Without it the app runs with sign-in off.
+
 ## [1.14.0] - 2026-11-16
 
 The Library tab.

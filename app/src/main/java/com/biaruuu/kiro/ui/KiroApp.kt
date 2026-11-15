@@ -34,6 +34,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.biaruuu.kiro.R
 import com.biaruuu.kiro.data.Anime
+import com.biaruuu.kiro.ui.auth.AuthGate
+import com.biaruuu.kiro.ui.auth.MeScreen
 import com.biaruuu.kiro.ui.components.KiroBottomBar
 import com.biaruuu.kiro.ui.components.KiroSideRail
 import com.biaruuu.kiro.ui.components.NavDestination
@@ -84,7 +86,7 @@ fun KiroApp() {
             }
         }
 
-        if (showSplash) SplashScreen() else KiroScaffold()
+        if (showSplash) SplashScreen() else AuthGate { KiroScaffold() }
     }
 }
 
@@ -183,7 +185,7 @@ private fun KiroScaffold() {
                     refreshKey = backStack.size,
                     modifier = contentModifier,
                 )
-                TAB_ME -> PlaceholderScreen("Me", contentModifier)
+                TAB_ME -> MeScreen(contentModifier)
             }
         }
     }

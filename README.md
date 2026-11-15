@@ -4,7 +4,7 @@ An anime streaming app for Android built with **Kotlin** (Jetpack Compose), **Ja
 powered by the [AniList GraphQL API](https://anilist.gitbook.io/anilist-apiv2-docs/).
 Typography is Netflix Sans (proprietary, see `licenses/FONTS.md`).
 
-**Version 1.14.0** - Home, Search and anime details screens, responsive layouts, Fluent icons.
+**Version 1.15.0** - Home, Search and anime details screens, responsive layouts, Fluent icons.
 
 ## Download
 
@@ -46,3 +46,13 @@ changelog entry is missing. (Pushing a tag such as `v1.0.1` also triggers it.)
 
 `keystore/kiro-release.jks` is a shared key committed so every release APK can update the previous
 one. It is fine for a hobby project, but move it to GitHub secrets before publishing to the Play Store.
+
+
+## Accounts (Firebase)
+
+1. In the Firebase console create a project and enable **Authentication → Email/Password**.
+2. Add Android apps for `com.biaruuu.kiro` (release) and `com.biaruuu.kiro.debug` (debug builds).
+3. Download `google-services.json` and save its full contents as the GitHub secret `GOOGLE_SERVICES_JSON`
+   (or put the file in `app/` for local builds; it is git-ignored).
+
+Without that file the app builds normally and skips sign-in.
