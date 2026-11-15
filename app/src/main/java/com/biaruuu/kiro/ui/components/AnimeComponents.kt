@@ -69,6 +69,8 @@ fun PosterCard(
     modifier: Modifier = Modifier,
     titleMaxLines: Int = 2,
     tagAtBottom: Boolean = false,
+    /** Slimmer look used by the search grid: flatter poster, 13 sp title. */
+    compact: Boolean = false,
 ) {
     val placeholder = remember(anime.id) { parseColor(anime.coverColor) ?: KiroSurface }
     val tag = remember(anime.id) { statusTag(anime.status) }
@@ -77,8 +79,8 @@ fun PosterCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(PosterAspect)
-                .clip(RoundedCornerShape(6.dp))
+                .aspectRatio(if (compact) 0.707f else PosterAspect)
+                .clip(RoundedCornerShape(if (compact) 4.dp else 6.dp))
                 .background(placeholder.copy(alpha = 0.3f)),
         ) {
             AsyncImage(
@@ -94,8 +96,8 @@ fun PosterCard(
                 Text(
                     text = tag,
                     color = Color.White,
-                    fontSize = 9.sp,
-                    lineHeight = 11.sp,
+                    fontSize = if (compact) 10.sp else 9.sp,
+                    lineHeight = 12.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     modifier = Modifier
@@ -107,10 +109,11 @@ fun PosterCard(
                 )
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(if (compact) 6.dp else 8.dp))
         Text(
             text = anime.displayTitle,
             style = MaterialTheme.typography.bodyLarge,
+            fontSize = if (compact) 13.sp else androidx.compose.ui.unit.TextUnit.Unspecified,
             lineHeight = 21.sp,
             color = MaterialTheme.colorScheme.onBackground,
             maxLines = titleMaxLines,

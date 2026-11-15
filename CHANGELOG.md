@@ -4,6 +4,19 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.17.0] - 2026-11-16
+
+Search, Laftel style.
+
+### Added
+- **Recent Searches**: tapping the search field shows your last searches with Clear and a remove button on each; tap one to search it again.
+- **Suggestions** while typing: matching titles with the part you typed in purple.
+- **Cancel** button and a clear (x) button in the field while searching; Back also closes the overlay.
+- The white line under the genre tabs now slides to the picked genre, and the tab row scrolls to keep it in view.
+
+### Changed
+- Search resized to Laftel's proportions: 32 dp field, smaller genre tabs, 52 dp results row, flatter posters with 13 sp titles, and a slimmer sort sheet.
+
 ## [1.16.3] - 2026-11-16
 
 ### Changed

@@ -1,6 +1,27 @@
 package com.biaruuu.kiro.ui.search
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import com.biaruuu.kiro.data.SearchHistory
+import kotlin.math.roundToInt
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -112,7 +133,20 @@ fun SearchScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val focusManager: FocusManager = LocalFocusManager.current
+    val context = LocalContext.current
     var showSort by remember { mutableStateOf(false) }
+    var focused by remember { mutableStateOf(false) }
+    var recents by remember { mutableStateOf(SearchHistory.all(context)) }
+
+    // Back closes the search overlay first.
+    BackHandler(enabled = focused) { focusManager.clearFocus() }
+
+    fun pick(text: String) {
+        viewModel.onQueryChange(text)
+        viewModel.submit()
+        recents = SearchHistory.add(context, text)
+        focusManager.clearFocus()
+    }
 
     Column(modifier = modifier.fillMaxSize()) {
         // Black strip behind the system status bar, as in the reference.
@@ -123,67 +157,83 @@ fun SearchScreen(
                 .background(Color.Black),
         )
 
-        // Fixed header: search field + genre tabs.
+        // Fixed header: search field (+ genre tabs when the field isn't being used).
         Column(modifier = Modifier.fillMaxWidth().background(HeaderBackground)) {
             SearchField(
                 value = state.query,
+                focused = focused,
+                onFocusChange = { focused = it },
                 onValueChange = viewModel::onQueryChange,
                 onClear = viewModel::clearQuery,
                 onSearch = {
+                    if (state.query.isNotBlank()) recents = SearchHistory.add(context, state.query)
                     viewModel.submit()
+                    focusManager.clearFocus()
+                },
+                onCancel = {
+                    viewModel.clearQuery()
                     focusManager.clearFocus()
                 },
             )
             Divider()
-            GenreTabs(
-                selected = state.genre ?: ALL,
-                onSelect = { genre -> viewModel.onGenreToggle(genre) },
-                onSelectAll = { state.genre?.let(viewModel::onGenreToggle) },
-            )
-            Divider()
-            if (state.loading) {
-                LinearProgressIndicator(
-                    color = KiroPurple,
-                    trackColor = Color.Transparent,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(2.dp),
+            if (!focused) {
+                GenreTabs(
+                    selected = state.genre ?: ALL,
+                    onSelect = { genre -> viewModel.onGenreToggle(genre) },
+                    onSelectAll = { state.genre?.let(viewModel::onGenreToggle) },
                 )
-            } else {
-                Spacer(Modifier.height(2.dp))
+                Divider()
             }
         }
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            when {
-                state.results.isEmpty() && state.loading -> SearchSkeleton(columns = 3)
-
-                state.results.isEmpty() && state.error != null -> ErrorState(
-                    message = state.error.orEmpty(),
-                    onRetry = viewModel::retry,
+            if (focused) {
+                SearchOverlay(
+                    query = state.query,
+                    suggestions = remember(state.results) { state.results.take(8).map { it.displayTitle } },
+                    recents = recents,
+                    onPick = ::pick,
+                    onRemove = { recents = SearchHistory.remove(context, it) },
+                    onClearAll = { recents = SearchHistory.clear(context) },
                 )
+            } else {
+                when {
+                    state.results.isEmpty() && state.loading -> SearchSkeleton(columns = 3)
 
-                state.results.isEmpty() && state.loaded -> MessageState(
-                    title = "No results",
-                    subtitle = "Try a different title or pick another genre.",
-                )
+                    state.results.isEmpty() && state.error != null -> ErrorState(
+                        message = state.error.orEmpty(),
+                        onRetry = viewModel::retry,
+                    )
 
-                else -> ResultsGrid(
-                    gridState = gridState,
-                    results = state.results,
-                    total = state.total,
-                    sort = state.sort,
-                    loadingMore = state.loadingMore,
-                    onSortClick = {
-                        focusManager.clearFocus()
-                        showSort = true
-                    },
-                    onAnimeClick = {
-                        focusManager.clearFocus()
-                        onAnimeClick(it)
-                    },
-                    onLoadMore = viewModel::loadMore,
-                )
+                    state.results.isEmpty() && state.loaded -> MessageState(
+                        title = "No results",
+                        subtitle = "Try a different title or pick another genre.",
+                    )
+
+                    else -> ResultsGrid(
+                        gridState = gridState,
+                        results = state.results,
+                        total = state.total,
+                        sort = state.sort,
+                        loadingMore = state.loadingMore,
+                        onSortClick = {
+                            focusManager.clearFocus()
+                            showSort = true
+                        },
+                        onAnimeClick = {
+                            focusManager.clearFocus()
+                            onAnimeClick(it)
+                        },
+                        onLoadMore = viewModel::loadMore,
+                    )
+                }
+                if (state.loading && state.results.isNotEmpty()) {
+                    LinearProgressIndicator(
+                        color = KiroPurple,
+                        trackColor = Color.Transparent,
+                        modifier = Modifier.fillMaxWidth().height(2.dp).align(Alignment.TopCenter),
+                    )
+                }
             }
         }
     }
@@ -210,75 +260,194 @@ private fun Divider() {
 @Composable
 private fun SearchField(
     value: String,
+    focused: Boolean,
+    onFocusChange: (Boolean) -> Unit,
     onValueChange: (String) -> Unit,
     onClear: () -> Unit,
     onSearch: () -> Unit,
+    onCancel: () -> Unit,
 ) {
     val dims = LocalDimens.current
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        singleLine = true,
-        textStyle = LocalTextStyle.current.copy(
-            color = Color.White,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Medium,
-        ),
-        cursorBrush = SolidColor(Color.White),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(onSearch = { onSearch() }),
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = dims.gutter, vertical = 12.dp)
-            .height(36.dp)
-            .clip(RoundedCornerShape(5.dp))
-            .background(FieldBackground),
-        decorationBox = { inner ->
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.fluent_search_regular),
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp),
-                )
-                Spacer(Modifier.width(10.dp))
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-                    if (value.isEmpty()) {
-                        Text(
-                            text = "Search by title, tag",
-                            color = MutedText,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 1,
+            .padding(horizontal = dims.gutter, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = LocalTextStyle.current.copy(
+                color = Color.White,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+            ),
+            cursorBrush = SolidColor(KiroPurple),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { onSearch() }),
+            modifier = Modifier
+                .weight(1f)
+                .height(32.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(FieldBackground)
+                .onFocusChanged { onFocusChange(it.isFocused) },
+            decorationBox = { inner ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.fluent_search_regular),
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                        if (value.isEmpty()) {
+                            Text(
+                                text = "Search by title, tag",
+                                color = MutedText,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                            )
+                        }
+                        inner()
+                    }
+                    if (value.isNotEmpty() && focused) {
+                        Icon(
+                            painter = painterResource(R.drawable.fluent_dismiss_circle_regular),
+                            contentDescription = "Clear",
+                            tint = Color.White,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = onClear,
+                                ),
                         )
                     }
-                    inner()
                 }
-                if (value.isNotEmpty()) {
-                    Icon(
-                        painter = painterResource(R.drawable.fluent_dismiss_regular),
-                        contentDescription = "Clear",
-                        tint = Color.White,
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = onClear,
-                            ),
-                    )
-                }
-            }
-        },
-    )
+            },
+        )
+        if (focused) {
+            Text(
+                text = "Cancel",
+                color = Color.White,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .padding(start = 16.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onCancel,
+                    ),
+            )
+        }
+    }
 }
 
-/** Text tabs with a white underline under the selected one. "All" clears the genre filter. */
+/** Recent searches while the field is empty, title suggestions (match in purple) while typing. */
+@Composable
+private fun SearchOverlay(
+    query: String,
+    suggestions: List<String>,
+    recents: List<String>,
+    onPick: (String) -> Unit,
+    onRemove: (String) -> Unit,
+    onClearAll: () -> Unit,
+) {
+    val dims = LocalDimens.current
+    val q = query.trim()
+    LazyColumn(modifier = Modifier.fillMaxSize().background(com.biaruuu.kiro.ui.theme.KiroBackground)) {
+        if (q.isEmpty()) {
+            if (recents.isNotEmpty()) {
+                item(key = "recent-title") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = dims.gutter),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text("Recent Searches", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Clear",
+                            color = KiroPurple,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onClearAll,
+                            ),
+                        )
+                    }
+                }
+                items(recents, key = { "recent-$it" }) { r ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .clickable { onPick(r) }
+                            .padding(horizontal = dims.gutter),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            r,
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Icon(
+                            painter = painterResource(R.drawable.fluent_dismiss_regular),
+                            contentDescription = "Remove",
+                            tint = Color.White,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                ) { onRemove(r) },
+                        )
+                    }
+                }
+            }
+        } else {
+            item(key = "suggest-gap") { Spacer(Modifier.height(4.dp)) }
+            items(suggestions, key = { "suggest-$it" }) { title ->
+                val at = title.indexOf(q, ignoreCase = true)
+                val text = buildAnnotatedString {
+                    if (at < 0) {
+                        append(title)
+                    } else {
+                        append(title.substring(0, at))
+                        withStyle(SpanStyle(color = KiroPurple)) { append(title.substring(at, at + q.length)) }
+                        append(title.substring(at + q.length))
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .clickable { onPick(title) }
+                        .padding(horizontal = dims.gutter),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(text, color = Color.White, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+    }
+}
+
+/** Genre text tabs. The white line slides to the picked one; "All" clears the genre filter. */
 @Composable
 private fun GenreTabs(
     selected: String,
@@ -286,45 +455,68 @@ private fun GenreTabs(
     onSelectAll: () -> Unit,
 ) {
     val dims = LocalDimens.current
+    val density = LocalDensity.current
     val tabs = remember { listOf(ALL) + GENRES }
+    val index = tabs.indexOf(selected).coerceAtLeast(0)
+    val scroll = rememberScrollState()
+    val lefts = remember { mutableStateListOf<Float>().apply { repeat(tabs.size) { add(0f) } } }
+    val widths = remember { mutableStateListOf<Float>().apply { repeat(tabs.size) { add(0f) } } }
+    var viewport by remember { mutableIntStateOf(0) }
 
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = dims.gutter),
-        horizontalArrangement = Arrangement.spacedBy(24.dp),
+    val lineX by animateFloatAsState(lefts[index], label = "genre-line-x")
+    val lineW by animateFloatAsState(widths[index], label = "genre-line-w")
+
+    LaunchedEffect(index, viewport, widths[index]) {
+        if (viewport > 0 && widths[index] > 0f) {
+            scroll.animateScrollTo((lefts[index] + widths[index] / 2f - viewport / 2f).roundToInt().coerceAtLeast(0))
+        }
+    }
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(44.dp),
+            .height(44.dp)
+            .onSizeChanged { viewport = it.width }
+            .horizontalScroll(scroll),
     ) {
-        items(tabs, key = { it }) { tab ->
-            val isSelected = tab == selected
-            Column(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                    ) {
-                        if (tab == ALL) onSelectAll() else if (!isSelected) onSelect(tab)
-                    },
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+        Row(modifier = Modifier.fillMaxHeight()) {
+            Spacer(Modifier.width(dims.gutter))
+            tabs.forEachIndexed { i, tab ->
+                val isSelected = i == index
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .onGloballyPositioned {
+                            lefts[i] = it.positionInParent().x
+                            widths[i] = it.size.width.toFloat()
+                        }
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) {
+                            if (tab == ALL) onSelectAll() else if (!isSelected) onSelect(tab)
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
                     Text(
                         text = tab,
                         color = if (isSelected) Color.White else MutedText,
-                        fontSize = 17.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                     )
                 }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(2.dp)
-                        .background(if (isSelected) Color.White else Color.Transparent),
-                )
+                Spacer(Modifier.width(if (i == tabs.lastIndex) dims.gutter else 24.dp))
             }
         }
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .offset { IntOffset(lineX.roundToInt(), 0) }
+                .width(with(density) { lineW.toDp() })
+                .height(2.dp)
+                .background(Color.White),
+        )
     }
 }
 
@@ -362,21 +554,21 @@ private fun ResultsGrid(
             columns = GridCells.Fixed(columns),
             contentPadding = PaddingValues(start = dims.gutter, end = dims.gutter, bottom = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
             item(span = { GridItemSpan(maxLineSpan) }, key = "count", contentType = "count") {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 20.dp),
+                        .height(52.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
                         text = "$count Results",
                         color = MutedText,
-                        fontSize = 16.sp,
+                        fontSize = 13.sp,
                         maxLines = 1,
                     )
                     Row(
@@ -390,15 +582,15 @@ private fun ResultsGrid(
                         Text(
                             text = sort.label(),
                             color = MutedText,
-                            fontSize = 16.sp,
+                            fontSize = 13.sp,
                             maxLines = 1,
                         )
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(4.dp))
                         Icon(
                             painter = painterResource(R.drawable.fluent_chevron_down_regular),
                             contentDescription = "Sort",
                             tint = MutedText,
-                            modifier = Modifier.size(22.dp),
+                            modifier = Modifier.size(20.dp),
                         )
                     }
                 }
@@ -409,6 +601,7 @@ private fun ResultsGrid(
                     anime = anime,
                     onClick = { onAnimeClick(anime) },
                     tagAtBottom = true,
+                    compact = true,
                 )
             }
 
@@ -455,7 +648,7 @@ private fun SortSheet(
         tonalElevation = 0.dp,
         dragHandle = null,
     ) {
-        Column(modifier = Modifier.navigationBarsPadding().padding(vertical = 8.dp)) {
+        Column(modifier = Modifier.navigationBarsPadding().padding(top = 4.dp)) {
             SortOrder.entries.forEach { option ->
                 SheetRow(
                     label = option.label(),
@@ -488,25 +681,25 @@ private fun SheetRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp)
+            .height(53.dp)
             .clickable(onClick = onClick)
             .padding(horizontal = 22.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(modifier = Modifier.width(56.dp)) {
+        Box(modifier = Modifier.width(34.dp)) {
             if (icon != null) {
                 Icon(
                     painter = painterResource(icon),
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(26.dp),
+                    modifier = Modifier.size(22.dp),
                 )
             }
         }
         Text(
             text = label,
             color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 17.sp,
+            fontSize = 15.sp,
         )
     }
 }
