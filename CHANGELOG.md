@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.10.0] - 2026-11-15
+
+### Added
+- **Continue Watching** on Home (under the hero): the episode you were on, with its thumbnail, a purple progress bar and "Episode N". Tapping it opens the player and **resumes from where you left off**. Progress is saved every 5 seconds, when you leave the player or the app, and a finished episode moves on to the next one (the last episode just disappears from the row).
+- **Anime title logos** (TMDB artwork, English first) instead of plain title text on the Home hero and the Details page, with the text as a fallback.
+- **IMDB rating and PARENTAL GUIDANCE badges** under the logo on Details, as on the web app: score from TMDB, age rating from TMDB content ratings (India first, then the US, shown as U / U/A 7+ / U/A 13+ / A 18+).
+- A soft fade behind the Home hero's title, tagline and Play button, like the Details page.
+
 ## [1.9.7] - 2026-11-15
 
 ### Changed

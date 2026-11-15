@@ -27,6 +27,7 @@ fun HomeScreen(
     listState: LazyListState,
     onAnimeClick: (Anime) -> Unit,
     onPlay: (Anime) -> Unit,
+    onContinue: (Int, Int) -> Unit,
     onNotifications: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(),
@@ -61,6 +62,12 @@ fun HomeScreen(
                         onPlay = onPlay,
                         onNotifications = onNotifications,
                     )
+                }
+            }
+            val history = rememberWatchHistory()
+            if (history.isNotEmpty()) {
+                item(key = "continue", contentType = "continue") {
+                    ContinueWatchingRow(items = history, onContinue = onContinue)
                 }
             }
             items(current.content.sections, key = { it.title }, contentType = { if (it.isRanked) "ranked" else "row" }) { section ->

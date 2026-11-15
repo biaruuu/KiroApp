@@ -56,6 +56,15 @@ object AniListRepository {
         await<List<String>> { callback -> TrailerApi.findTmdb(anime, callback) }
             .also { if (it.isNotEmpty()) tmdbCache[anime.id] = it }
 
+    private val metaCache = java.util.concurrent.ConcurrentHashMap<Int, TmdbMeta>()
+
+    /** Cached title logo / score / age rating of an anime. */
+    fun cachedMeta(animeId: Int): TmdbMeta? = metaCache[animeId]
+
+    suspend fun tmdbMeta(anime: Anime): TmdbMeta =
+        metaCache[anime.id] ?: await<TmdbMeta> { callback -> TrailerApi.findTmdbMeta(anime, callback) }
+            .also { if (it !== TmdbMeta.EMPTY) metaCache[anime.id] = it }
+
     suspend fun jikanTrailers(malId: Int): List<String> =
         await<List<String>> { callback -> TrailerApi.findJikan(malId, callback) }
 

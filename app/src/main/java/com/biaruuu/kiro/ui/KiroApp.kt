@@ -162,6 +162,7 @@ private fun KiroScaffold() {
                     listState = homeListState,
                     onAnimeClick = onAnimeClick,
                     onPlay = onAnimeClick,
+                    onContinue = { id, ep -> backStack.add("p:$id:$ep") },
                     onNotifications = {
                         Toast.makeText(context, "No new notifications", Toast.LENGTH_SHORT).show()
                     },

@@ -25,6 +25,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import com.biaruuu.kiro.data.EpisodeInfo
+import com.biaruuu.kiro.data.WatchHistory
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.layout.widthIn
@@ -161,6 +162,36 @@ fun PlayerScreen(
     // The player listener lives for the whole screen, so it must read the latest values.
     val latestEpisodes by rememberUpdatedState(episodes)
     val latestCurrent by rememberUpdatedState(current)
+    var mediaEpisode by remember { mutableIntStateOf(0) } // the episode that is really loaded in the player
+    val latestUi by rememberUpdatedState(ui)
+    val latestMediaEpisode = rememberUpdatedState(mediaEpisode)
+
+    // Remembers where you stopped so Home can offer "Continue Watching".
+    fun saveProgress() {
+        val ep = latestMediaEpisode.value
+        val dur = exo.duration
+        val pos = exo.currentPosition
+        if (ep <= 0 || dur <= 0 || pos <= 0) return
+        val base = latestUi.base ?: return
+        val info = latestEpisodes.firstOrNull { it.number == ep }
+        if (pos >= dur * 0.93) {
+            // Finished: carry on from the next episode, or drop it if that was the last one.
+            val next = latestEpisodes.firstOrNull { it.number > ep }
+            if (next != null) {
+                WatchHistory.save(
+                    context,
+                    WatchHistory.Entry(animeId, next.number, 0L, 0L, base.displayTitle, base.heroUrl, next.thumbnailUrl, System.currentTimeMillis()),
+                )
+            } else {
+                WatchHistory.remove(context, animeId)
+            }
+        } else {
+            WatchHistory.save(
+                context,
+                WatchHistory.Entry(animeId, ep, pos, dur, base.displayTitle, base.heroUrl, info?.thumbnailUrl, System.currentTimeMillis()),
+            )
+        }
+    }
 
     var isPlaying by remember { mutableStateOf(false) }
     var buffering by remember { mutableStateOf(true) }
@@ -200,7 +231,7 @@ fun PlayerScreen(
         resolving = true
         sources = emptyList()
         sourceIndex = 0
-        pendingSeek = 0
+        pendingSeek = WatchHistory.positionFor(context, animeId, current)
         userSubs = emptyList()
         val request = StreamRequest(
             animeId,
@@ -258,6 +289,7 @@ fun PlayerScreen(
             pendingSeek,
         )
         pendingSeek = 0
+        mediaEpisode = current
         exo.prepare()
         exo.playWhenReady = true
     }
@@ -298,6 +330,7 @@ fun PlayerScreen(
         }
         exo.addListener(listener)
         onDispose {
+            saveProgress()
             exo.removeListener(listener)
             exo.release()
         }
@@ -305,9 +338,11 @@ fun PlayerScreen(
 
     // Progress ticker.
     LaunchedEffect(exo) {
+        var ticks = 0
         while (true) {
             if (!seeking) position = exo.currentPosition
             if (exo.duration > 0) duration = exo.duration
+            if (++ticks % 20 == 0 && exo.isPlaying) saveProgress() // every 5 s
             delay(250)
         }
     }
@@ -315,7 +350,10 @@ fun PlayerScreen(
     // Pause when the app leaves the foreground.
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_PAUSE) exo.pause()
+            if (event == Lifecycle.Event.ON_PAUSE) {
+                saveProgress()
+                exo.pause()
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }

@@ -49,6 +49,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.biaruuu.kiro.ui.components.rememberTmdbMeta
+import com.biaruuu.kiro.ui.components.TitleLogo
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Brush
 import com.biaruuu.kiro.R
 import com.biaruuu.kiro.core.NativeCore
 import com.biaruuu.kiro.data.Anime
@@ -217,6 +221,21 @@ private fun PhoneHeroPage(
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.28f)),
         )
+        // Soft fade behind the title, tagline and Play button into the page background.
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .fillMaxHeight(0.5f)
+                .background(
+                    Brush.verticalGradient(
+                        0f to Color.Transparent,
+                        0.55f to KiroBackground.copy(alpha = 0.55f),
+                        1f to KiroBackground,
+                    ),
+                ),
+        )
+        val meta by rememberTmdbMeta(anime)
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -224,17 +243,26 @@ private fun PhoneHeroPage(
                 .padding(bottom = 40.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                text = anime.displayTitle,
-                style = TextStyle(shadow = TextShadow),
-                fontSize = dims.heroTitle,
-                lineHeight = dims.heroTitle * 1.3f,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                textAlign = TextAlign.Center,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+            TitleLogo(
+                logoUrl = meta?.logoUrl,
+                contentDescription = anime.displayTitle,
+                alignment = Alignment.Center,
+                maxHeight = 96.dp,
+                modifier = Modifier.fillMaxWidth(0.72f),
+            ) {
+                Text(
+                    text = anime.displayTitle,
+                    style = TextStyle(shadow = TextShadow),
+                    fontSize = dims.heroTitle,
+                    lineHeight = dims.heroTitle * 1.3f,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Spacer(Modifier.height(6.dp))
             if (line.isNotEmpty()) {
                 Spacer(Modifier.height(4.dp))
                 Text(

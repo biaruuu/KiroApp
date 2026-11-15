@@ -91,6 +91,154 @@ public final class TrailerApi {
         return () -> cancelled.set(true);
     }
 
+    private static final ConcurrentHashMap<Integer, TmdbMeta> META = new ConcurrentHashMap<>();
+
+    /** Title logo, score and age rating from TMDB (EMPTY when there is no key or no match). */
+    @NonNull
+    public static AniListApi.Cancelable findTmdbMeta(
+            @NonNull Anime anime, @NonNull AniListApi.Callback<TmdbMeta> callback) {
+        final AtomicBoolean cancelled = new AtomicBoolean(false);
+        POOL.execute(() -> {
+            TmdbMeta meta;
+            try {
+                meta = metaFromTmdb(anime, cancelled);
+            } catch (Exception e) {
+                meta = TmdbMeta.EMPTY;
+            }
+            if (!cancelled.get()) {
+                callback.onSuccess(meta);
+            }
+        });
+        return () -> cancelled.set(true);
+    }
+
+    @NonNull
+    private static TmdbMeta metaFromTmdb(@NonNull Anime anime, @NonNull AtomicBoolean cancelled)
+            throws Exception {
+        TmdbMeta cached = META.get(anime.getId());
+        if (cached != null) {
+            return cached;
+        }
+        String key = BuildConfig.TMDB_API_KEY;
+        if (key == null || key.isEmpty()) {
+            return TmdbMeta.EMPTY;
+        }
+        boolean movie = "MOVIE".equals(anime.getFormat());
+        int id;
+        if (movie) {
+            id = 0;
+            Set<String> titles = new LinkedHashSet<>();
+            addTitle(titles, anime.getTitleEnglish());
+            addTitle(titles, anime.getTitleRomaji());
+            List<String> known = new ArrayList<>(titles);
+            for (String t : titles) {
+                JSONObject m = pickMatch(get(TMDB + "/search/movie?query=" + URLEncoder.encode(t, "UTF-8"), key), known);
+                if (m != null) {
+                    id = m.optInt("id");
+                    break;
+                }
+            }
+        } else {
+            id = tvIdFor(anime, key, cancelled);
+        }
+        if (id <= 0 || cancelled.get()) {
+            return TmdbMeta.EMPTY;
+        }
+        String type = movie ? "movie" : "tv";
+        JSONObject d = get(TMDB + "/" + type + "/" + id
+                + "?append_to_response=images," + (movie ? "release_dates" : "content_ratings")
+                + "&include_image_language=en,null", key);
+
+        // Logo: an English one first, then any (the same rule as the web app).
+        String logo = null;
+        JSONObject images = d.optJSONObject("images");
+        JSONArray logos = images != null ? images.optJSONArray("logos") : null;
+        if (logos != null) {
+            String any = null;
+            for (int i = 0; i < logos.length(); i++) {
+                JSONObject l = logos.optJSONObject(i);
+                if (l == null || l.optString("file_path", "").isEmpty()) continue;
+                if (any == null) any = l.optString("file_path");
+                if ("en".equals(l.optString("iso_639_1", ""))) {
+                    logo = l.optString("file_path");
+                    break;
+                }
+            }
+            if (logo == null) logo = any;
+        }
+        String cert = movie ? movieCertification(d) : tvCertification(d);
+        TmdbMeta meta = new TmdbMeta(
+                logo != null ? "https://image.tmdb.org/t/p/w500" + logo : null,
+                d.optDouble("vote_average", 0.0),
+                cert);
+        META.put(anime.getId(), meta);
+        return meta;
+    }
+
+    @Nullable
+    private static String tvCertification(JSONObject d) {
+        JSONObject ratings = d.optJSONObject("content_ratings");
+        JSONArray results = ratings != null ? ratings.optJSONArray("results") : null;
+        return pickCertification(results, "rating");
+    }
+
+    @Nullable
+    private static String movieCertification(JSONObject d) {
+        JSONObject dates = d.optJSONObject("release_dates");
+        JSONArray results = dates != null ? dates.optJSONArray("results") : null;
+        if (results == null) return null;
+        // Flatten to [{iso_3166_1, certification}] so the same picker works.
+        JSONArray flat = new JSONArray();
+        for (int i = 0; i < results.length(); i++) {
+            JSONObject r = results.optJSONObject(i);
+            JSONArray rd = r != null ? r.optJSONArray("release_dates") : null;
+            if (rd == null) continue;
+            for (int j = 0; j < rd.length(); j++) {
+                JSONObject x = rd.optJSONObject(j);
+                if (x != null && !x.optString("certification", "").isEmpty()) {
+                    try {
+                        flat.put(new JSONObject().put("iso_3166_1", r.optString("iso_3166_1"))
+                                .put("certification", x.optString("certification")));
+                    } catch (Exception ignored) {
+                        // skip
+                    }
+                    break;
+                }
+            }
+        }
+        return pickCertification(flat, "certification");
+    }
+
+    /** India first (U/A 13+ style), then the US, then anything; US ratings are mapped to that style. */
+    @Nullable
+    private static String pickCertification(@Nullable JSONArray results, String field) {
+        if (results == null) return null;
+        String in = null, us = null, other = null;
+        for (int i = 0; i < results.length(); i++) {
+            JSONObject r = results.optJSONObject(i);
+            if (r == null) continue;
+            String v = r.optString(field, "").trim();
+            if (v.isEmpty() || "NR".equals(v)) continue;
+            String country = r.optString("iso_3166_1", "");
+            if ("IN".equals(country) && in == null) in = v;
+            else if ("US".equals(country) && us == null) us = v;
+            else if (other == null) other = v;
+        }
+        if (in != null) return in;
+        String v = us != null ? us : other;
+        return v == null ? null : styleCertification(v);
+    }
+
+    private static String styleCertification(String v) {
+        switch (v.toUpperCase(Locale.ROOT)) {
+            case "TV-MA": case "R": case "NC-17": case "18+": return "A 18+";
+            case "TV-14": case "PG-13": return "U/A 13+";
+            case "TV-PG": case "PG": return "U/A 7+";
+            case "TV-G": case "TV-Y": case "TV-Y7": case "G": return "U";
+            default: return v;
+        }
+    }
+
     /** MyAnimeList trailer through Jikan (empty list when none). Runs off-thread. */
     @NonNull
     public static AniListApi.Cancelable findJikan(
