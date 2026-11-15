@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.9.7] - 2026-11-15
+
+### Changed
+- **Episodes** panel redesigned like Netflix: a wide black panel opening on the episode you're watching, each row with its thumbnail (play button, purple progress bar on the current one), "1. Title", length in minutes and the plot summary.
+- **Audio & Subtitles** now uses the same pure black as the three-dot menu.
+- **Subtitle style** panel is shown entirely in Trebuchet MS, so every option reads clearly instead of each name in its own font.
+
 ## [1.9.6] - 2026-11-15
 
 ### Changed

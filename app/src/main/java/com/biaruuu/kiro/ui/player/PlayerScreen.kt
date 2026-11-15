@@ -24,6 +24,8 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import com.biaruuu.kiro.data.EpisodeInfo
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Box
@@ -480,6 +482,7 @@ fun PlayerScreen(
                     Panel.Speed -> "Playback speed"
                 },
                 onClose = { panel = null },
+                width = if (open == Panel.Episodes) 470.dp else 340.dp,
             ) {
                 when (open) {
                     Panel.Menu -> LazyColumn {
@@ -518,14 +521,16 @@ fun PlayerScreen(
                         SubtitleStyleStore.save(context, new)
                     }
                     Panel.Tracks -> Unit
-                    Panel.Episodes -> LazyColumn {
-                        items(episodes, key = { it.number }) { ep ->
-                            PanelRow(
-                                label = ep.heading,
-                                selected = ep.number == current,
-                            ) {
-                                playEpisode(ep.number)
-                                panel = null
+                    Panel.Episodes -> {
+                        val listState = androidx.compose.foundation.lazy.rememberLazyListState(
+                            initialFirstVisibleItemIndex = episodes.indexOfFirst { it.number == current }.coerceAtLeast(0),
+                        )
+                        LazyColumn(state = listState) {
+                            items(episodes, key = { it.number }) { ep ->
+                                EpisodeRow(ep, ep.number == current) {
+                                    playEpisode(ep.number)
+                                    panel = null
+                                }
                             }
                         }
                     }
@@ -783,7 +788,7 @@ private fun SeekBar(
 }
 
 @Composable
-private fun SidePanel(title: String, onClose: () -> Unit, content: @Composable () -> Unit) {
+private fun SidePanel(title: String, onClose: () -> Unit, width: androidx.compose.ui.unit.Dp = 340.dp, content: @Composable () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -794,7 +799,7 @@ private fun SidePanel(title: String, onClose: () -> Unit, content: @Composable (
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .fillMaxHeight()
-                .width(340.dp)
+                .width(width)
                 .background(Color.Black)
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
                 .padding(top = 12.dp),
@@ -813,6 +818,93 @@ private fun SidePanel(title: String, onClose: () -> Unit, content: @Composable (
                 )
             }
             content()
+        }
+    }
+}
+
+/** One episode like the Netflix list: thumbnail, "1. Title", length, and the plot. */
+@Composable
+private fun EpisodeRow(ep: EpisodeInfo, playing: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(if (playing) Color(0xFF1C1C1E) else Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .width(150.dp)
+                .aspectRatio(16f / 9f)
+                .clip(RoundedCornerShape(6.dp))
+                .background(Color(0xFF262628)),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (!ep.thumbnailUrl.isNullOrEmpty()) {
+                coil.compose.AsyncImage(
+                    model = ep.thumbnailUrl,
+                    contentDescription = null,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.55f))
+                    .border(1.5.dp, Color.White, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.fluent_play_filled),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+            if (playing) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .fillMaxWidth()
+                        .height(3.dp)
+                        .background(KiroPurple),
+                )
+            }
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    ep.heading,
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                if (ep.durationMinutes > 0) {
+                    Text(
+                        "${ep.durationMinutes}m",
+                        color = Color(0xFFB3B3B3),
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
+            }
+            if (!ep.overview.isNullOrBlank()) {
+                Text(
+                    ep.overview,
+                    color = Color(0xFFB3B3B3),
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp,
+                    maxLines = 4,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
         }
     }
 }
@@ -890,7 +982,7 @@ private fun TracksDialog(exo: ExoPlayer, tracks: Tracks, onClose: () -> Unit) {
                 .widthIn(max = 780.dp)
                 .fillMaxHeight(0.88f)
                 .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFF141414))
+                .background(Color.Black)
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { },
         ) {
             Column(modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp, vertical = 20.dp)) {
@@ -1023,6 +1115,7 @@ private fun MenuRow(label: String, value: String, onClick: () -> Unit) {
 @Composable
 private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -> Unit) {
     val context = LocalContext.current
+    val trebuchet = remember { FontFamily(SubtitleOptions.typeface(context, SubtitleOptions.DEFAULT_FONT)) }
     var customName by remember { mutableStateOf(SubtitleOptions.customName(context)) }
     val pickFont = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -1039,6 +1132,7 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
         }
     }
 
+    androidx.compose.material3.ProvideTextStyle(TextStyle(fontFamily = trebuchet)) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item { SectionLabel("FONT") }
         items(SubtitleOptions.fonts) { font ->
@@ -1116,7 +1210,7 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
                     Text(
                         "The quick brown fox jumps over the lazy dog",
                         color = if (selected) KiroPurple.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.6f),
-                        fontFamily = FontFamily(typeface),
+                        fontFamily = trebuchet,
                         fontSize = 13.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -1138,6 +1232,7 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
             StyleRow(SubtitleOptions.edges[i].first, style.edge == i) { onChange(style.copy(edge = i)) }
         }
         item { Spacer(Modifier.height(16.dp)) }
+    }
     }
 }
 
