@@ -169,6 +169,46 @@ pub fn title_similarity(a: &str, b: &str) -> i32 {
     jaccard.max(contained) as i32
 }
 
+/// Instant, offline search over titles already on the device. `titles` holds one anime per
+/// line, its names separated by tabs. Returns the line numbers of the best matches, best
+/// first, as "3,17,4". Typing a piece of a name ("nar") matches; so do reordered words.
+pub fn rank_titles(query: &str, titles: &str, limit: usize) -> String {
+    let q = query.trim().to_lowercase();
+    if q.is_empty() {
+        return String::new();
+    }
+    let mut scored: Vec<(i32, usize)> = Vec::new();
+    for (i, line) in titles.split('\n').enumerate() {
+        let mut best = 0;
+        for name in line.split('\t') {
+            let n = name.to_lowercase();
+            if n.is_empty() {
+                continue;
+            }
+            let score = if n.starts_with(&q) {
+                100
+            } else if n.split(|c: char| !c.is_alphanumeric()).any(|w| w.starts_with(q.as_str())) {
+                94
+            } else if n.contains(&q) {
+                88
+            } else {
+                title_similarity(&q, &n)
+            };
+            best = best.max(score);
+        }
+        if best >= 55 {
+            scored.push((best, i));
+        }
+    }
+    scored.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
+    scored
+        .iter()
+        .take(limit)
+        .map(|(_, i)| i.to_string())
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
 /// Words that carry no identity for a season match.
 fn is_filler(t: &str) -> bool {
     matches!(t, "season" | "part" | "cour" | "the" | "no" | "wa" | "ga" | "tv" | "anime" | "dub" | "sub" | "s")
@@ -278,6 +318,25 @@ pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_titleSimilarity<'lo
 }
 
 #[no_mangle]
+pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_rankTitlesNative<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    query: JString<'local>,
+    titles: JString<'local>,
+    limit: jint,
+) -> jstring {
+    let q: String = match env.get_string(&query) {
+        Ok(s) => s.into(),
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let t: String = match env.get_string(&titles) {
+        Ok(s) => s.into(),
+        Err(_) => return std::ptr::null_mut(),
+    };
+    to_jstring(&mut env, &rank_titles(&q, &t, limit.max(1) as usize))
+}
+
+#[no_mangle]
 pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_seasonMatchNative<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
@@ -329,6 +388,15 @@ pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_rankStreamsNative<'
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn rank_titles_finds_partial_and_reordered() {
+        let titles = "Naruto\tNaruto\nOne Piece\tOne Piece\nBoruto: Naruto Next Generations\tBoruto";
+        assert_eq!(rank_titles("nar", titles, 5), "0,2");
+        assert_eq!(rank_titles("piece one", titles, 5), "1");
+        assert_eq!(rank_titles("", titles, 5), "");
+        assert_eq!(rank_titles("zzz", titles, 5), "");
+    }
 
     #[test]
     fn season_match_tells_seasons_apart() {

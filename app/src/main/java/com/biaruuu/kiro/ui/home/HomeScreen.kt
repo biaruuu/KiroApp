@@ -20,6 +20,7 @@ import com.biaruuu.kiro.data.Anime
 import com.biaruuu.kiro.ui.components.AnimeRow
 import com.biaruuu.kiro.ui.components.ErrorState
 import com.biaruuu.kiro.ui.components.RankedRow
+import com.biaruuu.kiro.ui.components.HomeSkeleton
 import com.biaruuu.kiro.ui.theme.LocalDimens
 
 @Composable
@@ -37,12 +38,7 @@ fun HomeScreen(
     val history = rememberWatchHistory()
 
     when (val current = state) {
-        HomeUiState.Loading -> Box(
-            modifier = modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-        }
+        HomeUiState.Loading -> HomeSkeleton(modifier = modifier)
 
         is HomeUiState.Error -> ErrorState(
             message = current.message,

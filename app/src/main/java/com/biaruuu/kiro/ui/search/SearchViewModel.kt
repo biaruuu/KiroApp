@@ -2,7 +2,9 @@ package com.biaruuu.kiro.ui.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.biaruuu.kiro.core.NativeCore
 import com.biaruuu.kiro.data.AniListRepository
+import com.biaruuu.kiro.data.AnimeCache
 import com.biaruuu.kiro.data.Anime
 import com.biaruuu.kiro.data.ApiErrors
 import com.biaruuu.kiro.data.SortOrder
@@ -43,6 +45,7 @@ class SearchViewModel : ViewModel() {
 
     fun onQueryChange(query: String) {
         _state.update { it.copy(query = query) }
+        showLocalMatches(query)
         schedule(debounce = true)
     }
 
@@ -71,6 +74,26 @@ class SearchViewModel : ViewModel() {
         if (current.loading || current.loadingMore || !current.hasNext || current.results.isEmpty()) return
         job?.cancel()
         job = viewModelScope.launch { fetch(current.page + 1) }
+    }
+
+    /**
+     * Answers while you type: matches from the anime already loaded on this device, ranked in
+     * Rust, appear at once; the real results replace them a moment later.
+     */
+    private fun showLocalMatches(query: String) {
+        val q = query.trim()
+        if (q.length < 2) return
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.Default) {
+            val pool = AnimeCache.all()
+            val names = pool.map { listOfNotNull(it.titleEnglish, it.titleRomaji, it.titleNative).distinct() }
+            val hits = NativeCore.rankTitles(q, names, 24).mapNotNull { pool.getOrNull(it) }
+            if (hits.isNotEmpty()) {
+                _state.update { cur ->
+                    // Only if this is still what the box says and nothing real has arrived for it.
+                    if (cur.query.trim() == q) cur.copy(results = hits, loaded = true) else cur
+                }
+            }
+        }
     }
 
     private fun schedule(debounce: Boolean) {

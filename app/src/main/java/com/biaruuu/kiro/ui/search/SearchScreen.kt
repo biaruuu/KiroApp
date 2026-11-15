@@ -33,6 +33,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
+import com.biaruuu.kiro.ui.components.SearchSkeleton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -155,10 +156,7 @@ fun SearchScreen(
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             when {
-                state.results.isEmpty() && state.loading -> CircularProgressIndicator(
-                    color = KiroPurple,
-                    modifier = Modifier.align(Alignment.Center),
-                )
+                state.results.isEmpty() && state.loading -> SearchSkeleton(columns = 3)
 
                 state.results.isEmpty() && state.error != null -> ErrorState(
                     message = state.error.orEmpty(),

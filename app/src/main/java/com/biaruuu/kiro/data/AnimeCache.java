@@ -19,6 +19,11 @@ public final class AnimeCache {
         CACHE.put(anime.getId(), anime);
     }
 
+    /** A snapshot of everything seen so far (for instant local search). */
+    public static java.util.List<Anime> all() {
+        return new java.util.ArrayList<>(CACHE.values());
+    }
+
     @Nullable
     public static Anime get(int id) {
         return CACHE.get(id);

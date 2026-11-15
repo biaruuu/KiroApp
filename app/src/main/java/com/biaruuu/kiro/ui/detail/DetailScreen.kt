@@ -29,6 +29,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import com.biaruuu.kiro.ui.components.DetailSkeleton
+import com.biaruuu.kiro.ui.components.EpisodeSkeletonRow
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -100,10 +102,7 @@ fun DetailScreen(
       Box(modifier = Modifier.fillMaxSize().background(Bg)) {
         when {
             base == null && state.error != null -> ErrorState(state.error!!, onRetry = vm::load)
-            base == null -> CircularProgressIndicator(
-                color = KiroPurple,
-                modifier = Modifier.align(Alignment.Center),
-            )
+            base == null -> DetailSkeleton()
             else -> DetailContent(
                 anime = base,
                 detail = state.detail,
@@ -470,8 +469,11 @@ private fun DetailContent(
         }
         if (detail == null && loadingMore) {
             item(key = "loading") {
-                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = KiroPurple, modifier = Modifier.size(28.dp))
+                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
+                    repeat(3) {
+                        EpisodeSkeletonRow()
+                        Spacer(Modifier.height(14.dp))
+                    }
                 }
             }
         }

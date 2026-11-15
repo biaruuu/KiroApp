@@ -20,7 +20,13 @@ public final class HttpClientProvider {
             synchronized (HttpClientProvider.class) {
                 local = client;
                 if (local == null) {
+                    okhttp3.Dispatcher dispatcher = new okhttp3.Dispatcher();
+                    dispatcher.setMaxRequests(64);
+                    dispatcher.setMaxRequestsPerHost(16);
                     local = new OkHttpClient.Builder()
+                            .dispatcher(dispatcher)
+                            .connectionPool(new okhttp3.ConnectionPool(12, 5, TimeUnit.MINUTES))
+                            .protocols(java.util.Arrays.asList(okhttp3.Protocol.HTTP_2, okhttp3.Protocol.HTTP_1_1))
                             .connectTimeout(15, TimeUnit.SECONDS)
                             .readTimeout(20, TimeUnit.SECONDS)
                             .callTimeout(30, TimeUnit.SECONDS)

@@ -56,6 +56,41 @@ object NativeCore {
     }
 
     @JvmStatic
+    external fun rankTitlesNative(query: String, titles: String, limit: Int): String?
+
+    /**
+     * Instant local search: indexes (into [titles], each entry being all the names of one anime)
+     * of the best matches for [query], best first. Rust when available, same rules in Kotlin.
+     */
+    @JvmStatic
+    fun rankTitles(query: String, titles: List<List<String>>, limit: Int): List<Int> {
+        val q = query.trim().lowercase()
+        if (q.isEmpty()) return emptyList()
+        if (nativeAvailable) {
+            val joined = titles.joinToString("\n") { it.joinToString("\t") { n -> n.replace('\n', ' ').replace('\t', ' ') } }
+            val r = try {
+                rankTitlesNative(q, joined, limit)
+            } catch (_: Throwable) {
+                null
+            }
+            if (r != null) return r.split(',').mapNotNull { it.toIntOrNull() }
+        }
+        return titles.withIndex().mapNotNull { (i, names) ->
+            val best = names.maxOfOrNull { n ->
+                val l = n.lowercase()
+                when {
+                    l.startsWith(q) -> 100
+                    words(l).any { it.startsWith(q) } -> 94
+                    l.contains(q) -> 88
+                    else -> similarity(q, l)
+                }
+            } ?: 0
+            if (best >= 55) best to i else null
+        }.sortedWith(compareByDescending<Pair<Int, Int>> { it.first }.thenBy { it.second })
+            .take(limit).map { it.second }
+    }
+
+    @JvmStatic
     external fun seasonMatchNative(a: String, b: String): Int
 
     private val FILLER = setOf("season", "part", "cour", "the", "no", "wa", "ga", "tv", "anime", "dub", "sub", "s")

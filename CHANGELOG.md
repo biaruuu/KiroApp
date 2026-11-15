@@ -4,6 +4,18 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.11.0] - 2026-11-15
+
+Performance release.
+
+### Added
+- **Skeleton loaders** instead of spinners: Home (hero and poster rows), Search (the 3-column poster grid), the Details page and More details, and the episode list. They are flat placeholders that pulse, drawn without recomposing, so they cost almost nothing.
+- **Instant search while you type (Rust):** matches from the anime already loaded on the device are ranked in Rust (prefix, partial word and reordered-word matches) and shown immediately; the real AniList results replace them a moment later.
+- **On-disk API cache (Java):** lists (Home, Search) are reused for 10 minutes and the Details page (with airing times) for 2, with no request and no waiting. If the network drops, the last answer is shown instead of an error. The cache is capped at 24 MB.
+
+### Changed
+- Faster networking: HTTP/2, a larger connection pool and up to 16 parallel requests per host, so posters, trailers and episode data load side by side.
+
 ## [1.10.1] - 2026-11-15
 
 ### Changed

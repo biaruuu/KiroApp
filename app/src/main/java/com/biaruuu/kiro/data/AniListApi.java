@@ -98,6 +98,13 @@ public final class AniListApi {
                     + " status_in: $statusIn, isAdult: false) { ...M } } } "
                     + MEDIA_FIELDS;
 
+    private static final java.util.concurrent.ExecutorService IO =
+            java.util.concurrent.Executors.newFixedThreadPool(3);
+    /** Lists (home, search) may be 10 minutes old; the details page, with its airing times, 2. */
+    private static final long LIST_TTL_MS = 10 * 60 * 1000L;
+    private static final long DETAIL_TTL_MS = 2 * 60 * 1000L;
+    private static final long STALE_TTL_MS = 7L * 24 * 60 * 60 * 1000L;
+
     private static final String DETAIL_QUERY =
             "query Detail($id: Int) { Media(id: $id, type: ANIME) {"
                     + " id idMal"
@@ -265,43 +272,91 @@ public final class AniListApi {
             return () -> { };
         }
 
-        Request request = new Request.Builder()
-                .url(ENDPOINT)
-                .header("Accept", "application/json")
-                .post(RequestBody.create(payload, JSON_TYPE))
-                .build();
+        final String key = ApiDiskCache.key(payload);
+        final long ttl = query.equals(DETAIL_QUERY) ? DETAIL_TTL_MS : LIST_TTL_MS;
+        final java.util.concurrent.atomic.AtomicBoolean cancelled = new java.util.concurrent.atomic.AtomicBoolean(false);
+        final Call[] live = new Call[1];
 
-        final Call call = HttpClientProvider.get().newCall(request);
-        call.enqueue(new okhttp3.Callback() {
-            @Override
-            public void onFailure(@NonNull Call c, @NonNull IOException e) {
-                if (!c.isCanceled()) {
+        Runnable network = () -> {
+            if (cancelled.get()) {
+                return;
+            }
+            Request request = new Request.Builder()
+                    .url(ENDPOINT)
+                    .header("Accept", "application/json")
+                    .post(RequestBody.create(payload, JSON_TYPE))
+                    .build();
+            final Call call = HttpClientProvider.get().newCall(request);
+            live[0] = call;
+            call.enqueue(new okhttp3.Callback() {
+                @Override
+                public void onFailure(@NonNull Call c, @NonNull IOException e) {
+                    if (cancelled.get() || c.isCanceled()) {
+                        return;
+                    }
+                    // Offline or AniList down: show the last answer we have instead of an error.
+                    String stale = ApiDiskCache.get(key, STALE_TTL_MS);
+                    if (stale != null) {
+                        try {
+                            callback.onSuccess(parse(200, stale, parser));
+                            return;
+                        } catch (Exception ignored) {
+                            // fall through to the real error
+                        }
+                    }
                     callback.onError(e);
                 }
-            }
 
-            @Override
-            public void onResponse(@NonNull Call c, @NonNull Response response) {
-                final T result;
-                try (Response r = response) {
-                    result = handle(r, parser);
-                } catch (Exception e) {
-                    if (!c.isCanceled()) {
-                        callback.onError(e);
+                @Override
+                public void onResponse(@NonNull Call c, @NonNull Response response) {
+                    final T result;
+                    try (Response r = response) {
+                        ResponseBody body = r.body();
+                        String text = body != null ? body.string() : "";
+                        result = parse(r.code(), text, parser);
+                        if (r.isSuccessful()) {
+                            ApiDiskCache.put(key, text);
+                        }
+                    } catch (Exception e) {
+                        if (!cancelled.get() && !c.isCanceled()) {
+                            callback.onError(e);
+                        }
+                        return;
                     }
-                    return;
+                    if (!cancelled.get()) {
+                        callback.onSuccess(result);
+                    }
                 }
-                callback.onSuccess(result);
+            });
+        };
+
+        // A recent copy on disk is used straight away: no request, no waiting.
+        final String fresh = ApiDiskCache.get(key, ttl);
+        if (fresh != null) {
+            IO.execute(() -> {
+                try {
+                    T result = parse(200, fresh, parser);
+                    if (!cancelled.get()) {
+                        callback.onSuccess(result);
+                    }
+                } catch (Exception e) {
+                    network.run(); // unreadable copy: ask the network
+                }
+            });
+        } else {
+            network.run();
+        }
+        return () -> {
+            cancelled.set(true);
+            Call c = live[0];
+            if (c != null) {
+                c.cancel();
             }
-        });
-        return call::cancel;
+        };
     }
 
-    private static <T> T handle(Response response, Parser<T> parser) throws IOException {
-        ResponseBody body = response.body();
-        String text = body != null ? body.string() : "";
-
-        if (response.code() == 429) {
+    private static <T> T parse(int code, String text, Parser<T> parser) throws IOException {
+        if (code == 429) {
             throw new IOException("AniList is rate limiting requests. Wait a moment and retry.");
         }
 
@@ -312,11 +367,11 @@ public final class AniListApi {
             // handled below
         }
 
-        if (!response.isSuccessful()) {
+        if (code < 200 || code >= 300) {
             String message = root != null ? firstError(root) : null;
             throw new IOException(message != null
                     ? message
-                    : "AniList error (HTTP " + response.code() + ")");
+                    : "AniList error (HTTP " + code + ")");
         }
         if (root == null) {
             throw new IOException("Unexpected response from AniList");
@@ -327,7 +382,6 @@ public final class AniListApi {
             String message = firstError(root);
             throw new IOException(message != null ? message : "Empty response from AniList");
         }
-
         try {
             return parser.parse(data);
         } catch (JSONException e) {
