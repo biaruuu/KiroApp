@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.9.3] - 2026-11-15
+
+### Fixed
+- **"Couldn't play this video" on every episode.** The API's stream address (`/api/proxy/hls?url=...`) has no `.m3u8` ending, so the player took it for a plain video file and failed to read the playlist. Streams are now opened explicitly as HLS, which also lets the Quality list show the real resolutions (Auto + each available one).
+- If playback still fails, the message now includes the player's error code so the cause can be pinpointed.
+
 ## [1.9.2] - 2026-11-15
 
 Videos that wouldn't play, and exact season checks.

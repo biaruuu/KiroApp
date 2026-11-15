@@ -244,7 +244,12 @@ fun PlayerScreen(
         quality = 0
         applyQuality(exo, 0)
         exo.setMediaItem(
-            MediaItem.Builder().setUri(source.url).setSubtitleConfigurations(subtitles).build(),
+            MediaItem.Builder()
+                .setUri(source.url)
+                // The API's proxy address has no ".m3u8" ending, so ExoPlayer can't guess it is HLS.
+                .apply { if (source.isHls) setMimeType(MimeTypes.APPLICATION_M3U8) }
+                .setSubtitleConfigurations(subtitles)
+                .build(),
             pendingSeek,
         )
         pendingSeek = 0
@@ -278,7 +283,7 @@ fun PlayerScreen(
                     pendingSeek = exo.currentPosition
                     sourceIndex = latestIndex + 1
                 } else {
-                    error = "Couldn't play this video"
+                    error = "Couldn't play this video (${e.errorCodeName})"
                 }
             }
 
