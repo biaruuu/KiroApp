@@ -66,9 +66,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.biaruuu.kiro.ui.components.RatingBadges
-import com.biaruuu.kiro.ui.components.TitleLogo
-import com.biaruuu.kiro.ui.components.rememberTmdbMeta
 import com.biaruuu.kiro.R
 import com.biaruuu.kiro.data.Anime
 import com.biaruuu.kiro.data.AnimeDetail
@@ -293,25 +290,13 @@ private fun DetailContent(
                         }
                     }
                     Spacer(Modifier.height(8.dp))
-                    val meta by rememberTmdbMeta(anime)
-                    TitleLogo(
-                        logoUrl = meta?.logoUrl,
-                        contentDescription = anime.displayTitle,
-                        maxHeight = 84.dp,
-                        modifier = Modifier.fillMaxWidth(0.7f),
-                    ) {
-                        Text(
-                            anime.displayTitle,
-                            color = Color.White,
-                            fontSize = 24.sp,
-                            lineHeight = 29.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                    if (meta?.ratingLabel?.isNotEmpty() == true || !meta?.certification.isNullOrEmpty()) {
-                        Spacer(Modifier.height(10.dp))
-                        RatingBadges(meta)
-                    }
+                    Text(
+                        anime.displayTitle,
+                        color = Color.White,
+                        fontSize = 24.sp,
+                        lineHeight = 29.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
                     val genres = genreLine(anime)
                     if (genres.isNotEmpty()) {
                         Spacer(Modifier.height(6.dp))

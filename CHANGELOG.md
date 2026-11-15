@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.10.1] - 2026-11-15
+
+### Changed
+- **Details page is back to how it was**: the anime's title as text, with no title logo, IMDB rating or parental guidance badges. (Continue Watching and the Home hero logo stay.)
+
 ## [1.10.0] - 2026-11-15
 
 ### Added
