@@ -83,6 +83,12 @@ jobs:
         run: |
           if [ -n "$GOOGLE_SERVICES_JSON" ]; then
             printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+            # Google sign-in needs a web client (type 3) in the file; say so if it is missing.
+            if grep -q '"client_type": *3' app/google-services.json; then
+              echo "google-services.json has a Google web client: Google sign-in is available."
+            else
+              echo "::warning::google-services.json has no Google web client. Enable Google in Firebase Authentication, add the SHA-1 to the Android app, then download and save the file again."
+            fi
           else
             echo "GOOGLE_SERVICES_JSON secret not set: building with sign-in turned off."
           fi

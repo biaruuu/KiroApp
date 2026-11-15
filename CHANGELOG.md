@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.16.1] - 2026-11-16
+
+### Fixed
+- Rebuilt with the updated Firebase config so Google sign-in works (the 1.16.0 build was made before Google was enabled).
+
+### Changed
+- The build now warns when `google-services.json` has no Google web client.
+
 ## [1.16.0] - 2026-11-16
 
 Login and Me tab redesign.
