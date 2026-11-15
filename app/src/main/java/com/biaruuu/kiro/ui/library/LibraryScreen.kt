@@ -1,7 +1,25 @@
 package com.biaruuu.kiro.ui.library
 
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.util.lerp
+import com.biaruuu.kiro.ui.components.PageTopBar
+import kotlin.math.abs
+import kotlin.math.roundToInt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -93,7 +111,9 @@ fun LibraryScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    var tab by rememberSaveable { mutableIntStateOf(TAB_WATCHED) }
+    val pager = rememberPagerState(pageCount = { Tabs.size })
+    val scope = rememberCoroutineScope()
+    val tab = pager.currentPage
     var listSort by rememberSaveable { mutableIntStateOf(0) }
     var ratedSort by rememberSaveable { mutableIntStateOf(0) }
     var version by remember { mutableIntStateOf(0) }
@@ -123,72 +143,71 @@ fun LibraryScreen(
     val ratedSortLabels = listOf("Recently rated", "Highest rating")
 
     Column(modifier = modifier.statusBarsPadding()) {
-        // Title bar
-        Box(modifier = Modifier.fillMaxWidth().height(56.dp), contentAlignment = Alignment.Center) {
-            Text("Library", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        }
+        PageTopBar("Library", onBack = null)
+        LibraryTabs(pager = pager, onSelect = { scope.launch { pager.animateScrollToPage(it) } })
         Box(Modifier.fillMaxWidth().height(1.dp).background(Hairline))
 
-        LibraryTabs(selected = tab, onSelect = { tab = it })
-        Box(Modifier.fillMaxWidth().height(1.dp).background(Hairline))
+        // Swiping or tapping a tab slides between the four pages.
+        HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
+            Column(modifier = Modifier.fillMaxSize()) {
+                when (page) {
+                    TAB_WATCHED -> {
+                        CountBar("${history.size} Series", null) {}
+                        if (history.isEmpty()) {
+                            EmptyState(R.drawable.fluent_inbox_regular, "Start watching to build your library!")
+                        } else {
+                            LazyVerticalGrid(
+                                columns = GridCells.Adaptive(160.dp),
+                                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(18.dp),
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                items(history, key = { it.animeId }) { e ->
+                                    WatchedCard(
+                                        entry = e,
+                                        onPlay = { onContinue(e.animeId, e.episode) },
+                                        onInfo = { onOpenAnime(e.animeId) },
+                                        onRemove = { removeTarget = RemoveTarget(TAB_WATCHED, e.animeId, e.title) },
+                                    )
+                                }
+                            }
+                        }
+                    }
 
-        val count = when (tab) {
-            TAB_WATCHED -> "${history.size} Series"
-            TAB_LIST -> "${myList.size} Series"
-            TAB_RATED -> "${rated.size} Series"
-            else -> "0 Season"
-        }
-        val sortLabel = when (tab) {
-            TAB_LIST -> listSortLabels[listSort]
-            TAB_RATED -> ratedSortLabels[ratedSort]
-            else -> null
-        }
-        CountBar(count = count, sortLabel = sortLabel, onSortClick = { sortSheet = true })
+                    TAB_LIST -> {
+                        CountBar("${myList.size} Series", listSortLabels[listSort]) { sortSheet = true }
+                        if (sortedList.isEmpty()) {
+                            EmptyState(R.drawable.fluent_inbox_regular, "Start adding favorites to your list!")
+                        } else {
+                            PosterGrid(
+                                entries = sortedList,
+                                showRating = false,
+                                onOpen = onOpenAnime,
+                                onRemove = { removeTarget = RemoveTarget(TAB_LIST, it.id, it.title) },
+                            )
+                        }
+                    }
 
-        when (tab) {
-            TAB_WATCHED -> if (history.isEmpty()) {
-                EmptyState(R.drawable.fluent_play_regular, "Nothing watched yet. Start an episode!")
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(160.dp),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    items(history, key = { it.animeId }) { e ->
-                        WatchedCard(
-                            entry = e,
-                            onPlay = { onContinue(e.animeId, e.episode) },
-                            onInfo = { onOpenAnime(e.animeId) },
-                            onRemove = { removeTarget = RemoveTarget(TAB_WATCHED, e.animeId, e.title) },
-                        )
+                    TAB_DOWNLOAD -> {
+                        CountBar("0 Season", null) {}
+                        EmptyState(R.drawable.fluent_arrow_download_regular, "Download episodes to watch offline")
+                    }
+
+                    else -> {
+                        CountBar("${rated.size} Series", ratedSortLabels[ratedSort]) { sortSheet = true }
+                        if (sortedRated.isEmpty()) {
+                            EmptyState(R.drawable.fluent_star_regular, "Rate anime and they will show up here!")
+                        } else {
+                            PosterGrid(
+                                entries = sortedRated,
+                                showRating = true,
+                                onOpen = onOpenAnime,
+                                onRemove = { removeTarget = RemoveTarget(TAB_RATED, it.id, it.title) },
+                            )
+                        }
                     }
                 }
-            }
-
-            TAB_LIST -> if (sortedList.isEmpty()) {
-                EmptyState(R.drawable.fluent_library_regular, "Start adding favorites to your list!")
-            } else {
-                PosterGrid(
-                    entries = sortedList,
-                    showRating = false,
-                    onOpen = onOpenAnime,
-                    onRemove = { removeTarget = RemoveTarget(TAB_LIST, it.id, it.title) },
-                )
-            }
-
-            TAB_DOWNLOAD -> EmptyState(R.drawable.fluent_arrow_download_regular, "Download episodes to watch offline")
-
-            else -> if (sortedRated.isEmpty()) {
-                EmptyState(R.drawable.fluent_star_regular, "Rate anime and they will show up here!")
-            } else {
-                PosterGrid(
-                    entries = sortedRated,
-                    showRating = true,
-                    onOpen = onOpenAnime,
-                    onRemove = { removeTarget = RemoveTarget(TAB_RATED, it.id, it.title) },
-                )
             }
         }
     }
@@ -237,61 +256,79 @@ fun LibraryScreen(
 }
 
 @Composable
-private fun LibraryTabs(selected: Int, onSelect: (Int) -> Unit) {
-    val listState = rememberLazyListState()
-    // Keep the chosen tab roughly centred, like the reference.
-    LaunchedEffect(selected) {
-        val info = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == selected }
-        if (info != null) {
-            val center = (listState.layoutInfo.viewportStartOffset + listState.layoutInfo.viewportEndOffset) / 2
-            listState.animateScrollBy((info.offset + info.size / 2 - center).toFloat())
-        } else {
-            listState.animateScrollToItem(selected)
+private fun LibraryTabs(pager: PagerState, onSelect: (Int) -> Unit) {
+    val density = LocalDensity.current
+    val scroll = rememberScrollState()
+    val lefts = remember { mutableStateListOf(0f, 0f, 0f, 0f) }
+    val widths = remember { mutableStateListOf(0f, 0f, 0f, 0f) }
+    var viewport by remember { mutableIntStateOf(0) }
+
+    // The white line slides between the two tabs while the page is being dragged.
+    val cur = pager.currentPage
+    val frac = pager.currentPageOffsetFraction
+    val target = (if (frac > 0f) cur + 1 else if (frac < 0f) cur - 1 else cur).coerceIn(0, Tabs.lastIndex)
+    val p = abs(frac).coerceIn(0f, 1f)
+    val lineX = lerp(lefts[cur], lefts[target], p)
+    val lineW = lerp(widths[cur], widths[target], p)
+
+    // Keep the chosen tab in view.
+    LaunchedEffect(cur, viewport, widths[cur]) {
+        if (viewport > 0 && widths[cur] > 0f) {
+            scroll.animateScrollTo((lefts[cur] + widths[cur] / 2f - viewport / 2f).roundToInt().coerceAtLeast(0))
         }
     }
-    LazyRow(
-        state = listState,
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(28.dp),
-        modifier = Modifier.fillMaxWidth().height(52.dp),
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(44.dp)
+            .onSizeChanged { viewport = it.width }
+            .horizontalScroll(scroll),
     ) {
-        itemsIndexed(Tabs) { index, label ->
-            val active = index == selected
-            Column(
-                modifier = Modifier.clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) { onSelect(index) },
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    Text(
-                        label,
-                        color = if (active) Color.White else Color(0xFF8C8C91),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                    )
-                }
-                Box(
-                    Modifier
-                        .height(3.dp)
-                        .fillMaxWidth()
-                        .background(if (active) Color.White else Color.Transparent),
+        Row(modifier = Modifier.fillMaxHeight()) {
+            Spacer(Modifier.width(16.dp))
+            Tabs.forEachIndexed { index, label ->
+                val color by animateColorAsState(
+                    if (cur == index) Color.White else Color(0xFF8C8C91),
+                    label = "tab-color",
                 )
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .onGloballyPositioned {
+                            lefts[index] = it.positionInParent().x
+                            widths[index] = it.size.width.toFloat()
+                        }
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { onSelect(index) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(label, color = color, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                }
+                Spacer(Modifier.width(if (index == Tabs.lastIndex) 16.dp else 24.dp))
             }
         }
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .offset { IntOffset(lineX.roundToInt(), 0) }
+                .width(with(density) { lineW.toDp() })
+                .height(2.dp)
+                .background(Color.White),
+        )
     }
 }
 
 @Composable
 private fun CountBar(count: String, sortLabel: String?, onSortClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(count, color = Muted, fontSize = 16.sp)
+        Text(count, color = Muted, fontSize = 13.sp)
         if (sortLabel != null) {
             Row(
                 modifier = Modifier.clickable(
@@ -301,13 +338,13 @@ private fun CountBar(count: String, sortLabel: String?, onSortClick: () -> Unit)
                 ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(sortLabel, color = Muted, fontSize = 16.sp)
-                Spacer(Modifier.width(6.dp))
+                Text(sortLabel, color = Muted, fontSize = 13.sp)
+                Spacer(Modifier.width(4.dp))
                 Icon(
                     painter = painterResource(R.drawable.fluent_chevron_down_regular),
                     contentDescription = "Sort",
                     tint = Muted,
-                    modifier = Modifier.size(22.dp),
+                    modifier = Modifier.size(20.dp),
                 )
             }
         }
@@ -374,15 +411,16 @@ private fun WatchedCard(
             Text(
                 entry.title,
                 color = Color.White,
-                fontSize = 16.sp,
-                lineHeight = 22.sp,
+                fontSize = 13.sp,
+                lineHeight = 20.sp,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(28.dp)
+                    .offset(y = (-4).dp)
                     .clickable(onClick = onInfo),
                 contentAlignment = Alignment.Center,
             ) {
@@ -390,14 +428,14 @@ private fun WatchedCard(
                     painter = painterResource(R.drawable.fluent_info_regular),
                     contentDescription = "Details",
                     tint = Color.White,
-                    modifier = Modifier.size(26.dp),
+                    modifier = Modifier.size(20.dp),
                 )
             }
         }
         Text(
             "Episode ${entry.episode}",
             color = Color.White,
-            fontSize = 16.sp,
+            fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
         )
     }
@@ -413,7 +451,7 @@ private fun PosterGrid(
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(104.dp),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier.fillMaxSize(),
@@ -423,7 +461,7 @@ private fun PosterGrid(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(2f / 3f)
+                        .aspectRatio(0.707f)
                         .clip(RoundedCornerShape(4.dp))
                         .background(Placeholder),
                 ) {
@@ -434,12 +472,12 @@ private fun PosterGrid(
                         modifier = Modifier.matchParentSize(),
                     )
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(6.dp))
                 Text(
                     e.title,
                     color = Color.White,
-                    fontSize = 16.sp,
-                    lineHeight = 22.sp,
+                    fontSize = 13.sp,
+                    lineHeight = 21.sp,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -450,10 +488,10 @@ private fun PosterGrid(
                             painter = painterResource(R.drawable.fluent_star_filled),
                             contentDescription = null,
                             tint = KiroPurple,
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(14.dp),
                         )
                         Spacer(Modifier.width(4.dp))
-                        Text("${e.rating}/5", color = Muted, fontSize = 14.sp)
+                        Text("${e.rating}/5", color = Muted, fontSize = 12.sp)
                     }
                 }
             }
@@ -464,7 +502,8 @@ private fun PosterGrid(
 @Composable
 private fun EmptyState(@DrawableRes icon: Int, message: String) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(bottom = 80.dp, start = 32.dp, end = 32.dp),
+        // Bottom padding = the count bar's height, so the group is centred in the whole page.
+        modifier = Modifier.fillMaxSize().padding(bottom = 52.dp, start = 32.dp, end = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -472,10 +511,10 @@ private fun EmptyState(@DrawableRes icon: Int, message: String) {
             painter = painterResource(icon),
             contentDescription = null,
             tint = EmptyTint,
-            modifier = Modifier.size(56.dp),
+            modifier = Modifier.size(32.dp),
         )
-        Spacer(Modifier.height(16.dp))
-        Text(message, color = EmptyTint, fontSize = 18.sp, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(12.dp))
+        Text(message, color = EmptyTint, fontSize = 14.sp, textAlign = TextAlign.Center)
     }
 }
 
@@ -499,12 +538,12 @@ private fun SortSheet(
         tonalElevation = 0.dp,
         dragHandle = null,
     ) {
-        Column(modifier = Modifier.navigationBarsPadding().padding(top = 8.dp)) {
+        Column(modifier = Modifier.navigationBarsPadding().padding(top = 4.dp)) {
             labels.forEachIndexed { index, label ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp)
+                        .height(53.dp)
                         .clickable {
                             onSelect(index)
                             close()
@@ -512,37 +551,37 @@ private fun SortSheet(
                         .padding(horizontal = 22.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(Modifier.width(44.dp)) {
+                    Box(Modifier.width(34.dp)) {
                         if (index == current) {
                             Icon(
                                 painter = painterResource(R.drawable.fluent_checkmark_regular),
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier.size(26.dp),
+                                modifier = Modifier.size(22.dp),
                             )
                         }
                     }
-                    Text(label, color = Color.White, fontSize = 19.sp)
+                    Text(label, color = Color.White, fontSize = 15.sp)
                 }
             }
             Box(Modifier.padding(horizontal = 24.dp, vertical = 6.dp).fillMaxWidth().height(1.dp).background(Hairline))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
+                    .height(53.dp)
                     .clickable { close() }
                     .padding(horizontal = 22.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(Modifier.width(44.dp)) {
+                Box(Modifier.width(34.dp)) {
                     Icon(
                         painter = painterResource(R.drawable.fluent_dismiss_regular),
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(26.dp),
+                        modifier = Modifier.size(22.dp),
                     )
                 }
-                Text("Cancel", color = Color.White, fontSize = 19.sp)
+                Text("Cancel", color = Color.White, fontSize = 15.sp)
             }
             Spacer(Modifier.height(8.dp))
         }

@@ -68,7 +68,7 @@ private val Destinations = listOf(
         R.drawable.fluent_video_clip_multiple_filled,
         badge = true,
     ),
-    NavDestination("Library", R.drawable.fluent_library_regular, R.drawable.fluent_library_filled),
+    NavDestination("Library", R.drawable.fluent_inbox_regular, R.drawable.fluent_inbox_regular),
     NavDestination("Me", R.drawable.fluent_emoji_regular, R.drawable.fluent_emoji_filled),
 )
 

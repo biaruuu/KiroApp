@@ -4,6 +4,15 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.16.3] - 2026-11-16
+
+### Changed
+- Library resized to Laftel's proportions: 48 dp title bar, 44 dp tab row, smaller text, thumbnails and posters, and a centred empty state.
+- Bottom navigation is slimmer (50 dp, 22 dp icons, smaller labels) and Library uses an inbox icon.
+
+### Added
+- A white line under the selected Library tab that slides between tabs; swipe the page or tap a tab to switch smoothly.
+
 ## [1.16.2] - 2026-11-16
 
 ### Changed

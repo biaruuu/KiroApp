@@ -73,14 +73,14 @@ private fun NavItem(
                 painter = painterResource(if (selected) destination.iconSelected else destination.icon),
                 contentDescription = null,
                 tint = tint,
-                modifier = Modifier.size(28.dp),
+                modifier = Modifier.size(22.dp),
             )
             if (destination.badge) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .offset(x = 2.dp, y = (-1).dp)
-                        .size(7.dp)
+                        .size(6.dp)
                         .clip(CircleShape)
                         .background(KiroPurple),
                 )
@@ -89,7 +89,7 @@ private fun NavItem(
         Text(
             text = destination.label,
             color = tint,
-            fontSize = 12.sp,
+            fontSize = 10.5.sp,
             fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
             maxLines = 1,
             modifier = Modifier.padding(top = 2.dp),
@@ -116,7 +116,7 @@ fun KiroBottomBar(
             modifier = Modifier
                 .navigationBarsPadding()
                 .fillMaxWidth()
-                .height(64.dp),
+                .height(50.dp),
         ) {
             destinations.forEachIndexed { index, destination ->
                 NavItem(
