@@ -368,7 +368,9 @@ fun PlayerScreen(
     // HDR / Dolby Vision: hardware tunneling plus an HDR window, both left to the phone's decoder.
     DisposableEffect(hdrOn) {
         prefs.edit().putBoolean("hdr_tunneling", hdrOn).apply()
-        exo.trackSelectionParameters = exo.trackSelectionParameters.buildUpon().setTunnelingEnabled(hdrOn).build()
+        (exo.trackSelector as? androidx.media3.exoplayer.trackselection.DefaultTrackSelector)?.let { sel ->
+            sel.parameters = sel.buildUponParameters().setTunnelingEnabled(hdrOn).build()
+        }
         val window = (context as? android.app.Activity)?.window
         if (hdrOn && android.os.Build.VERSION.SDK_INT >= 26) {
             window?.colorMode = android.content.pm.ActivityInfo.COLOR_MODE_HDR
