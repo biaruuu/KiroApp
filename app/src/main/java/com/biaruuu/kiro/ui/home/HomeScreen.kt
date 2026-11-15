@@ -34,6 +34,7 @@ fun HomeScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val dims = LocalDimens.current
+    val history = rememberWatchHistory()
 
     when (val current = state) {
         HomeUiState.Loading -> Box(
@@ -64,7 +65,6 @@ fun HomeScreen(
                     )
                 }
             }
-            val history = rememberWatchHistory()
             if (history.isNotEmpty()) {
                 item(key = "continue", contentType = "continue") {
                     ContinueWatchingRow(items = history, onContinue = onContinue)
