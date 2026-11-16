@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.18.1] - 2026-11-16
+
+### Changed
+- My List, ratings and Continue Watching now need an account. Logged-out users who tap My List or rate an anime are asked to log in, and nothing is saved on the phone alone.
+
 ## [1.18.0] - 2026-11-16
 
 Profiles and a library that follows you.

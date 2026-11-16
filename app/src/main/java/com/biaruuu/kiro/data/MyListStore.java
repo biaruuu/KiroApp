@@ -66,6 +66,7 @@ public final class MyListStore {
 
     /** Adds the anime if missing, removes it if present. Returns true when it is now in the list. */
     public static boolean toggle(@NonNull Context context, @NonNull Anime anime) {
+        if (!CloudSync.allowed(context)) return false;
         SharedPreferences p = prefs(context);
         JSONObject list = read(p, KEY_LIST);
         String key = String.valueOf(anime.getId());
@@ -120,6 +121,7 @@ public final class MyListStore {
 
     /** Saves 1-5 stars; 0 clears the rating. */
     public static void setRating(@NonNull Context context, int animeId, int stars) {
+        if (!CloudSync.allowed(context)) return;
         SharedPreferences p = prefs(context);
         JSONObject ratings = read(p, KEY_RATINGS);
         String key = String.valueOf(animeId);
@@ -147,6 +149,7 @@ public final class MyListStore {
 
     /** Saves 1-5 stars and remembers the title and poster so the Rated tab can show it. */
     public static void setRating(@NonNull Context context, @NonNull Anime anime, int stars) {
+        if (!CloudSync.allowed(context)) return;
         setRating(context, anime.getId(), stars);
         SharedPreferences p = prefs(context);
         JSONObject meta = read(p, KEY_RATED_META);

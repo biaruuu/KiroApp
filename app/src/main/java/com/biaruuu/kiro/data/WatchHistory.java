@@ -83,6 +83,7 @@ public final class WatchHistory {
 
     /** Saves progress for an anime (replacing its older entry). */
     public static synchronized void save(@NonNull Context context, @NonNull Entry e) {
+        if (!CloudSync.allowed(context)) return;
         List<Entry> list = all(context);
         List<Entry> next = new ArrayList<>();
         next.add(e);

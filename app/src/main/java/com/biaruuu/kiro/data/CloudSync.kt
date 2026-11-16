@@ -63,6 +63,18 @@ object CloudSync {
         }
     }
 
+    /** Saving to the library needs an account (unless this build has no accounts at all). */
+    @JvmStatic
+    fun allowed(context: Context): Boolean =
+        uid != null || !com.biaruuu.kiro.data.auth.AuthRepository.isConfigured(context)
+
+    /** Tells a logged-out user why nothing was saved and opens the login page. */
+    @JvmStatic
+    fun requireLogin(context: Context) {
+        android.widget.Toast.makeText(context, "Log in to save to your library", android.widget.Toast.LENGTH_SHORT).show()
+        com.biaruuu.kiro.data.auth.AuthRepository.requestLogin()
+    }
+
     @JvmStatic
     fun stop() {
         main.removeCallbacks(push)

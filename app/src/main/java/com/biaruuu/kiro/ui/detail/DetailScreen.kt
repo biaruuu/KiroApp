@@ -340,6 +340,10 @@ private fun DetailContent(
                         icon = if (inList) R.drawable.fluent_checkmark_regular else R.drawable.fluent_add_regular,
                         tint = if (inList) KiroPurple else Color.White,
                     ) {
+                        if (!com.biaruuu.kiro.data.CloudSync.allowed(context)) {
+                            com.biaruuu.kiro.data.CloudSync.requireLogin(context)
+                            return@ActionButton
+                        }
                         inList = MyListStore.toggle(context, anime)
                         Toast.makeText(
                             context,
@@ -501,6 +505,11 @@ private fun DetailContent(
         RatingSheet(
             current = rating,
             onSelect = {
+                if (!com.biaruuu.kiro.data.CloudSync.allowed(context)) {
+                    showRating = false
+                    com.biaruuu.kiro.data.CloudSync.requireLogin(context)
+                    return@RatingSheet
+                }
                 rating = it
                 MyListStore.setRating(context, anime, it)
             },
