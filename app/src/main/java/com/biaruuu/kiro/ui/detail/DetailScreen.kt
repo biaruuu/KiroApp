@@ -176,6 +176,18 @@ private fun DetailContent(
     var showSeasons by remember { mutableStateOf(false) }
     var newestFirst by rememberSaveable { mutableStateOf(false) }
     var expanded by rememberSaveable { mutableStateOf(false) }
+    val watchedVersion by com.biaruuu.kiro.data.WatchedStore.version.collectAsState()
+    val watchedEps = remember(watchedVersion, anime.id) { com.biaruuu.kiro.data.WatchedStore.watchedEpisodes(context, anime.id) }
+    var rewatch by remember { mutableStateOf<Int?>(null) }
+    rewatch?.let { n ->
+        com.biaruuu.kiro.ui.components.RewatchDialog(
+            onNo = { rewatch = null },
+            onYes = {
+                rewatch = null
+                onPlay(anime.id, n)
+            },
+        )
+    }
 
     val trailerId = trailerIds.getOrNull(trailerIndex)
 
@@ -317,7 +329,9 @@ private fun DetailContent(
                         .background(KiroPurple)
                         .clickable {
                             val first = released.firstOrNull()
-                            if (first != null) onPlay(anime.id, first.number)
+                            if (first != null) {
+                                if (first.number in watchedEps) rewatch = first.number else onPlay(anime.id, first.number)
+                            }
                             else Toast.makeText(context, "Not released yet", Toast.LENGTH_SHORT).show()
                         },
                     contentAlignment = Alignment.Center,
@@ -495,7 +509,14 @@ private fun DetailContent(
         }
 
         items(released, key = { it.number }, contentType = { "episode" }) { episode ->
-            EpisodeRow(episode, fallbackImage = anime.heroUrl, onClick = { onPlay(anime.id, episode.number) })
+            EpisodeRow(
+                episode,
+                fallbackImage = anime.heroUrl,
+                watched = episode.number in watchedEps,
+                onClick = {
+                    if (episode.number in watchedEps) rewatch = episode.number else onPlay(anime.id, episode.number)
+                },
+            )
         }
 
         item(key = "end") { Spacer(Modifier.navigationBarsPadding().height(32.dp)) }
@@ -571,7 +592,7 @@ private fun CountdownRow(number: Int, label: String, image: String?) {
 }
 
 @Composable
-private fun EpisodeRow(episode: EpisodeInfo, fallbackImage: String?, onClick: () -> Unit) {
+private fun EpisodeRow(episode: EpisodeInfo, fallbackImage: String?, watched: Boolean, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -596,6 +617,7 @@ private fun EpisodeRow(episode: EpisodeInfo, fallbackImage: String?, onClick: ()
                     modifier = Modifier.fillMaxSize(),
                 )
             }
+            if (watched) com.biaruuu.kiro.ui.components.WatchedBadge(Modifier.align(Alignment.TopStart))
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {

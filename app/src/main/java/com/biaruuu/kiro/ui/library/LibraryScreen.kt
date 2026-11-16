@@ -96,9 +96,10 @@ private val SheetBackground = Color(0xFF141414)
 
 private const val TAB_WATCHED = 0
 private const val TAB_LIST = 1
-private const val TAB_DOWNLOAD = 2
-private const val TAB_RATED = 3
-private val Tabs = listOf("Recently Watched", "My List", "Download", "Rated")
+private const val TAB_COMPLETED = 2
+private const val TAB_DOWNLOAD = 3
+private const val TAB_RATED = 4
+private val Tabs = listOf("Recently Watched", "My List", "Completed", "Download", "Rated")
 
 /** What a long-press → "Remove" will act on. */
 private data class RemoveTarget(val tab: Int, val animeId: Int, val title: String)
@@ -127,6 +128,16 @@ fun LibraryScreen(
     val myList = remember(refreshKey, version, cloud) { MyListStore.all(context) }
     val rated = remember(refreshKey, version, cloud) { MyListStore.allRated(context) }
 
+    val watchedVersion by com.biaruuu.kiro.data.WatchedStore.version.collectAsState()
+    val completed = remember(refreshKey, version, cloud, watchedVersion) {
+        com.biaruuu.kiro.data.WatchedStore.completed(context).map {
+            MyListStore.Entry(it.id, it.title, it.poster, it.at, 0, 0)
+        }
+    }
+    val profile by com.biaruuu.kiro.data.ProfileRepository.profile.collectAsState()
+    val authState by com.biaruuu.kiro.data.auth.AuthRepository.state.collectAsState()
+    val shownName = profile.username.ifBlank { (authState as? com.biaruuu.kiro.data.auth.AuthState.SignedIn)?.name ?: "Guest" }
+
     val sortedList = remember(myList, history, listSort) {
         when (listSort) {
             0 -> myList.sortedByDescending { it.addedAt }
@@ -145,7 +156,15 @@ fun LibraryScreen(
     val ratedSortLabels = listOf("Recently rated", "Highest rating")
 
     Column(modifier = modifier.statusBarsPadding()) {
-        PageTopBar("Library", onBack = null)
+        Row(
+            modifier = Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            com.biaruuu.kiro.ui.auth.Avatar(profile.avatar, shownName, 30.dp)
+            Spacer(Modifier.width(10.dp))
+            Text(shownName, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Hairline))
         LibraryTabs(pager = pager, onSelect = { scope.launch { pager.animateScrollToPage(it) } })
         Box(Modifier.fillMaxWidth().height(1.dp).background(Hairline))
 
@@ -191,6 +210,20 @@ fun LibraryScreen(
                         }
                     }
 
+                    TAB_COMPLETED -> {
+                        CountBar("${completed.size} Series", null) {}
+                        if (completed.isEmpty()) {
+                            EmptyState(R.drawable.fluent_checkmark_regular, "Finish an anime and it will show up here!")
+                        } else {
+                            PosterGrid(
+                                entries = completed,
+                                showRating = false,
+                                onOpen = onOpenAnime,
+                                onRemove = { removeTarget = RemoveTarget(TAB_COMPLETED, it.id, it.title) },
+                            )
+                        }
+                    }
+
                     TAB_DOWNLOAD -> {
                         CountBar("0 Season", null) {}
                         EmptyState(R.drawable.fluent_arrow_download_regular, "Download episodes to watch offline")
@@ -228,6 +261,7 @@ fun LibraryScreen(
     removeTarget?.let { target ->
         val (heading, body) = when (target.tab) {
             TAB_WATCHED -> "Remove from Recently Watched?" to "\"${target.title}\" will no longer appear under Continue Watching."
+            TAB_COMPLETED -> "Remove from Completed?" to "\"${target.title}\" will be marked as not watched."
             TAB_LIST -> "Remove from My List?" to "\"${target.title}\" will be removed from your list."
             else -> "Remove your rating?" to "Your rating for \"${target.title}\" will be cleared."
         }
@@ -241,6 +275,7 @@ fun LibraryScreen(
                     when (target.tab) {
                         TAB_WATCHED -> WatchHistory.remove(context, target.animeId)
                         TAB_LIST -> MyListStore.remove(context, target.animeId)
+                        TAB_COMPLETED -> com.biaruuu.kiro.data.WatchedStore.clear(context, target.animeId)
                         else -> {
                             MyListStore.setRating(context, target.animeId, 0)
                             MyListStore.clearRatedMeta(context, target.animeId)

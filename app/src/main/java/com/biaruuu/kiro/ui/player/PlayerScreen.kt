@@ -181,6 +181,9 @@ fun PlayerScreen(
         val base = latestUi.base ?: return
         val info = latestEpisodes.firstOrNull { it.number == ep }
         if (pos >= dur * 0.93) {
+            val total = if (base.episodes > 0) base.episodes
+                else if ("FINISHED".equals(base.status, true)) (latestEpisodes.maxOfOrNull { it.number } ?: 0) else 0
+            com.biaruuu.kiro.data.WatchedStore.markWatched(context, animeId, base.displayTitle, base.posterUrl.orEmpty(), ep, total)
             // Finished: carry on from the next episode, or drop it if that was the last one.
             val next = latestEpisodes.firstOrNull { it.number > ep }
             if (next != null) {
@@ -227,9 +230,23 @@ fun PlayerScreen(
     val latestSources by rememberUpdatedState(sources)
     val latestIndex by rememberUpdatedState(sourceIndex)
 
+    val watchedVersion by com.biaruuu.kiro.data.WatchedStore.version.collectAsState()
+    val watchedEps = remember(watchedVersion, animeId) { com.biaruuu.kiro.data.WatchedStore.watchedEpisodes(context, animeId) }
+    var rewatchEp by remember { mutableStateOf<Int?>(null) }
     fun playEpisode(number: Int) {
         current = number
         position = 0
+    }
+
+    rewatchEp?.let { n ->
+        com.biaruuu.kiro.ui.components.RewatchDialog(
+            onNo = { rewatchEp = null },
+            onYes = {
+                rewatchEp = null
+                playEpisode(n)
+                panel = null
+            },
+        )
     }
 
     // 1. Ask every provider for this episode; the best (quality + speed) comes first.
@@ -643,9 +660,13 @@ fun PlayerScreen(
                         )
                         LazyColumn(state = listState) {
                             items(episodes, key = { it.number }) { ep ->
-                                EpisodeRow(ep, ep.number == current) {
-                                    playEpisode(ep.number)
-                                    panel = null
+                                EpisodeRow(ep, ep.number == current, ep.number in watchedEps) {
+                                    if (ep.number in watchedEps && ep.number != current) {
+                                        rewatchEp = ep.number
+                                    } else {
+                                        playEpisode(ep.number)
+                                        panel = null
+                                    }
                                 }
                             }
                         }
@@ -940,7 +961,7 @@ private fun SidePanel(title: String, onClose: () -> Unit, width: androidx.compos
 
 /** One episode like the Netflix list: thumbnail, "1. Title", length, and the plot. */
 @Composable
-private fun EpisodeRow(ep: EpisodeInfo, playing: Boolean, onClick: () -> Unit) {
+private fun EpisodeRow(ep: EpisodeInfo, playing: Boolean, watched: Boolean, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -979,6 +1000,7 @@ private fun EpisodeRow(ep: EpisodeInfo, playing: Boolean, onClick: () -> Unit) {
                     modifier = Modifier.size(16.dp),
                 )
             }
+            if (watched) com.biaruuu.kiro.ui.components.WatchedBadge(Modifier.align(Alignment.TopStart))
             if (playing) {
                 Box(
                     modifier = Modifier

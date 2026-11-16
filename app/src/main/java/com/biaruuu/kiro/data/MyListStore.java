@@ -35,7 +35,7 @@ public final class MyListStore {
         /** The user's own stars (1-5), 0 when not rated. */
         public final int rating;
 
-        Entry(int id, String title, String posterUrl, long addedAt, int score, int rating) {
+        public Entry(int id, String title, String posterUrl, long addedAt, int score, int rating) {
             this.id = id;
             this.title = title;
             this.posterUrl = posterUrl;

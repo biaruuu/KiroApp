@@ -55,20 +55,13 @@ import kotlinx.coroutines.delay
 
 private const val TAB_HOME = 0
 private const val TAB_SEARCH = 1
-private const val TAB_PEEK = 2
-private const val TAB_LIBRARY = 3
-private const val TAB_ME = 4
+private const val TAB_LIBRARY = 2
+private const val TAB_ME = 3
 
 private val Destinations = listOf(
     NavDestination("Home", R.drawable.fluent_home_regular, R.drawable.fluent_home_filled),
     NavDestination("Search", R.drawable.fluent_search_regular, R.drawable.fluent_search_filled),
-    NavDestination(
-        "Peek",
-        R.drawable.fluent_video_clip_multiple_regular,
-        R.drawable.fluent_video_clip_multiple_filled,
-        badge = true,
-    ),
-    NavDestination("Library", R.drawable.fluent_inbox_regular, R.drawable.fluent_inbox_regular),
+    NavDestination("Your Library", R.drawable.fluent_inbox_regular, R.drawable.fluent_inbox_regular),
     NavDestination("Me", R.drawable.fluent_emoji_regular, R.drawable.fluent_emoji_filled),
 )
 
@@ -179,7 +172,6 @@ private fun KiroScaffold() {
                     modifier = contentModifier,
                 )
 
-                TAB_PEEK -> PlaceholderScreen("Peek", contentModifier)
                 TAB_LIBRARY -> LibraryScreen(
                     onOpenAnime = { backStack.add("d:$it") },
                     onContinue = { id, ep -> backStack.add("p:$id:$ep") },

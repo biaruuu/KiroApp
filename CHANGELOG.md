@@ -4,6 +4,17 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.19.0] - 2026-11-16
+
+### Added
+- **Completed tab** in Your Library: anime you have watched to the last episode are tracked and listed automatically (long-press to clear).
+- **Watched badge** on episode thumbnails (details page and the player's episode list) for episodes you have finished. Watched episodes sync with your account.
+- **Rewatch prompt**: tapping a watched episode (or Play on a watched first episode) asks "Are you sure you want to rewatch this again?" with No / Yes, every time.
+- Your profile photo and username now appear at the top of the library.
+
+### Changed
+- The bottom bar tab is now **Your Library**, and the Peek placeholder tab is removed.
+
 ## [1.18.1] - 2026-11-16
 
 ### Changed

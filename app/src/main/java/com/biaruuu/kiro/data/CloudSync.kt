@@ -59,7 +59,7 @@ object CloudSync {
             }
             if (snap.metadata.hasPendingWrites() || dirty) return@addSnapshotListener
             applyRemote(app, userId, snap.getString("myList"), snap.getString("ratings"),
-                snap.getString("ratedMeta"), snap.getString("history"))
+                snap.getString("ratedMeta"), snap.getString("history"), snap.getString("watched"))
         }
     }
 
@@ -89,9 +89,10 @@ object CloudSync {
     @JvmStatic
     fun clearLocal(context: Context) {
         val p = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        p.edit().remove("my_list").remove("ratings").remove("rated_meta").remove("watch_history")
+        p.edit().remove("my_list").remove("ratings").remove("rated_meta").remove("watch_history").remove("watched")
             .remove(MERGED_UID).apply()
         _version.value++
+        WatchedStore.notifyChanged()
     }
 
     /** Called by the local stores after every write. */
@@ -125,6 +126,7 @@ object CloudSync {
             "ratings" to p.getString("ratings", "{}")!!,
             "ratedMeta" to p.getString("rated_meta", "{}")!!,
             "history" to p.getString("watch_history", "[]")!!,
+            "watched" to p.getString("watched", "{}")!!,
             "updatedAt" to System.currentTimeMillis(),
         )
         ref.set(data).addOnCompleteListener { t ->
@@ -133,26 +135,30 @@ object CloudSync {
         }
     }
 
-    private fun applyRemote(c: Context, id: String, list: String?, ratings: String?, meta: String?, history: String?) {
+    private fun applyRemote(c: Context, id: String, list: String?, ratings: String?, meta: String?, history: String?, watched: String?) {
         val p = prefs(c)
         val firstOnDevice = p.getString(MERGED_UID, null) != id
         var l = list ?: "{}"
         var r = ratings ?: "{}"
         var m = meta ?: "{}"
         var h = history ?: "[]"
+        var w = watched ?: "{}"
         if (firstOnDevice) {
             // Signed in on this phone for the first time: keep what was saved here as a guest too.
             l = mergeObjects(p.getString("my_list", "{}"), l, "at")
             r = mergeObjects(p.getString("ratings", "{}"), r, null)
             m = mergeObjects(p.getString("rated_meta", "{}"), m, null)
             h = mergeHistory(p.getString("watch_history", "[]"), h)
+            w = mergeObjects(p.getString("watched", "{}"), w, "at")
         }
         val changed = l != p.getString("my_list", "{}") || r != p.getString("ratings", "{}") ||
-            m != p.getString("rated_meta", "{}") || h != p.getString("watch_history", "[]")
+            m != p.getString("rated_meta", "{}") || h != p.getString("watch_history", "[]") ||
+            w != p.getString("watched", "{}")
         if (changed) {
             p.edit().putString("my_list", l).putString("ratings", r)
-                .putString("rated_meta", m).putString("watch_history", h).apply()
+                .putString("rated_meta", m).putString("watch_history", h).putString("watched", w).apply()
             _version.value++
+            WatchedStore.notifyChanged()
         }
         if (firstOnDevice) {
             markMerged(c, id)
