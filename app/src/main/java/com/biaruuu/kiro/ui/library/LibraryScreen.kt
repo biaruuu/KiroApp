@@ -528,7 +528,7 @@ private fun PosterGrid(
                             modifier = Modifier.size(14.dp),
                         )
                         Spacer(Modifier.width(4.dp))
-                        Text("${e.rating}/5", color = Muted, fontSize = 12.sp)
+                        Text(String.format(java.util.Locale.US, "%.1f", e.rating / 2f), color = KiroPurple, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }

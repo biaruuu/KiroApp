@@ -37,6 +37,9 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -366,9 +369,9 @@ private fun DetailContent(
                         ).show()
                     }
                     ActionButton(
-                        label = "Rating",
+                        label = if (rating > 0) (if (rating % 2 == 0) "${rating / 2}" else "${rating / 2}.5") else "Rate",
                         icon = if (rating > 0) R.drawable.fluent_star_filled else R.drawable.fluent_star_regular,
-                        tint = if (rating > 0) KiroPurple else Color.White,
+                        tint = Color.White,
                     ) { showRating = true }
                     ActionButton(label = "Share", icon = R.drawable.fluent_open_regular, tint = Color.White) {
                         val send = Intent(Intent.ACTION_SEND).apply {
@@ -657,11 +660,29 @@ private fun EpisodeRow(episode: EpisodeInfo, fallbackImage: String?, watched: Bo
     }
 }
 
+private val RatingLabels = listOf(
+    "Disappointing :(", "Hmm.. Not impressed", "Below expectations", "Nothing special", "Had potential",
+    "Enjoyable", "Entertaining and engaging", "Highly recommended :)", "Absolutely fantastic!", "A MASTERPIECE",
+)
+
+/** Laftel-style rating: tap the left half of a star for .5, the right half for a whole star. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RatingSheet(current: Int, onSelect: (Int) -> Unit, onDismiss: () -> Unit) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
+    var picked by remember { mutableIntStateOf(current) } // half stars, 0..10
+    val starSize = 34.dp
+    val pitch = 40.dp
+    val pitchPx = with(androidx.compose.ui.platform.LocalDensity.current) { pitch.toPx() }
+    val starPx = with(androidx.compose.ui.platform.LocalDensity.current) { starSize.toPx() }
+
+    fun halvesAt(x: Float): Int {
+        val index = (x / pitchPx).toInt().coerceIn(0, 4)
+        val within = (x - index * pitchPx).coerceIn(0f, starPx)
+        return index * 2 + if (within < starPx / 2f) 1 else 2
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
@@ -672,29 +693,97 @@ private fun RatingSheet(current: Int, onSelect: (Int) -> Unit, onDismiss: () -> 
         dragHandle = null,
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(vertical = 24.dp),
+            modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(top = 4.dp, bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text("Rate this anime", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(16.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                for (star in 1..5) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                Box(
+                    modifier = Modifier
+                        .padding(end = 4.dp)
+                        .size(48.dp)
+                        .clickable { scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() } },
+                    contentAlignment = Alignment.Center,
+                ) {
                     Icon(
-                        painter = painterResource(
-                            if (star <= current) R.drawable.fluent_star_filled else R.drawable.fluent_star_regular,
-                        ),
-                        contentDescription = "$star stars",
-                        tint = if (star <= current) KiroPurple else MutedText,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .clickable {
-                                // Tapping the current rating clears it.
-                                onSelect(if (star == current) 0 else star)
-                                scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
-                            },
+                        painter = painterResource(R.drawable.fluent_dismiss_regular),
+                        contentDescription = "Close",
+                        tint = Color.White,
+                        modifier = Modifier.size(26.dp),
                     )
                 }
+            }
+            Spacer(Modifier.height(3.dp))
+            Text(
+                if (picked % 2 == 0) "${picked / 2}" else "${picked / 2}.5",
+                color = if (picked > 0) Color.White else Color(0xFF8E8E93),
+                fontSize = 28.sp,
+                lineHeight = 34.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                if (picked > 0) RatingLabels[picked - 1] else "Tap to rate",
+                color = if (picked > 0) Color(0xFFE6E6E8) else Color(0xFF9A9A9F),
+                fontSize = 15.sp,
+                lineHeight = 20.sp,
+            )
+            Spacer(Modifier.height(11.dp))
+            Row(
+                modifier = Modifier
+                    .width(pitch * 4 + starSize)
+                    .height(starSize)
+                    .pointerInput(Unit) {
+                        detectTapGestures { picked = halvesAt(it.x) }
+                    }
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures { change, _ ->
+                            picked = halvesAt(change.position.x.coerceAtLeast(0f)).coerceAtLeast(1)
+                        }
+                    },
+                horizontalArrangement = Arrangement.spacedBy(pitch - starSize),
+            ) {
+                for (star in 0 until 5) {
+                    val fill = ((picked - star * 2).coerceIn(0, 2)) / 2f
+                    Box(Modifier.size(starSize)) {
+                        Icon(
+                            painter = painterResource(R.drawable.fluent_star_filled),
+                            contentDescription = null,
+                            tint = Color(0xFF4D4D50),
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                        if (fill > 0f) {
+                            Icon(
+                                painter = painterResource(R.drawable.fluent_star_filled),
+                                contentDescription = null,
+                                tint = KiroPurple,
+                                modifier = Modifier.fillMaxSize().drawWithContent {
+                                    clipRect(right = size.width * fill) { this@drawWithContent.drawContent() }
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(45.dp))
+            val enabled = picked > 0
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(if (enabled) KiroPurple else Color(0xFF2E2E30))
+                    .clickable(enabled = enabled) {
+                        onSelect(picked)
+                        scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "Confirm",
+                    color = if (enabled) Color.White else Color(0xFF5E5E63),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                )
             }
         }
     }

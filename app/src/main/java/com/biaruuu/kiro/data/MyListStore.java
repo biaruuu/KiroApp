@@ -114,12 +114,17 @@ public final class MyListStore {
         return out;
     }
 
-    /** The user's stars (1-5) for this anime, or 0 when not rated. */
+    /** The user's rating in half stars (1-10, so 9 is 4.5 stars), or 0 when not rated. */
     public static int getRating(@NonNull Context context, int animeId) {
-        return read(prefs(context), KEY_RATINGS).optInt(String.valueOf(animeId), 0);
+        return halves(read(prefs(context), KEY_RATINGS), String.valueOf(animeId));
     }
 
-    /** Saves 1-5 stars; 0 clears the rating. */
+    /** Ratings are stored as stars (older whole-star values stay valid); this gives half stars. */
+    private static int halves(JSONObject ratings, String key) {
+        return (int) Math.round(ratings.optDouble(key, 0) * 2);
+    }
+
+    /** Saves a rating in half stars (1-10); 0 clears it. */
     public static void setRating(@NonNull Context context, int animeId, int stars) {
         if (!CloudSync.allowed(context)) return;
         SharedPreferences p = prefs(context);
@@ -129,7 +134,7 @@ public final class MyListStore {
             if (stars <= 0) {
                 ratings.remove(key);
             } else {
-                ratings.put(key, Math.min(stars, 5));
+                ratings.put(key, Math.min(stars, 10) / 2.0);
             }
         } catch (JSONException ignored) {
             return;
@@ -147,7 +152,7 @@ public final class MyListStore {
         CloudSync.libraryChanged(context);
     }
 
-    /** Saves 1-5 stars and remembers the title and poster so the Rated tab can show it. */
+    /** Saves a rating in half stars (1-10) and remembers the title and poster so the Rated tab can show it. */
     public static void setRating(@NonNull Context context, @NonNull Anime anime, int stars) {
         if (!CloudSync.allowed(context)) return;
         setRating(context, anime.getId(), stars);
@@ -183,7 +188,7 @@ public final class MyListStore {
         while (keys.hasNext()) {
             String key = keys.next();
             JSONObject e = meta.optJSONObject(key);
-            int stars = ratings.optInt(key, 0);
+            int stars = halves(ratings, key);
             if (e == null || stars <= 0) {
                 continue;
             }

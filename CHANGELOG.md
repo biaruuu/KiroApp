@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.19.1] - 2026-11-16
+
+### Changed
+- **Rating, Laftel style**: a new rating sheet with a close button, a big score, a caption that changes with the score (Disappointing :( ... A MASTERPIECE), five stars you can tap or drag, and a Confirm button that turns purple once you pick a score.
+- **Half stars**: tap the left half of a star for .5 and the right half for a whole star. Earlier whole-star ratings are kept.
+- The details page shows your score under a white star, and the Rated tab shows it as 4.5 in purple.
+
 ## [1.19.0] - 2026-11-16
 
 ### Added
