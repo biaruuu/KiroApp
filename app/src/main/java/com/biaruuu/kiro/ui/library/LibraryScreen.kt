@@ -160,9 +160,12 @@ fun LibraryScreen(
             modifier = Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            com.biaruuu.kiro.ui.auth.Avatar(profile.avatar, shownName, 30.dp)
-            Spacer(Modifier.width(10.dp))
-            Text(shownName, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            com.biaruuu.kiro.ui.components.DecoratedAvatar(profile.avatar, shownName, 30.dp, profile.decoration)
+            Spacer(Modifier.width(12.dp))
+            Text(
+                shownName, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                fontFamily = com.biaruuu.kiro.data.NameStyles.family(androidx.compose.ui.platform.LocalContext.current, profile.nameFont),
+            )
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Hairline))
         LibraryTabs(pager = pager, onSelect = { scope.launch { pager.animateScrollToPage(it) } })

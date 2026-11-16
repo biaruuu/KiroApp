@@ -76,7 +76,10 @@ fun AdminPage() {
     LaunchedEffect(profile.username, profile.avatar, profile.bio) {
         if (profile.username.isNotBlank()) {
             FirebaseFirestore.getInstance().collection("meta").document("admin").set(
-                hashMapOf("username" to profile.username, "bio" to profile.bio, "avatar" to profile.avatar, "email" to Admin.EMAIL),
+                hashMapOf(
+                    "username" to profile.username, "bio" to profile.bio, "avatar" to profile.avatar, "email" to Admin.EMAIL,
+                    "decoration" to profile.decoration, "nameFont" to profile.nameFont,
+                ),
             ).addOnFailureListener {
                 Toast.makeText(context, "Couldn't save your developer card: ${it.message}", Toast.LENGTH_LONG).show()
             }
@@ -93,12 +96,12 @@ fun AdminPage() {
             )
         }
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-            listOf("Online", "Letters", "Announce").forEachIndexed { i, label ->
+            listOf("Online", "Letters", "Announce", "Designs").forEachIndexed { i, label ->
                 Column(
                     modifier = Modifier.weight(1f).clickable { tab = i }.padding(top = 10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(label, color = if (tab == i) Color.White else Muted, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(label, color = if (tab == i) Color.White else Muted, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
                     Box(Modifier.fillMaxWidth().height(2.dp).background(if (tab == i) Color.White else Color.Transparent))
                 }
@@ -107,7 +110,8 @@ fun AdminPage() {
         when (tab) {
             0 -> OnlineTab()
             1 -> LettersTab()
-            else -> AnnounceTab()
+            2 -> AnnounceTab()
+            else -> DesignsTab()
         }
     }
 }
@@ -293,6 +297,103 @@ private fun AnnounceTab() {
                         FirebaseFirestore.getInstance().collection("announcements").document(a.id).delete()
                     })
                 }
+            }
+        }
+    }
+}
+
+/** Publish new avatar decorations, profile effects and nameplates (PNG, animated PNG, GIF or WebP). Users get them at once. */
+@Composable
+private fun DesignsTab() {
+    val context = LocalContext.current
+    val published by com.biaruuu.kiro.data.Designs.remote.collectAsState()
+    var type by remember { mutableStateOf(com.biaruuu.kiro.data.Designs.DECORATION) }
+    var name by remember { mutableStateOf("") }
+    var picked by remember { mutableStateOf<ByteArray?>(null) }
+    val pick = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val bytes = try { context.contentResolver.openInputStream(uri)?.use { it.readBytes() } } catch (_: Exception) { null }
+            when {
+                bytes == null -> Toast.makeText(context, "Couldn't read that file.", Toast.LENGTH_SHORT).show()
+                bytes.size > com.biaruuu.kiro.data.Designs.MAX_BYTES ->
+                    Toast.makeText(context, "Too large (${bytes.size / 1024} KB). The limit is ${com.biaruuu.kiro.data.Designs.MAX_BYTES / 1024} KB.", Toast.LENGTH_LONG).show()
+                else -> picked = bytes
+            }
+        }
+    }
+    val types = listOf(
+        com.biaruuu.kiro.data.Designs.DECORATION to "Decoration",
+        com.biaruuu.kiro.data.Designs.EFFECT to "Effect",
+        com.biaruuu.kiro.data.Designs.NAMEPLATE to "Nameplate",
+    )
+
+    LazyColumn(modifier = Modifier.fillMaxSize().imePadding(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item {
+            Text("Publish a design", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text("Shows up for every user right away. Animated PNG, GIF and WebP all play.", color = Muted, fontSize = 12.sp)
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                types.forEach { (id, label) ->
+                    val on = type == id
+                    Text(
+                        label, color = if (on) Color.Black else Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (on) Color.White else Color(0xFF2A2A2D)).clickable { type = id }.padding(horizontal = 14.dp, vertical = 8.dp),
+                    )
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            UnderlineField(
+                value = name, onChange = { if (it.length <= 30) name = it }, hint = "Name",
+                keyboardType = KeyboardType.Text, imeAction = ImeAction.Done, onImeAction = {},
+            )
+            Spacer(Modifier.height(14.dp))
+            val bytes = picked
+            if (bytes != null) {
+                Box(Modifier.fillMaxWidth().height(140.dp).clip(RoundedCornerShape(10.dp)).background(Card), contentAlignment = Alignment.Center) {
+                    com.biaruuu.kiro.ui.components.AnimatedAsset(
+                        com.biaruuu.kiro.data.Design("preview", type, name, data = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)),
+                        Modifier.size(120.dp),
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+            }
+            Text(
+                if (bytes == null) "Choose image" else "Choose a different image",
+                color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Color(0xFF2A2A2D)).clickable { pick.launch("image/*") }.padding(vertical = 14.dp),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+            Spacer(Modifier.height(10.dp))
+            PrimaryButton(
+                label = "Publish",
+                enabled = picked != null && name.isNotBlank(),
+                busy = false,
+                onClick = {
+                    val data = android.util.Base64.encodeToString(picked, android.util.Base64.NO_WRAP)
+                    FirebaseFirestore.getInstance().collection("designs").add(
+                        hashMapOf("type" to type, "name" to name.trim(), "data" to data, "createdAt" to System.currentTimeMillis()),
+                    ).addOnSuccessListener { Toast.makeText(context, "Published.", Toast.LENGTH_SHORT).show() }
+                        .addOnFailureListener { Toast.makeText(context, "Couldn't publish: ${it.message}", Toast.LENGTH_LONG).show() }
+                    picked = null; name = ""
+                },
+            )
+            Spacer(Modifier.height(18.dp))
+            Text("Published designs", color = Muted, fontSize = 13.sp)
+        }
+        items(published, key = { it.id }) { d ->
+            Row(
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Card).padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                com.biaruuu.kiro.ui.components.AnimatedAsset(d, Modifier.size(52.dp))
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(d.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(d.type.replaceFirstChar { it.uppercase() }, color = Muted, fontSize = 12.sp)
+                }
+                Text("Delete", color = Color(0xFFFF6B6B), fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.clickable {
+                    FirebaseFirestore.getInstance().collection("designs").document(d.id).delete()
+                })
             }
         }
     }

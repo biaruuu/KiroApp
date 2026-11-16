@@ -19,7 +19,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 data class Announcement(val id: String, val title: String, val body: String, val createdAt: Long)
 
 /** The developer's public card shown on every notification. */
-data class AdminCard(val username: String, val bio: String, val avatar: String, val email: String)
+data class AdminCard(
+    val username: String, val bio: String, val avatar: String, val email: String,
+    val decoration: String = "", val nameFont: String = "",
+)
 
 /**
  * Messages from the developer, listened to live: one published in the admin panel reaches every
@@ -79,6 +82,8 @@ object Announcements {
                 snap.getString("bio").orEmpty(),
                 snap.getString("avatar").orEmpty(),
                 snap.getString("email").orEmpty(),
+                snap.getString("decoration").orEmpty(),
+                snap.getString("nameFont").orEmpty(),
             )
         }
     }

@@ -81,11 +81,12 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
                     },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Avatar(profile.avatar, shownName.ifBlank { "K" }, 52.dp)
+                com.biaruuu.kiro.ui.components.DecoratedAvatar(profile.avatar, shownName.ifBlank { "K" }, 52.dp, profile.decoration)
                 Spacer(Modifier.size(14.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         if (signedIn != null) "Hello, $shownName!" else "Hello, guest!",
+                        fontFamily = com.biaruuu.kiro.data.NameStyles.family(context, profile.nameFont),
                         color = Color.White,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
@@ -114,6 +115,7 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
             Spacer(Modifier.height(32.dp))
             Text("Settings", color = Muted, fontSize = 14.sp)
             Spacer(Modifier.height(6.dp))
+            if (signedIn != null) SettingsRow(R.drawable.fluent_sparkle_regular, "Customize profile") { onOpen("customize") }
             SettingsRow(R.drawable.fluent_alert_regular, "Notification", badge = hasUnread) { onOpen("notifications") }
             SettingsRow(R.drawable.fluent_arrow_download_regular, "Download") { onOpen("download") }
             SettingsRow(R.drawable.fluent_play_circle_regular, "Play") { onOpen("play") }

@@ -150,7 +150,10 @@ private fun KiroScaffold() {
     val releaseUnread by com.biaruuu.kiro.data.UpdateChecker.unread.collectAsState()
     val announcementUnread by com.biaruuu.kiro.data.Announcements.unread.collectAsState()
     val hasUnread = releaseUnread || announcementUnread
-    LaunchedEffect(Unit) { com.biaruuu.kiro.data.Announcements.start(context) }
+    LaunchedEffect(Unit) {
+        com.biaruuu.kiro.data.Announcements.start(context)
+        com.biaruuu.kiro.data.Designs.start(context)
+    }
 
     // Presence: while a signed-in user has Kiro open, the developer's admin panel sees them online
     // and what they watch. It is refreshed every 30 seconds and when the title changes.
@@ -171,12 +174,13 @@ private fun KiroScaffold() {
             }
         }
     }
-    LaunchedEffect(authState, myName.username, myName.avatar, myName.bio) {
+    LaunchedEffect(authState, myName.username, myName.avatar, myName.bio, myName.decoration, myName.nameFont) {
         if (com.biaruuu.kiro.data.Admin.isAdmin(authState) && myName.username.isNotBlank()) {
             com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("meta").document("admin").set(
                 hashMapOf(
                     "username" to myName.username, "bio" to myName.bio, "avatar" to myName.avatar,
                     "email" to com.biaruuu.kiro.data.Admin.EMAIL,
+                    "decoration" to myName.decoration, "nameFont" to myName.nameFont,
                 ),
             )
         }

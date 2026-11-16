@@ -100,6 +100,7 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
         "privacy" -> "Privacy Policy"
         "notifications" -> "Notifications"
         "admin" -> "Admin panel"
+        "customize" -> "Customize profile"
         else -> if (page.startsWith("release-")) "What's new" else "Version"
     }
     Box(modifier = modifier.background(KiroBackground), contentAlignment = Alignment.TopCenter) {
@@ -118,6 +119,7 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
                 "privacy" -> com.biaruuu.kiro.ui.legal.LegalContent(terms = false)
                 "notifications" -> NotificationsPage(onOpen)
                 "admin" -> AdminPage()
+                "customize" -> CustomizePage()
                 else -> if (page.startsWith("release-")) WhatsNewPage(latest = false, onBack = onBack, version = page.removePrefix("release-")) else VersionPage()
             }
         }

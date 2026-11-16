@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.27.0] - 2026-11-17
+
+### Added
+- **Customize profile** (Me tab): choose an animated avatar decoration, a profile effect, a nameplate and a font for your display name, with a live preview. Your picks show on your picture in Your Library, the Me tab and notifications.
+- **Cat Ears**, the first animated avatar decoration.
+- **Name styles**: Satoshi, Cinzel, Roboto Mono, Comic Neue, Poppins and Montserrat for your display name.
+- New decorations, effects and nameplates can now be added to Kiro without an app update.
+
 ## [1.26.1] - 2026-11-17
 
 ### Changed

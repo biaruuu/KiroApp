@@ -15,6 +15,11 @@ data class Profile(
     val bio: String = "",
     /** The picture as base64 JPEG, or empty when there is none. */
     val avatar: String = "",
+    /** Ids of the chosen look (see [Designs]); empty means none. [nameFont] "" is the normal font. */
+    val decoration: String = "",
+    val effect: String = "",
+    val nameplate: String = "",
+    val nameFont: String = "",
     /** True once the first answer (cache or server) has arrived. */
     val loaded: Boolean = false,
 )
@@ -58,6 +63,10 @@ object ProfileRepository {
                 username = name,
                 bio = snap.getString("bio").orEmpty(),
                 avatar = snap.getString("avatar").orEmpty(),
+                decoration = snap.getString("decoration").orEmpty(),
+                effect = snap.getString("effect").orEmpty(),
+                nameplate = snap.getString("nameplate").orEmpty(),
+                nameFont = snap.getString("nameFont").orEmpty(),
                 loaded = true,
             )
         }
@@ -81,7 +90,15 @@ object ProfileRepository {
         name.trim().length in MIN_USERNAME..MAX_USERNAME && name.trim().all { it.isLetterOrDigit() || it == '_' || it == '.' }
 
     /** Updates only the fields given. [onDone] gets null on success. */
-    fun save(username: String? = null, bio: String? = null, avatar: String? = null, onDone: (String?) -> Unit = {}) {
+    fun save(
+        username: String? = null,
+        bio: String? = null,
+        avatar: String? = null,
+        decoration: String? = null,
+        effect: String? = null,
+        nameplate: String? = null,
+        nameFont: String? = null,
+        onDone: (String?) -> Unit = {}) {
         val ref = doc
         if (ref == null) {
             onDone("You are signed out.")
@@ -91,6 +108,10 @@ object ProfileRepository {
         username?.let { data["username"] = it.trim() }
         bio?.let { data["bio"] = it.trim() }
         avatar?.let { data["avatar"] = it }
+        decoration?.let { data["decoration"] = it }
+        effect?.let { data["effect"] = it }
+        nameplate?.let { data["nameplate"] = it }
+        nameFont?.let { data["nameFont"] = it }
         data["updatedAt"] = System.currentTimeMillis()
         ref.set(data, SetOptions.merge()).addOnCompleteListener { t ->
             onDone(if (t.isSuccessful) null else "Couldn't save. Check your connection and try again.")

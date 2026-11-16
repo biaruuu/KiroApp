@@ -66,7 +66,7 @@ fun NotificationsPage(onOpen: (String) -> Unit) {
     val myProfile by com.biaruuu.kiro.data.ProfileRepository.profile.collectAsState()
     // When the developer looks, their own live profile is used; everyone else reads the public card.
     val admin = if (Admin.isAdmin(authState) && myProfile.username.isNotBlank()) {
-        com.biaruuu.kiro.data.AdminCard(myProfile.username, myProfile.bio, myProfile.avatar, Admin.EMAIL)
+        com.biaruuu.kiro.data.AdminCard(myProfile.username, myProfile.bio, myProfile.avatar, Admin.EMAIL, myProfile.decoration, myProfile.nameFont)
     } else publicCard
     // What counts as new is decided before this visit clears it.
     val seenVersion = remember { UpdateChecker.seenVersion(context) }
@@ -159,11 +159,16 @@ fun NotificationsPage(onOpen: (String) -> Unit) {
 private fun DeveloperHeader(card: com.biaruuu.kiro.data.AdminCard?, time: String, unread: Boolean) {
     val name = card?.username?.ifBlank { null } ?: "Developer"
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Avatar(card?.avatar.orEmpty(), name, 40.dp)
+        com.biaruuu.kiro.ui.components.DecoratedAvatar(card?.avatar.orEmpty(), name, 40.dp, card?.decoration)
         Spacer(Modifier.width(10.dp))
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                val context = LocalContext.current
+                Text(
+                    name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    fontFamily = com.biaruuu.kiro.data.NameStyles.family(context, card?.nameFont.orEmpty()),
+                    modifier = Modifier.weight(1f, fill = false),
+                )
                 Spacer(Modifier.width(5.dp))
                 VerifiedBadge()
                 Spacer(Modifier.width(6.dp))
