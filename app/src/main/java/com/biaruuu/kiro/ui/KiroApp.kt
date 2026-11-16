@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -125,6 +126,32 @@ private fun KiroScaffold() {
 
     val onAnimeClick: (Anime) -> Unit = { backStack.add("d:${it.id}") }
     BackHandler(enabled = backStack.isNotEmpty()) { backStack.removeAt(backStack.lastIndex) }
+
+    // After an update: show what changed once. From the update notification: show the new version.
+    LaunchedEffect(Unit) {
+        if (com.biaruuu.kiro.data.UpdateChecker.consumeJustUpdated(context)) backStack.add("s:whatsnew-current")
+    }
+    val updateRequest by com.biaruuu.kiro.data.UpdateChecker.request.collectAsState()
+    LaunchedEffect(updateRequest) {
+        if (updateRequest != null) {
+            backStack.add("s:whatsnew-$updateRequest")
+            com.biaruuu.kiro.data.UpdateChecker.request.value = null
+        }
+    }
+    // Android 13+ needs permission before the update notification can be shown; ask once.
+    val askNotifications = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+    ) { }
+    LaunchedEffect(Unit) {
+        val prefs = context.getSharedPreferences("kiro_update", android.content.Context.MODE_PRIVATE)
+        if (android.os.Build.VERSION.SDK_INT >= 33 && !prefs.getBoolean("asked_notifications", false) &&
+            androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            prefs.edit().putBoolean("asked_notifications", true).apply()
+            askNotifications.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(

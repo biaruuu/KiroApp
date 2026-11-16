@@ -51,8 +51,14 @@ fun TrailerPlayer(
                 overScrollMode = View.OVER_SCROLL_NEVER
                 isClickable = false
                 isFocusable = false
+                // The page is only a picture: never let a touch reach YouTube's player UI.
+                setOnTouchListener { _, _ -> true }
 
                 settings.javaScriptEnabled = true
+                // The phone version of the embed draws prev / pause / next buttons over the video.
+                // The desktop version shows nothing at all when controls=0.
+                settings.userAgentString =
+                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
                 settings.domStorageEnabled = true
                 settings.cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
                 setLayerType(View.LAYER_TYPE_HARDWARE, null)
@@ -137,6 +143,7 @@ private fun playerHtml(videoId: String): String = """
   /* The WebView is sized 16:9 by the app, so the player simply fills it. Width-based units only:
      the WebView reported a wrong viewport height before. */
   #wrap { position: absolute; left: 0; top: 0; width: 100vw; height: 56.25vw; pointer-events: none; }
+  #wrap, #wrap * { pointer-events: none !important; }
   #wrap iframe { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: 0; }
 </style>
 </head>
@@ -155,7 +162,7 @@ private fun playerHtml(videoId: String): String = """
       videoId: 'VIDEO_ID',
       playerVars: {
         autoplay: 1, mute: 1, controls: 0, disablekb: 1, fs: 0, modestbranding: 1,
-        rel: 0, playsinline: 1, iv_load_policy: 3, loop: 1, playlist: 'VIDEO_ID', vq: 'hd1080'
+        rel: 0, playsinline: 1, iv_load_policy: 3, cc_load_policy: 0, showinfo: 0, autohide: 1, loop: 1, playlist: 'VIDEO_ID', vq: 'hd1080'
       },
       events: {
         onReady: function (e) { e.target.mute(); hd(); e.target.playVideo(); },

@@ -31,6 +31,10 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.DisposableEffect
@@ -89,7 +93,6 @@ private val HintGray = Color(0xFF5E5E63)
 private val ButtonGray = Color(0xFF2E2E30)
 private val BoxBorder = Color(0xFF3A3A3E)
 private val ErrorRed = Color(0xFFFF6B6B)
-private const val REPO_URL = "https://github.com/biaruuu/KiroApp"
 
 /**
  * Shows [content] once the user is signed in with a verified email, or chose to look around as a
@@ -297,89 +300,83 @@ private fun WelcomeScreen(onEmail: () -> Unit, onGuest: () -> Unit, onTerms: () 
 }
 
 /**
- * Trending anime trailers playing muted behind the buttons (like Laftel's login). A still of the
- * show shows first and stays if a trailer can't play; the bottom fades into the page colour.
+ * One trending anime trailer playing muted across the top of the page (below a black status bar),
+ * melting into the dark page before the buttons, like Laftel's login. A still of the show shows
+ * first and stays if the trailer can't play. It does not switch shows.
  */
 @Composable
 private fun LoginBackdrop() {
-    val heroes by androidx.compose.runtime.produceState<List<com.biaruuu.kiro.data.Anime>>(emptyList()) {
-        value = try {
-            com.biaruuu.kiro.data.AniListRepository.loadHome().hero.take(5)
-        } catch (e: kotlinx.coroutines.CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-    var index by remember { mutableIntStateOf(0) }
+    var anime by remember { mutableStateOf<com.biaruuu.kiro.data.Anime?>(null) }
     var videoId by remember { mutableStateOf<String?>(null) }
     var playing by remember { mutableStateOf(false) }
-    val anime = heroes.getOrNull(index)
 
-    LaunchedEffect(anime?.id) {
-        playing = false
-        videoId = null
-        if (anime != null) {
-            videoId = try {
-                com.biaruuu.kiro.data.AniListRepository.tmdbTrailers(anime).firstOrNull()
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                null
+    LaunchedEffect(Unit) {
+        try {
+            val heroes = com.biaruuu.kiro.data.AniListRepository.loadHome().hero.take(5)
+            anime = heroes.firstOrNull()
+            // Use the first show that has a trailer, then stay on it.
+            for (h in heroes) {
+                val ids = com.biaruuu.kiro.data.AniListRepository.tmdbTrailers(h)
+                if (ids.isNotEmpty()) {
+                    anime = h
+                    videoId = ids.first()
+                    break
+                }
             }
-        }
-    }
-    // Moves on to the next show every so often.
-    LaunchedEffect(heroes.size, index) {
-        if (heroes.size > 1) {
-            delay(14_000)
-            index = (index + 1) % heroes.size
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (_: Exception) {
         }
     }
 
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().background(KiroBackground)) {
-        val coverWidth = maxOf(maxWidth, maxHeight * (16f / 9f)) * 1.08f
-        val coverHeight = coverWidth * (9f / 16f)
-        androidx.compose.animation.Crossfade(targetState = anime?.heroUrl, label = "login-still") { url ->
-            if (url != null) {
-                coil.compose.AsyncImage(
-                    model = url,
-                    contentDescription = null,
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
+        val areaHeight = maxHeight * 0.62f
+        Box(Modifier.fillMaxWidth().height(areaHeight).statusBarsPadding().clipToBounds()) {
+            androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
+                val coverWidth = maxOf(maxWidth, maxHeight * (16f / 9f)) * 1.05f
+                val coverHeight = coverWidth * (9f / 16f)
+                val still = anime?.heroUrl
+                if (still != null) {
+                    coil.compose.AsyncImage(
+                        model = still,
+                        contentDescription = null,
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+                val id = videoId
+                if (id != null) {
+                    androidx.compose.runtime.key(id) {
+                        val alpha by androidx.compose.animation.core.animateFloatAsState(
+                            if (playing) 1f else 0f,
+                            androidx.compose.animation.core.tween(700),
+                            label = "login-video",
+                        )
+                        com.biaruuu.kiro.ui.detail.TrailerPlayer(
+                            videoId = id,
+                            muted = true,
+                            onPlaying = { playing = true },
+                            onFailed = { videoId = null },
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .requiredSize(coverWidth, coverHeight)
+                                .alpha(alpha),
+                        )
+                    }
+                }
+                Box(
+                    Modifier.fillMaxSize().background(
+                        Brush.verticalGradient(
+                            0f to Color.Black.copy(alpha = 0.25f),
+                            0.55f to Color.Black.copy(alpha = 0.20f),
+                            1f to KiroBackground,
+                        ),
+                    ),
                 )
             }
         }
-        val id = videoId
-        if (id != null) {
-            androidx.compose.runtime.key(id) {
-                val alpha by androidx.compose.animation.core.animateFloatAsState(
-                    if (playing) 1f else 0f,
-                    androidx.compose.animation.core.tween(700),
-                    label = "login-video",
-                )
-                com.biaruuu.kiro.ui.detail.TrailerPlayer(
-                    videoId = id,
-                    muted = true,
-                    onPlaying = { playing = true },
-                    onFailed = { videoId = null },
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .requiredSize(coverWidth, coverHeight)
-                        .alpha(alpha),
-                )
-            }
-        }
-        Box(
-            Modifier.fillMaxSize().background(
-                Brush.verticalGradient(
-                    0f to Color.Black.copy(alpha = 0.40f),
-                    0.45f to Color.Black.copy(alpha = 0.30f),
-                    0.72f to KiroBackground.copy(alpha = 0.94f),
-                    1f to KiroBackground,
-                ),
-            ),
-        )
+        // The status bar stays solid black, as in the reference.
+        Spacer(Modifier.fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars).background(Color.Black))
     }
 }
 

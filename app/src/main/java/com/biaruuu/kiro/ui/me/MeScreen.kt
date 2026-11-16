@@ -48,7 +48,6 @@ import com.biaruuu.kiro.ui.theme.KiroPurple
 
 private val Muted = Color(0xFF8E8E93)
 private val Hairline = Color(0xFF2B2B2F)
-const val REPO_URL = "https://github.com/biaruuu/KiroApp"
 
 /** The Me tab: account header and the settings list. [onOpen] pushes a settings page. */
 @Composable
@@ -120,15 +119,10 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
 
             Box(Modifier.padding(vertical = 12.dp).fillMaxWidth().height(1.dp).background(Hairline))
 
-            SettingsRow(R.drawable.fluent_help_circle_regular, "Help Center") {
-                openUrl(context, "$REPO_URL/issues")
-            }
-            SettingsRow(R.drawable.fluent_headset_regular, "Contact us") {
-                openUrl(context, "$REPO_URL/issues/new")
-            }
-            SettingsRow(R.drawable.fluent_document_regular, "License") { onOpen("license") }
-            SettingsRow(R.drawable.fluent_document_regular, "Terms of Use") { onOpen("terms") }
-            SettingsRow(R.drawable.fluent_document_regular, "Privacy Policy") { onOpen("privacy") }
+            SettingsRow(R.drawable.fluent_help_circle_regular, "Help Center") { onOpen("help") }
+            SettingsRow(R.drawable.fluent_headset_regular, "Contact us") { onOpen("contact") }
+            SettingsRow(R.drawable.fluent_terms_regular, "Terms of Use") { onOpen("terms") }
+            SettingsRow(R.drawable.fluent_shield_regular, "Privacy Policy") { onOpen("privacy") }
             SettingsRow(R.drawable.fluent_phone_regular, "Version", value = BuildConfig.VERSION_NAME.substringBefore('-')) {
                 onOpen("version")
             }

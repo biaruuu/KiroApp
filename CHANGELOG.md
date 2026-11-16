@@ -4,6 +4,20 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.21.0] - 2026-11-16
+
+### Added
+- **Update notifications**: Kiro checks for a new version in the background and sends a notification. Tapping it opens a What's new page with everything that changed and an Update Now button that downloads and installs the update inside the app.
+- **What's new after updating**: the first time you open Kiro after an update, a full page shows what's new and what was fixed.
+- **Help Center** with answers to common questions, and **Contact us** to send a message from inside the app.
+
+### Changed
+- The login page now plays one trailer across the top of the screen under a black status bar and fades into the dark page before the buttons, and it no longer switches shows by itself.
+- Terms of Use and Privacy Policy have their own icons, and the License entry is removed from the Me tab.
+
+### Fixed
+- YouTube's player buttons (previous, pause, next) no longer appear over trailers on the login and details pages.
+
 ## [1.20.0] - 2026-11-16
 
 ### Added

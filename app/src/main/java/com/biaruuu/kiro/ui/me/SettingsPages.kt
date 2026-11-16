@@ -93,7 +93,9 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
         "download" -> "Download setting"
         "play" -> "Play Setting"
         "language" -> "Language"
-        "license" -> "License"
+        "help" -> "Help Center"
+        "contact" -> "Contact us"
+        "whatsnew-latest", "whatsnew-current" -> "What's new"
         "terms" -> "Terms of Use"
         "privacy" -> "Privacy Policy"
         else -> "Version"
@@ -106,7 +108,10 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
                 "download" -> DownloadPage()
                 "play" -> PlayPage()
                 "language" -> LanguagePage()
-                "license" -> LicensePage()
+                "help" -> HelpPage()
+                "contact" -> ContactPage(onBack)
+                "whatsnew-latest" -> WhatsNewPage(latest = true, onBack = onBack)
+                "whatsnew-current" -> WhatsNewPage(latest = false, onBack = onBack)
                 "terms" -> com.biaruuu.kiro.ui.legal.LegalContent(terms = true)
                 "privacy" -> com.biaruuu.kiro.ui.legal.LegalContent(terms = false)
                 else -> VersionPage()
@@ -245,101 +250,6 @@ private fun LanguagePage() {
     Text("More languages are coming later.", color = Muted, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 16.dp))
 }
 
-@Composable
-private fun LicensePage() {
-    val libs = listOf(
-        "Jetpack Compose & AndroidX" to "Apache License 2.0",
-        "Media3 / ExoPlayer" to "Apache License 2.0",
-        "FFmpeg audio decoders (jellyfin media3-ffmpeg-decoder)" to "GPL / LGPL (FFmpeg)",
-        "Coil" to "Apache License 2.0",
-        "OkHttp" to "Apache License 2.0",
-        "Firebase Authentication" to "Apache License 2.0",
-        "Fluent UI System Icons" to "MIT License",
-        "Anime data: AniList. Trailers and artwork: TMDB." to "Used under their API terms",
-    )
-    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-        Text("Kiro is built with open-source software:", color = Muted, fontSize = 13.sp)
-        Spacer(Modifier.height(16.dp))
-        libs.forEach { (name, license) ->
-            Text(name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Text(license, color = Muted, fontSize = 12.sp)
-            Spacer(Modifier.height(16.dp))
-        }
-    }
-}
-
-/** "1.15.0" vs "1.14.2": true when [latest] is newer than [current]. */
-private fun isNewer(latest: String, current: String): Boolean {
-    val a = latest.split('.').map { it.toIntOrNull() ?: 0 }
-    val b = current.split('.').map { it.toIntOrNull() ?: 0 }
-    for (i in 0 until maxOf(a.size, b.size)) {
-        val x = a.getOrElse(i) { 0 }
-        val y = b.getOrElse(i) { 0 }
-        if (x != y) return x > y
-    }
-    return false
-}
-
-@Composable
-private fun VersionPage() {
-    val context = LocalContext.current
-    val current = BuildConfig.VERSION_NAME.substringBefore('-')
-    var latest by remember { mutableStateOf<String?>(null) }
-    var downloadUrl by remember { mutableStateOf(REPO_URL + "/releases/latest") }
-
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-            try {
-                val req = Request.Builder()
-                    .url("https://api.github.com/repos/biaruuu/KiroApp/releases/latest")
-                    .header("Accept", "application/vnd.github+json")
-                    .build()
-                HttpClientProvider.get().newCall(req).execute().use { r ->
-                    if (r.isSuccessful) {
-                        val json = JSONObject(r.body?.string().orEmpty())
-                        latest = json.optString("tag_name").removePrefix("v").ifEmpty { null }
-                        val assets = json.optJSONArray("assets")
-                        val apk = assets?.optJSONObject(0)?.optString("browser_download_url").orEmpty()
-                        downloadUrl = apk.ifEmpty { json.optString("html_url", downloadUrl) }
-                    }
-                }
-            } catch (_: Exception) {
-                // Offline: the button just stays disabled.
-            }
-        }
-    }
-
-    val canUpdate = latest?.let { isNewer(it, current) } == true
-    Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text("Kiro Android", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(14.dp))
-        Text("Latest Version ${latest ?: current}", color = Color(0xFFB4B4BA), fontSize = 14.sp)
-        Spacer(Modifier.height(8.dp))
-        Text("Current Version $current", color = Color(0xFFB4B4BA), fontSize = 14.sp)
-        Spacer(Modifier.height(20.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(if (canUpdate) KiroPurple else DisabledGray)
-                .clickable(enabled = canUpdate) {
-                    try {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl)))
-                    } catch (_: Exception) {
-                        Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
-                    }
-                },
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("Update Now", color = if (canUpdate) Color.White else DisabledText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-        }
-    }
-}
 
 @Composable
 private fun AccountPage(onBack: () -> Unit, sub: String?, openSub: (String?) -> Unit) {

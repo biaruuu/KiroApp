@@ -26,6 +26,8 @@ public class KiroApplication extends Application implements ImageLoaderFactory {
         com.biaruuu.kiro.data.ApiDiskCache.init(this);
         // The streaming API sleeps when idle; wake it now so the first episode starts fast.
         com.biaruuu.kiro.data.stream.AnivaultProvider.warmUp();
+        // Tell the user when a new version is out.
+        com.biaruuu.kiro.data.UpdateWorker.schedule(this);
     }
 
     @NonNull

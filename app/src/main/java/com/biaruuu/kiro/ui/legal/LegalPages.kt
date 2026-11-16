@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private const val UPDATED = "Last updated: November 16, 2026"
-private const val CONTACT = "Questions? Open an issue at github.com/biaruuu/KiroApp/issues."
+private const val CONTACT = "Questions? Use Contact us in the Me tab."
 
 private val TermsSections = listOf(
     "1. Welcome to Kiro" to "These Terms of Use apply to your use of the Kiro app. By creating an account or using Kiro you agree to them. If you do not agree, please do not use the app.",
@@ -26,7 +26,7 @@ private val TermsSections = listOf(
     "5. What Kiro is" to "Kiro is an anime discovery and viewing app. Show information comes from public services such as AniList and TMDB, and trailers are played through YouTube. Kiro does not host or upload video files. Episodes are found through third-party sources, and their availability, quality and legality in your country are outside our control. You are responsible for making sure your use follows the laws where you live.",
     "6. Your profile" to "Your username, bio and profile photo are part of your account. Do not use names, text or pictures that are unlawful, hateful, harassing, sexually explicit, or that pretend to be someone else. We may ask you to change them or remove them.",
     "7. Acceptable use" to "Do not misuse Kiro. That includes trying to break or overload it, bypass its limits or security, scrape or copy its data in bulk, interfere with other people's accounts, or use it for anything unlawful.",
-    "8. Intellectual property" to "Kiro's name, logo and design belong to its owner. Anime titles, artwork, trailers and other media belong to their respective owners and are shown for the purpose of identifying and describing the shows. Kiro's source code is available under the license in the repository, see License in the Me tab.",
+    "8. Intellectual property" to "Kiro's name, logo and design belong to its owner. Anime titles, artwork, trailers and other media belong to their respective owners and are shown for the purpose of identifying and describing the shows.",
     "9. Ending your use" to "You can stop using Kiro at any time. To delete your account and its saved data, open Me, Account Setting, then Delete account. We may suspend or remove accounts that break these terms.",
     "10. No warranty" to "Kiro is provided \"as is\" and \"as available\", without promises that it will always work, be error-free, or that any episode or trailer will be available.",
     "11. Limit of liability" to "To the extent the law allows, Kiro and its contributors are not liable for indirect or consequential losses, or for loss of data, arising from your use of the app.",

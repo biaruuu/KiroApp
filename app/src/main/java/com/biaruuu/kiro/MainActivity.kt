@@ -16,10 +16,24 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
         )
+        handleIntent(intent)
         setContent {
             KiroTheme {
                 KiroApp()
             }
+        }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: android.content.Intent?) {
+        if (intent?.getStringExtra(com.biaruuu.kiro.data.UpdateWorker.EXTRA_OPEN) == "update") {
+            com.biaruuu.kiro.data.UpdateChecker.request.value = "latest"
+            intent.removeExtra(com.biaruuu.kiro.data.UpdateWorker.EXTRA_OPEN)
         }
     }
 }

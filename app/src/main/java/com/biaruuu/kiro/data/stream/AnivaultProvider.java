@@ -25,7 +25,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 /**
- * Streams from the Anivault API (https://github.com/biaruuu/Anivault-API) hosted on Render.
+ * Streams from the Anivault API hosted on Render.
  *
  * <p>For one episode it asks every scraper source (Anikoto, MegaPlay, DesiDub, AnimeHeaven) for
  * both sub and dub at the same time. It returns as soon as the first answer is in plus a short
