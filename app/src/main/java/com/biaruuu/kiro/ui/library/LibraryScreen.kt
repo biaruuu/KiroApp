@@ -296,8 +296,8 @@ fun LibraryScreen(
 private fun LibraryTabs(pager: PagerState, onSelect: (Int) -> Unit) {
     val density = LocalDensity.current
     val scroll = rememberScrollState()
-    val lefts = remember { mutableStateListOf(0f, 0f, 0f, 0f) }
-    val widths = remember { mutableStateListOf(0f, 0f, 0f, 0f) }
+    val lefts = remember { mutableStateListOf<Float>().apply { repeat(Tabs.size) { add(0f) } } }
+    val widths = remember { mutableStateListOf<Float>().apply { repeat(Tabs.size) { add(0f) } } }
     var viewport by remember { mutableIntStateOf(0) }
 
     // The white line slides between the two tabs while the page is being dragged.
