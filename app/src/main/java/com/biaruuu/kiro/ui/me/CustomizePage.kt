@@ -92,20 +92,32 @@ fun CustomizePage() {
         }
 
         Section("Avatar Decoration")
-        Grid(listOf<Design?>(null) + decorations, profile.decoration) { ProfileRepository.save(decoration = it) }
-        { d -> if (d == null) NoneTile() else TileWithLabel(d.name) { DecoratedAvatar(profile.avatar, name, 46.dp, d.id) } }
+        Grid(
+            items = listOf<Design?>(null) + decorations,
+            selectedId = profile.decoration,
+            onPick = { ProfileRepository.save(decoration = it) },
+            tile = { d -> if (d == null) NoneTile() else TileWithLabel(d.name) { DecoratedAvatar(profile.avatar, name, 46.dp, d.id) } },
+        )
 
         Section("Profile Effect")
-        Grid(listOf<Design?>(null) + effects, profile.effect) { ProfileRepository.save(effect = it) }
-        { d -> if (d == null) NoneTile() else TileWithLabel(d.name) { AnimatedAsset(d, Modifier.size(52.dp)) } }
+        Grid(
+            items = listOf<Design?>(null) + effects,
+            selectedId = profile.effect,
+            onPick = { ProfileRepository.save(effect = it) },
+            tile = { d -> if (d == null) NoneTile() else TileWithLabel(d.name) { AnimatedAsset(d, Modifier.size(52.dp)) } },
+        )
 
         Section("Nameplate")
-        Grid(listOf<Design?>(null) + nameplates, profile.nameplate) { ProfileRepository.save(nameplate = it) }
-        { d ->
-            if (d == null) NoneTile() else TileWithLabel(d.name) {
-                Box(Modifier.fillMaxWidth().height(34.dp).clip(RoundedCornerShape(6.dp))) { AnimatedAsset(d, Modifier.fillMaxSize(), crop = true) }
-            }
-        }
+        Grid(
+            items = listOf<Design?>(null) + nameplates,
+            selectedId = profile.nameplate,
+            onPick = { ProfileRepository.save(nameplate = it) },
+            tile = { d ->
+                if (d == null) NoneTile() else TileWithLabel(d.name) {
+                    Box(Modifier.fillMaxWidth().height(34.dp).clip(RoundedCornerShape(6.dp))) { AnimatedAsset(d, Modifier.fillMaxSize(), crop = true) }
+                }
+            },
+        )
         if (effects.isEmpty() && nameplates.isEmpty()) {
             Spacer(Modifier.height(8.dp))
             Text("More effects and nameplates are coming soon.", color = Muted, fontSize = 12.sp)
