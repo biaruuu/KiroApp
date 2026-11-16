@@ -142,7 +142,7 @@ fun AnimeRow(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = dims.gutter),
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = dims.gutter),
             horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing),
@@ -151,6 +151,7 @@ fun AnimeRow(
                 PosterCard(
                     anime = anime,
                     onClick = { onAnimeClick(anime) },
+                    compact = true,
                     modifier = Modifier.width(dims.cardWidth),
                 )
             }
@@ -188,7 +189,7 @@ fun RankedRow(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = dims.gutter),
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = dims.gutter),
             horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing + 8.dp),
@@ -201,6 +202,7 @@ fun RankedRow(
                         anime = anime,
                         onClick = { onAnimeClick(anime) },
                         titleMaxLines = 1,
+                        compact = true,
                         modifier = Modifier
                             .padding(start = numberWidth)
                             .width(dims.cardWidth),

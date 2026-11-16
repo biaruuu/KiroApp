@@ -128,6 +128,7 @@ public final class WatchHistory {
                         .put("u", e.updatedAt));
             }
             prefs(context).edit().putString(KEY, arr.toString()).apply();
+            CloudSync.libraryChanged(context);
         } catch (Exception ignored) {
             // Best effort.
         }

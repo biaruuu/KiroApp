@@ -59,6 +59,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -121,9 +122,10 @@ fun LibraryScreen(
     var removeTarget by remember { mutableStateOf<RemoveTarget?>(null) }
 
     // Reloaded when a page opened from here is closed (refreshKey) and after every removal.
-    val history = remember(refreshKey, version) { WatchHistory.all(context) }
-    val myList = remember(refreshKey, version) { MyListStore.all(context) }
-    val rated = remember(refreshKey, version) { MyListStore.allRated(context) }
+    val cloud by com.biaruuu.kiro.data.CloudSync.version.collectAsState()
+    val history = remember(refreshKey, version, cloud) { WatchHistory.all(context) }
+    val myList = remember(refreshKey, version, cloud) { MyListStore.all(context) }
+    val rated = remember(refreshKey, version, cloud) { MyListStore.allRated(context) }
 
     val sortedList = remember(myList, history, listSort) {
         when (listSort) {

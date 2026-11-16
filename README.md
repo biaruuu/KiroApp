@@ -50,6 +50,9 @@ one. It is fine for a hobby project, but move it to GitHub secrets before publis
 
 ## Accounts (Firebase)
 
+Profiles and the synced library use **Cloud Firestore**: in the Firebase console open Build > Firestore Database > Create database, then paste `firestore.rules` into the Rules tab and Publish.
+
+
 1. In the Firebase console create a project and enable **Authentication → Email/Password**.
 2. Add an Android app for `com.biaruuu.kiro` (debug and release builds share it).
 3. Download `google-services.json` and save its full contents as the GitHub secret `GOOGLE_SERVICES_JSON`

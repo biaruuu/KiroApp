@@ -23,6 +23,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +55,8 @@ fun rememberWatchHistory(): List<WatchHistory.Entry> {
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     var items by remember { mutableStateOf(WatchHistory.all(context)) }
+    val cloud by com.biaruuu.kiro.data.CloudSync.version.collectAsState()
+    LaunchedEffect(cloud) { items = WatchHistory.all(context) }
     DisposableEffect(owner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) items = WatchHistory.all(context)
@@ -80,7 +84,7 @@ fun ContinueWatchingRow(
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(horizontal = dims.gutter),
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = dims.gutter),
             horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing),
@@ -139,7 +143,7 @@ fun ContinueWatchingRow(
                     Text(
                         e.title,
                         color = MaterialTheme.colorScheme.onBackground,
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -147,7 +151,7 @@ fun ContinueWatchingRow(
                     Text(
                         "Episode ${e.episode}",
                         color = Color(0xFF8E8E93),
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                     )
                 }
             }

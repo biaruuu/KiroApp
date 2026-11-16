@@ -3,6 +3,8 @@ package com.biaruuu.kiro.ui.me
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -57,7 +59,16 @@ import com.biaruuu.kiro.R
 import com.biaruuu.kiro.data.AppSettings
 import com.biaruuu.kiro.data.HttpClientProvider
 import com.biaruuu.kiro.data.auth.AuthRepository
+import com.biaruuu.kiro.data.ProfileRepository
 import com.biaruuu.kiro.data.auth.AuthState
+import com.biaruuu.kiro.ui.auth.AvatarEditable
+import com.biaruuu.kiro.ui.auth.CheckBox
+import com.biaruuu.kiro.ui.auth.PrimaryButton
+import com.biaruuu.kiro.ui.auth.UnderlineField
+import com.biaruuu.kiro.ui.auth.rememberAvatarFlow
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import com.biaruuu.kiro.ui.components.PageTopBar
 import com.biaruuu.kiro.ui.theme.KiroBackground
 import com.biaruuu.kiro.ui.theme.KiroPurple
@@ -75,8 +86,10 @@ private val DisabledText = Color(0xFF5E5E63)
 /** A full-screen settings page opened from the Me tab. */
 @Composable
 fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
+    var sub by remember { mutableStateOf<String?>(null) }
+    BackHandler(enabled = page == "account" && sub != null) { sub = null }
     val title = when (page) {
-        "account" -> "Account Setting"
+        "account" -> when (sub) { "username" -> "Username"; "bio" -> "Bio"; else -> "Account Setting" }
         "download" -> "Download setting"
         "play" -> "Play Setting"
         "language" -> "Language"
@@ -85,9 +98,9 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
     }
     Box(modifier = modifier.background(KiroBackground), contentAlignment = Alignment.TopCenter) {
         Column(modifier = Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-            PageTopBar(title, onBack)
+            PageTopBar(title, if (page == "account" && sub != null) ({ sub = null }) else onBack)
             when (page) {
-                "account" -> AccountPage(onBack)
+                "account" -> AccountPage(onBack, sub) { sub = it }
                 "download" -> DownloadPage()
                 "play" -> PlayPage()
                 "language" -> LanguagePage()
@@ -325,7 +338,19 @@ private fun VersionPage() {
 }
 
 @Composable
-private fun AccountPage(onBack: () -> Unit) {
+private fun AccountPage(onBack: () -> Unit, sub: String?, openSub: (String?) -> Unit) {
+    val profile by ProfileRepository.profile.collectAsState()
+    when (sub) {
+        "username" -> {
+            EditUsername(profile.username) { openSub(null) }
+            return
+        }
+        "bio" -> {
+            EditBio(profile.bio) { openSub(null) }
+            return
+        }
+    }
+    val pickPhoto = rememberAvatarFlow { ProfileRepository.save(avatar = it) }
     val state by AuthRepository.state.collectAsState()
     val s = state as? AuthState.SignedIn
     var confirmLogout by remember { mutableStateOf(false) }
@@ -333,8 +358,17 @@ private fun AccountPage(onBack: () -> Unit) {
     var message by remember { mutableStateOf<String?>(null) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.weight(1f).padding(horizontal = 16.dp)) {
+        Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(24.dp))
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                AvatarEditable(profile.avatar, profile.username.ifBlank { s?.name.orEmpty() }, 96.dp, onClick = pickPhoto)
+            }
+            Spacer(Modifier.height(20.dp))
+            ValueRow("Username", profile.username.ifBlank { s?.name.orEmpty() }) { openSub("username") }
+            ValueRow("Bio", profile.bio.ifBlank { "Add a bio" }, placeholder = profile.bio.isBlank()) { openSub("bio") }
+            Spacer(Modifier.height(10.dp))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Hairline))
+            Spacer(Modifier.height(20.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     painter = painterResource(if (s?.google == true) R.drawable.google_g_logo else R.drawable.fluent_mail_filled),
@@ -391,6 +425,103 @@ private fun AccountPage(onBack: () -> Unit) {
                 AuthRepository.deleteAccount { err ->
                     if (err == null) onBack() else message = err
                 }
+            },
+        )
+    }
+}
+
+@Composable
+private fun ValueRow(label: String, value: String, placeholder: Boolean = false, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(45.dp).clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.size(16.dp))
+        Text(
+            value,
+            color = if (placeholder) DisabledText else Muted,
+            fontSize = 13.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            painter = painterResource(R.drawable.fluent_chevron_right_regular),
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(28.dp),
+        )
+    }
+}
+
+@Composable
+private fun EditUsername(current: String, done: () -> Unit) {
+    var name by remember { mutableStateOf(current) }
+    val ok = ProfileRepository.validUsername(name)
+    Column(modifier = Modifier.fillMaxSize().imePadding().padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 16.dp)) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Username", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            UnderlineField(
+                value = name,
+                onChange = { if (it.length <= ProfileRepository.MAX_USERNAME) name = it.trim() },
+                hint = "Enter username",
+                keyboardType = KeyboardType.Ascii,
+                imeAction = ImeAction.Done,
+                onImeAction = {
+                    if (ok) {
+                        ProfileRepository.save(username = name)
+                        done()
+                    }
+                },
+            )
+            Spacer(Modifier.height(16.dp))
+            CheckBox("3-20 characters: letters, numbers, _ or .", ok)
+        }
+        PrimaryButton(
+            label = "Save",
+            enabled = ok && name.trim() != current,
+            busy = false,
+            onClick = {
+                ProfileRepository.save(username = name)
+                done()
+            },
+        )
+    }
+}
+
+@Composable
+private fun EditBio(current: String, done: () -> Unit) {
+    var bio by remember { mutableStateOf(current) }
+    Column(modifier = Modifier.fillMaxSize().imePadding().padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 16.dp)) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Bio", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            UnderlineField(
+                value = bio,
+                onChange = { if (it.length <= ProfileRepository.MAX_BIO) bio = it },
+                hint = "Write something about you",
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Default,
+                onImeAction = {},
+                singleLine = false,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "${bio.length} / ${ProfileRepository.MAX_BIO}",
+                color = Muted,
+                fontSize = 12.sp,
+                textAlign = TextAlign.End,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        PrimaryButton(
+            label = "Save",
+            enabled = bio.trim() != current,
+            busy = false,
+            onClick = {
+                ProfileRepository.save(bio = bio)
+                done()
             },
         )
     }

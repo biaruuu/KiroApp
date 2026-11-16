@@ -1,6 +1,8 @@
 package com.biaruuu.kiro.data.auth
 
 import android.content.Context
+import com.biaruuu.kiro.data.CloudSync
+import com.biaruuu.kiro.data.ProfileRepository
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.FirebaseTooManyRequestsException
@@ -21,7 +23,7 @@ sealed interface AuthState {
     data object Loading : AuthState
     data object SignedOut : AuthState
     data class NeedsVerification(val email: String) : AuthState
-    data class SignedIn(val email: String, val name: String, val google: Boolean) : AuthState
+    data class SignedIn(val email: String, val name: String, val google: Boolean, val uid: String = "") : AuthState
 }
 
 /**
@@ -37,6 +39,7 @@ object AuthRepository {
     val state: StateFlow<AuthState> = _state.asStateFlow()
 
     private var started = false
+    private var appContext: Context? = null
 
     fun isConfigured(context: Context): Boolean = FirebaseApp.getApps(context.applicationContext).isNotEmpty()
 
@@ -44,6 +47,7 @@ object AuthRepository {
     @Synchronized
     fun start(context: Context): Boolean {
         if (!isConfigured(context)) return false
+        appContext = context.applicationContext
         if (!started) {
             started = true
             FirebaseAuth.getInstance().addAuthStateListener { publish(it.currentUser) }
@@ -52,13 +56,23 @@ object AuthRepository {
     }
 
     private fun publish(user: FirebaseUser?) {
+        val ctx = appContext
+        if (ctx != null) {
+            if (user != null && user.isEmailVerified) {
+                ProfileRepository.start(ctx, user.uid)
+                CloudSync.start(ctx, user.uid)
+            } else {
+                ProfileRepository.stop()
+                CloudSync.stop()
+            }
+        }
         _state.value = when {
             user == null -> AuthState.SignedOut
             !user.isEmailVerified -> AuthState.NeedsVerification(user.email.orEmpty())
             else -> {
                 val email = user.email.orEmpty()
                 val name = user.displayName?.takeIf { it.isNotBlank() } ?: email.substringBefore('@')
-                AuthState.SignedIn(email, name, user.providerData.any { it.providerId == "google.com" })
+                AuthState.SignedIn(email, name, user.providerData.any { it.providerId == "google.com" }, user.uid)
             }
         }
     }
@@ -122,6 +136,9 @@ object AuthRepository {
     }
 
     fun signOut() {
+        // Stop syncing, then wipe this phone's copy so the next account starts clean.
+        CloudSync.stop()
+        appContext?.let { CloudSync.clearLocal(it) }
         FirebaseAuth.getInstance().signOut()
         _guest.value = false
     }
@@ -135,6 +152,7 @@ object AuthRepository {
         }
         user.delete().addOnCompleteListener { t ->
             if (t.isSuccessful) {
+                appContext?.let { CloudSync.clearLocal(it) }
                 _guest.value = false
                 onDone(null)
             } else if (t.exception is FirebaseAuthRecentLoginRequiredException) {

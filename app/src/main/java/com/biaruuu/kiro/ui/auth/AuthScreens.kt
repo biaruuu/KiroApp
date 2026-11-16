@@ -107,7 +107,7 @@ fun AuthGate(content: @Composable () -> Unit) {
         AuthState.Loading -> Box(Modifier.fillMaxSize().background(KiroBackground))
         AuthState.SignedOut -> if (guest) content() else LoginFlow()
         is AuthState.NeedsVerification -> VerifyScreen(s.email)
-        is AuthState.SignedIn -> content()
+        is AuthState.SignedIn -> ProfileGate(s.uid, s.name, content)
     }
 }
 
@@ -123,7 +123,7 @@ private fun LoginFlow() {
 
 /** Keeps page content a comfortable width on tablets and in landscape. */
 @Composable
-private fun CenteredPage(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+internal fun CenteredPage(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Box(modifier = modifier.fillMaxSize().background(KiroBackground), contentAlignment = Alignment.TopCenter) {
         Box(modifier = Modifier.widthIn(max = 520.dp).fillMaxSize()) { content() }
     }
@@ -442,7 +442,7 @@ private fun EmailFlow(onBack: () -> Unit) {
 }
 
 @Composable
-private fun UnderlineField(
+internal fun UnderlineField(
     value: String,
     onChange: (String) -> Unit,
     hint: String,
@@ -451,6 +451,7 @@ private fun UnderlineField(
     onImeAction: () -> Unit,
     transformation: VisualTransformation = VisualTransformation.None,
     trailing: (@Composable () -> Unit)? = null,
+    singleLine: Boolean = true,
 ) {
     val focus = remember { FocusRequester() }
     var focused by remember { mutableStateOf(false) }
@@ -461,7 +462,7 @@ private fun UnderlineField(
             BasicTextField(
                 value = value,
                 onValueChange = onChange,
-                singleLine = true,
+                singleLine = singleLine,
                 textStyle = style,
                 cursorBrush = SolidColor(KiroPurple),
                 visualTransformation = transformation,
@@ -482,7 +483,7 @@ private fun UnderlineField(
 }
 
 @Composable
-private fun CheckBox(text: String, ok: Boolean, icon: Boolean = true) {
+internal fun CheckBox(text: String, ok: Boolean, icon: Boolean = true) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -505,7 +506,7 @@ private fun CheckBox(text: String, ok: Boolean, icon: Boolean = true) {
 }
 
 @Composable
-private fun PrimaryButton(
+internal fun PrimaryButton(
     label: String,
     enabled: Boolean,
     busy: Boolean,

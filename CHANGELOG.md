@@ -4,6 +4,22 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.18.0] - 2026-11-16
+
+Profiles and a library that follows you.
+
+### Added
+- **Username, bio and profile photo.** New accounts get a full-page setup after verifying: Enter your username, then Next for a bio, then Next to upload and crop a photo. Bio and photo can be skipped.
+- **Edit your profile** any time in Me > Account Setting: change the photo (pick, drag and pinch to crop), username and bio. The Me header shows your photo and username.
+- **Library saved in the cloud.** My List, ratings and Continue Watching are stored in Cloud Firestore and update in real time across your devices (works offline and syncs when you are back online). Logging out clears this phone's copy.
+- `firestore.rules` so each account can only read and write its own data.
+
+### Changed
+- Home: smaller section titles and Laftel-sized poster cards; a black strip keeps content from running under the clock once the hero scrolls away.
+
+### Setup
+- In the Firebase console create a **Firestore Database** and publish the rules from `firestore.rules`.
+
 ## [1.17.0] - 2026-11-16
 
 Search, Laftel style.

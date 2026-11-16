@@ -87,6 +87,7 @@ public final class MyListStore {
             nowInList = true;
         }
         p.edit().putString(KEY_LIST, list.toString()).apply();
+        CloudSync.libraryChanged(context);
         return nowInList;
     }
 
@@ -132,6 +133,7 @@ public final class MyListStore {
             return;
         }
         p.edit().putString(KEY_RATINGS, ratings.toString()).apply();
+        CloudSync.libraryChanged(context);
     }
 
     /** Takes an anime out of My List. */
@@ -140,6 +142,7 @@ public final class MyListStore {
         JSONObject list = read(p, KEY_LIST);
         list.remove(String.valueOf(animeId));
         p.edit().putString(KEY_LIST, list.toString()).apply();
+        CloudSync.libraryChanged(context);
     }
 
     /** Saves 1-5 stars and remembers the title and poster so the Rated tab can show it. */
@@ -163,6 +166,7 @@ public final class MyListStore {
             return;
         }
         p.edit().putString(KEY_RATED_META, meta.toString()).apply();
+        CloudSync.libraryChanged(context);
     }
 
     /** Everything the user has rated (newest first). */
@@ -197,5 +201,6 @@ public final class MyListStore {
         JSONObject meta = read(p, KEY_RATED_META);
         meta.remove(String.valueOf(animeId));
         p.edit().putString(KEY_RATED_META, meta.toString()).apply();
+        CloudSync.libraryChanged(context);
     }
 }

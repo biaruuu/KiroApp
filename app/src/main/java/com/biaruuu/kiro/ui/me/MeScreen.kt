@@ -40,7 +40,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.biaruuu.kiro.BuildConfig
 import com.biaruuu.kiro.R
+import com.biaruuu.kiro.data.ProfileRepository
 import com.biaruuu.kiro.data.auth.AuthRepository
+import com.biaruuu.kiro.ui.auth.Avatar
 import com.biaruuu.kiro.data.auth.AuthState
 import com.biaruuu.kiro.ui.theme.KiroPurple
 
@@ -55,6 +57,8 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
     val configured = remember { AuthRepository.isConfigured(context) }
     val state by AuthRepository.state.collectAsState()
     val signedIn = state as? AuthState.SignedIn
+    val profile by ProfileRepository.profile.collectAsState()
+    val shownName = profile.username.ifBlank { signedIn?.name.orEmpty() }
 
     Box(modifier = modifier.statusBarsPadding(), contentAlignment = Alignment.TopCenter) {
         Column(
@@ -78,21 +82,11 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
                     },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(
-                    modifier = Modifier.size(52.dp).clip(CircleShape).background(KiroPurple),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        (signedIn?.name?.firstOrNull() ?: 'K').uppercase(),
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Black,
-                    )
-                }
+                Avatar(profile.avatar, shownName.ifBlank { "K" }, 52.dp)
                 Spacer(Modifier.size(14.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        if (signedIn != null) "Hello, ${signedIn.name}!" else "Hello, guest!",
+                        if (signedIn != null) "Hello, $shownName!" else "Hello, guest!",
                         color = Color.White,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
