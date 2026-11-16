@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.22.0] - 2026-11-16
+
+### Added
+- **Skip Intro, Skip Outro and Skip Recap** buttons in the player. They appear only while the opening, ending or recap is playing, and tapping one jumps straight to the end of it. Timestamps come from Aniskip and are matched to the exact length of the episode you are watching, so they line up with your version of the episode.
+
 ## [1.21.0] - 2026-11-16
 
 ### Added

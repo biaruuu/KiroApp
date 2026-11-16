@@ -217,6 +217,15 @@ fun PlayerScreen(
     var seeking by remember { mutableStateOf(false) }
     var retry by remember { mutableIntStateOf(0) }
 
+    // Intro / outro / recap times for this exact episode (Aniskip), looked up once the real length is known.
+    var skipSegments by remember { mutableStateOf<List<com.biaruuu.kiro.data.SkipTimes.Segment>>(emptyList()) }
+    val skipMalId = ui.detail?.malId ?: 0
+    val durationSec = duration / 1000
+    LaunchedEffect(current, skipMalId, durationSec) {
+        skipSegments = emptyList()
+        if (duration > 0) skipSegments = com.biaruuu.kiro.data.SkipTimes.load(skipMalId, current, duration / 1000.0)
+    }
+
     var sources by remember { mutableStateOf<List<StreamSource>>(emptyList()) }
     var sourceIndex by remember { mutableIntStateOf(0) }
     var resolving by remember { mutableStateOf(true) }
@@ -506,6 +515,37 @@ fun PlayerScreen(
                         .background(KiroPurple)
                         .clickable { retry++ }
                         .padding(horizontal = 24.dp, vertical = 8.dp),
+                )
+            }
+        }
+
+        // ---- Skip Intro / Outro / Recap while inside one of the segments ----
+        if (!locked && error == null) {
+            val posSec = position / 1000.0
+            val active = skipSegments.firstOrNull { posSec >= it.start - 0.5 && posSec < it.end - 1.0 }
+            AnimatedVisibility(
+                visible = active != null,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 28.dp, bottom = 84.dp),
+            ) {
+                val label = active?.label ?: "Skip"
+                val end = active?.end ?: 0.0
+                Text(
+                    label,
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color.Black.copy(alpha = 0.65f))
+                        .border(1.dp, Color.White, RoundedCornerShape(4.dp))
+                        .clickable {
+                            val target = (end * 1000).toLong().coerceAtMost(if (duration > 0) duration else Long.MAX_VALUE)
+                            exo.seekTo(target)
+                            position = target
+                        }
+                        .padding(horizontal = 16.dp, vertical = 9.dp),
                 )
             }
         }
