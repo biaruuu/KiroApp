@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.24.0] - 2026-11-17
+
+### Added
+- **True HDR playback**: when a video is HDR10, HLG or Dolby Vision and your screen supports HDR, Kiro now switches the screen into HDR mode for that video and back to normal afterwards. The HDR & Dolby Vision row in the player menu shows which format is playing (for example "HDR10") and explains if your screen can't show it.
+
+### Changed
+- HDR no longer needs to be turned on by hand. The "On" option now only adds hardware tunneling, which is off by default because it doesn't work with every video.
+
 ## [1.23.1] - 2026-11-16
 
 ### Changed
