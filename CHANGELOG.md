@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.19.3] - 2026-11-16
+
+### Changed
+- **New splash screen**: the Kiro logo centered on the dark background and fading in, like Laftel's. The logo is no longer repeated as text on Home or the login page.
+
 ## [1.19.2] - 2026-11-16
 
 ### Fixed

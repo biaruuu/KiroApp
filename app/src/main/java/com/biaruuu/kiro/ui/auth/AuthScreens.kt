@@ -170,8 +170,6 @@ private fun WelcomeScreen(onEmail: () -> Unit) {
                 }
             }
             Spacer(Modifier.weight(1f))
-            Text("KIRO", color = KiroPurple, fontSize = 52.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
-            Spacer(Modifier.height(10.dp))
             Text(
                 "Discover your favorite anime and\ncustomize your library.",
                 color = Color(0xFFB4B4BA),

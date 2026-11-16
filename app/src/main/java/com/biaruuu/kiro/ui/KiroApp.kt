@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -84,18 +86,19 @@ fun KiroApp() {
     }
 }
 
+/** Just the logo, centered on the dark background, fading in (like Laftel's launch screen). */
 @Composable
 private fun SplashScreen() {
+    val alpha = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(Unit) { alpha.animateTo(1f, androidx.compose.animation.core.tween(450)) }
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().background(KiroBackground),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = "KIRO",
-            color = KiroPurple,
-            fontSize = 64.sp,
-            fontWeight = FontWeight.Black,
-            letterSpacing = 4.sp,
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(R.drawable.kiro_logo),
+            contentDescription = "Kiro",
+            modifier = Modifier.width(192.dp).graphicsLayer { this.alpha = alpha.value },
         )
     }
 }
