@@ -147,11 +147,37 @@ private fun KiroScaffold() {
             }
         }
     }
-    val hasUnread by com.biaruuu.kiro.data.UpdateChecker.unread.collectAsState()
+    val releaseUnread by com.biaruuu.kiro.data.UpdateChecker.unread.collectAsState()
+    val announcementUnread by com.biaruuu.kiro.data.Announcements.unread.collectAsState()
+    val hasUnread = releaseUnread || announcementUnread
+    LaunchedEffect(Unit) { com.biaruuu.kiro.data.Announcements.start(context) }
+
+    // Presence: while a signed-in user has Kiro open, the developer's admin panel sees them online
+    // and what they watch. It is refreshed every 30 seconds and when the title changes.
+    val authState by com.biaruuu.kiro.data.auth.AuthRepository.state.collectAsState()
+    val signedInUid = (authState as? com.biaruuu.kiro.data.auth.AuthState.SignedIn)?.uid
+    val watchingNow by com.biaruuu.kiro.data.Presence.watching.collectAsState()
+    val myName by com.biaruuu.kiro.data.ProfileRepository.profile.collectAsState()
+    LaunchedEffect(lifecycleOwner, signedInUid) {
+        if (signedInUid.isNullOrEmpty()) return@LaunchedEffect
+        lifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
+            try {
+                while (true) {
+                    com.biaruuu.kiro.data.Presence.write(signedInUid, true)
+                    kotlinx.coroutines.delay(30_000L)
+                }
+            } finally {
+                com.biaruuu.kiro.data.Presence.write(signedInUid, false)
+            }
+        }
+    }
+    LaunchedEffect(watchingNow, myName.username) {
+        if (!signedInUid.isNullOrEmpty()) com.biaruuu.kiro.data.Presence.write(signedInUid, true)
+    }
     val updateRequest by com.biaruuu.kiro.data.UpdateChecker.request.collectAsState()
     LaunchedEffect(updateRequest) {
         if (updateRequest != null) {
-            backStack.add("s:whatsnew-$updateRequest")
+            backStack.add(if (updateRequest == "notifications") "s:notifications" else "s:whatsnew-$updateRequest")
             com.biaruuu.kiro.data.UpdateChecker.request.value = null
         }
     }

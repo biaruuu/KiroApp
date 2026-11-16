@@ -34,6 +34,9 @@ class MainActivity : ComponentActivity() {
         if (intent?.getStringExtra(com.biaruuu.kiro.data.UpdateWorker.EXTRA_OPEN) == "update") {
             com.biaruuu.kiro.data.UpdateChecker.request.value = "latest"
             intent.removeExtra(com.biaruuu.kiro.data.UpdateWorker.EXTRA_OPEN)
+        } else if (intent?.getStringExtra(com.biaruuu.kiro.data.UpdateWorker.EXTRA_OPEN) == "notifications") {
+            com.biaruuu.kiro.data.UpdateChecker.request.value = "notifications"
+            intent.removeExtra(com.biaruuu.kiro.data.UpdateWorker.EXTRA_OPEN)
         }
     }
 }

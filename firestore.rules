@@ -1,6 +1,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // The developer account (signed in with a verified email).
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'yurischevalier@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+
     // Everything a user saves lives under users/{their uid} and only they can touch it.
     match /users/{uid} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
@@ -8,12 +16,30 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == uid;
       }
     }
-    // Messages from Contact us: signed-in users can send, nobody can read them from the app.
+
+    // Messages from Contact us: signed-in users can send; only the developer can read or delete them.
     match /feedback/{id} {
       allow create: if request.auth != null
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.message is string
         && request.resource.data.message.size() <= 1000;
+      allow read, delete: if isAdmin();
+    }
+
+    // Announcements and the developer's public card: everyone can read, only the developer can write.
+    match /announcements/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /meta/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Who is online and what they watch: each user writes their own, only the developer can read.
+    match /presence/{uid} {
+      allow write: if request.auth != null && request.auth.uid == uid;
+      allow read: if isAdmin();
     }
   }
 }

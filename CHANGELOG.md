@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.26.0] - 2026-11-17
+
+### Added
+- **Messages from the developer**: announcements now appear in your Notifications, and as a phone notification right away while Kiro is open. Every notification shows the developer's profile photo with a blue verified tick and a Developer badge.
+
+### Changed
+- Privacy Policy now mentions that, while you are signed in and Kiro is open, the developer can see that you are online and what you are watching.
+
 ## [1.25.0] - 2026-11-17
 
 ### Added

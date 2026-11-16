@@ -235,6 +235,7 @@ fun ContactPage(onDone: () -> Unit) {
                     FirebaseFirestore.getInstance().collection("feedback").add(
                         hashMapOf(
                             "uid" to signedIn.uid,
+                            "username" to com.biaruuu.kiro.data.ProfileRepository.profile.value.username,
                             "message" to message.trim(),
                             "version" to BuildConfig.VERSION_NAME,
                             "createdAt" to System.currentTimeMillis(),

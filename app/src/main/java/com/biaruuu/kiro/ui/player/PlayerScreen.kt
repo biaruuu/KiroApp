@@ -407,6 +407,13 @@ fun PlayerScreen(
         onDispose { enhancer?.release() }
     }
 
+    // Lets the developer's admin panel show what is being watched right now.
+    val watchTitle = ui.base?.displayTitle.orEmpty()
+    DisposableEffect(animeId, current, watchTitle) {
+        com.biaruuu.kiro.data.Presence.watching.value = com.biaruuu.kiro.data.Presence.Watching(animeId, watchTitle, current)
+        onDispose { com.biaruuu.kiro.data.Presence.watching.value = null }
+    }
+
     // True HDR: the window is put in HDR colour mode only while an HDR video (HDR10, HLG or
     // Dolby Vision) is playing on a screen that can show it, so the panel really switches to HDR
     // and everything else stays in normal SDR. Hardware tunneling is the separate "On" option.

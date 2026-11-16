@@ -107,6 +107,10 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
                 if (signedIn != null || configured) Chevron()
             }
 
+            if (com.biaruuu.kiro.data.Admin.isAdmin(state)) {
+                Spacer(Modifier.height(20.dp))
+                SettingsRow(R.drawable.fluent_shield_regular, "Admin panel") { onOpen("admin") }
+            }
             Spacer(Modifier.height(32.dp))
             Text("Settings", color = Muted, fontSize = 14.sp)
             Spacer(Modifier.height(6.dp))
