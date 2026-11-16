@@ -97,6 +97,7 @@ fun HeroCarousel(
     onPlay: (Anime) -> Unit,
     onNotifications: () -> Unit,
     modifier: Modifier = Modifier,
+    hasUnread: Boolean = false,
 ) {
     val dims = LocalDimens.current
     val wide = dims.windowClass != WindowClass.Compact
@@ -175,6 +176,16 @@ fun HeroCarousel(
                             tint = Color.White,
                             modifier = Modifier.size(26.dp),
                         )
+                        if (hasUnread) {
+                            Box(
+                                Modifier
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 1.dp, y = (-1).dp)
+                                    .size(10.dp)
+                                    .clip(androidx.compose.foundation.shape.CircleShape)
+                                    .background(Color(0xFFFF4D4F)),
+                            )
+                        }
                     }
                 }
             }

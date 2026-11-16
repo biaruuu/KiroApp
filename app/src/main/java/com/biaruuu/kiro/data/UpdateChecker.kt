@@ -11,7 +11,7 @@ import org.json.JSONObject
 /** Looks up the newest published version and its release notes, and remembers what was announced. */
 object UpdateChecker {
 
-    class Release(val version: String, val notes: String, val apkUrl: String)
+    class Release(val version: String, val notes: String, val apkUrl: String, val published: String = "")
 
     private const val API = "https://api.github.com/repos/biaruuu/KiroApp/releases"
     private const val PREFS = "kiro_update"
@@ -23,22 +23,52 @@ object UpdateChecker {
 
     suspend fun latest(): Release? = fetch("$API/latest")
 
+    /** Newest published versions first, for the Notifications page. */
+    suspend fun recent(limit: Int = 12): List<Release> = withContext(Dispatchers.IO) {
+        try {
+            val req = Request.Builder().url("$API?per_page=$limit").header("Accept", "application/vnd.github+json").build()
+            HttpClientProvider.get().newCall(req).execute().use { r ->
+                if (!r.isSuccessful) return@withContext emptyList()
+                val arr = org.json.JSONArray(r.body?.string().orEmpty())
+                (0 until arr.length()).mapNotNull { parse(arr.getJSONObject(it)) }
+                    .filter { !it.version.contains('-') }
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun parse(json: JSONObject): Release? {
+        if (json.optBoolean("draft")) return null
+        val version = json.optString("tag_name").removePrefix("v")
+        if (version.isEmpty()) return null
+        val apk = json.optJSONArray("assets")?.let { arr ->
+            (0 until arr.length()).map { arr.getJSONObject(it) }
+                .firstOrNull { it.optString("name").endsWith(".apk") }
+                ?.optString("browser_download_url").orEmpty()
+        }.orEmpty()
+        return Release(version, json.optString("body"), apk, json.optString("published_at").take(10))
+    }
+
+    // The checks run every minute while the app is open. GitHub answers "304 Not Modified" to a
+    // repeat request with the same ETag, and those answers don't count against its rate limit.
+    private val etags = HashMap<String, String>()
+    private val cached = HashMap<String, Release>()
+
     suspend fun forVersion(version: String): Release? = fetch("$API/tags/v$version")
 
     private suspend fun fetch(url: String): Release? = withContext(Dispatchers.IO) {
         try {
-            val req = Request.Builder().url(url).header("Accept", "application/vnd.github+json").build()
-            HttpClientProvider.get().newCall(req).execute().use { r ->
+            val builder = Request.Builder().url(url).header("Accept", "application/vnd.github+json")
+            synchronized(etags) { etags[url] }?.let { builder.header("If-None-Match", it) }
+            HttpClientProvider.get().newCall(builder.build()).execute().use { r ->
+                if (r.code == 304) return@withContext synchronized(etags) { cached[url] }
                 if (!r.isSuccessful) return@withContext null
-                val json = JSONObject(r.body?.string().orEmpty())
-                val version = json.optString("tag_name").removePrefix("v")
-                if (version.isEmpty()) return@withContext null
-                val apk = json.optJSONArray("assets")?.let { arr ->
-                    (0 until arr.length()).map { arr.getJSONObject(it) }
-                        .firstOrNull { it.optString("name").endsWith(".apk") }
-                        ?.optString("browser_download_url").orEmpty()
-                }.orEmpty()
-                Release(version, json.optString("body"), apk)
+                val release = parse(JSONObject(r.body?.string().orEmpty())) ?: return@withContext null
+                r.header("ETag")?.let { tag -> synchronized(etags) { etags[url] = tag; cached[url] = release } }
+                release
             }
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
@@ -67,6 +97,26 @@ object UpdateChecker {
         val last = p.getString("last_seen_version", null)
         p.edit().putString("last_seen_version", currentVersion).apply()
         return last != null && isNewer(currentVersion, last)
+    }
+
+    /** True while there is a published version newer than both the installed one and the last one the user looked at. */
+    val unread = MutableStateFlow(false)
+    private var latestVersion: String? = null
+
+    /** The newest version this device last saw on the Notifications page (never older than the installed one). */
+    fun seenVersion(c: Context): String {
+        val seen = prefs(c).getString("notif_seen", null) ?: return currentVersion
+        return if (isNewer(seen, currentVersion)) seen else currentVersion
+    }
+
+    fun onLatest(c: Context, release: Release) {
+        latestVersion = release.version
+        unread.value = isNewer(release.version, seenVersion(c))
+    }
+
+    fun markSeen(c: Context) {
+        latestVersion?.let { prefs(c).edit().putString("notif_seen", it).apply() }
+        unread.value = false
     }
 
     /** Returns true if this version has not been announced with a notification yet (and marks it). */

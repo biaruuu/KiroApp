@@ -662,6 +662,73 @@ fun PlayerScreen(
             }
         }
 
+        // ---- Next episode prompt: appears 15 seconds before the end and fills as the end nears ----
+        run {
+            val next = nextEpisode
+            var dismissed by remember(current) { mutableStateOf(false) }
+            val remaining = duration - position
+            val show = !locked && error == null && next != null && !dismissed && duration > 60_000L &&
+                position > 0 && remaining in 0..15_000L
+            val posSec = position / 1000.0
+            val skipShowing = skipSegments.any { posSec >= it.start - 0.5 && posSec < it.end - 1.0 }
+            val bottomPad by androidx.compose.animation.core.animateDpAsState(
+                (if (controlsVisible) 118.dp else 40.dp) + (if (skipShowing) 56.dp else 0.dp),
+                androidx.compose.animation.core.tween(220),
+                label = "next-bottom",
+            )
+            AnimatedVisibility(
+                visible = show,
+                enter = fadeIn() + androidx.compose.animation.slideInHorizontally { it / 2 },
+                exit = fadeOut(),
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 32.dp, bottom = bottomPad),
+            ) {
+                val fill = (1f - remaining / 15_000f).coerceIn(0f, 1f)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color.Black.copy(alpha = 0.65f))
+                            .clickable { dismissed = true },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.fluent_dismiss_regular),
+                            contentDescription = "Dismiss",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color.White)
+                            .drawBehind {
+                                drawRect(KiroPurple.copy(alpha = 0.35f), size = androidx.compose.ui.geometry.Size(size.width * fill, size.height))
+                            }
+                            .clickable { if (next != null) playEpisode(next.number) },
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        Row(modifier = Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "Next Episode${if (next != null) " ${next.number}" else ""}",
+                                color = Color.Black, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Icon(
+                                painter = painterResource(R.drawable.fluent_next_regular),
+                                contentDescription = null,
+                                tint = Color.Black,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         // ---- Locked: only the unlock button ----
         if (locked) {
             AnimatedVisibility(

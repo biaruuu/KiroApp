@@ -4,6 +4,15 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.25.0] - 2026-11-17
+
+### Added
+- **Notifications page**: tap the bell on Home or Notification in the Me tab to see every Kiro update. Tap one to read the full notes and update. A red dot shows when something new is waiting.
+- **Next Episode prompt**: 15 seconds before an episode ends, a Next Episode button appears and fills up as the end gets closer. Tap it to jump ahead, or dismiss it with the X.
+
+### Changed
+- New versions now reach you much faster. While Kiro is open it checks every minute, and in the background it checks every 15 minutes, instead of every few hours.
+
 ## [1.24.1] - 2026-11-17
 
 ### Added

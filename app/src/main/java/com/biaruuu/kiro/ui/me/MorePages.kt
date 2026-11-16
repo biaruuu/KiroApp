@@ -52,14 +52,14 @@ private val Body = Color(0xFFB4B4BA)
  * otherwise it shows what changed in the version you are running (opened once after updating).
  */
 @Composable
-fun WhatsNewPage(latest: Boolean, onBack: () -> Unit) {
+fun WhatsNewPage(latest: Boolean, onBack: () -> Unit, version: String? = null) {
     val context = LocalContext.current
     val current = UpdateChecker.currentVersion
     var release by remember { mutableStateOf<UpdateChecker.Release?>(null) }
     var loading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(latest) {
-        release = if (latest) UpdateChecker.latest() else UpdateChecker.forVersion(current)
+    LaunchedEffect(latest, version) {
+        release = if (version != null) UpdateChecker.forVersion(version) else if (latest) UpdateChecker.latest() else UpdateChecker.forVersion(current)
         loading = false
     }
 

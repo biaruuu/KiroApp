@@ -40,6 +40,7 @@ fun HomeScreen(
     onContinue: (Int, Int) -> Unit,
     onNotifications: () -> Unit,
     modifier: Modifier = Modifier,
+    hasUnread: Boolean = false,
     viewModel: HomeViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -68,6 +69,7 @@ fun HomeScreen(
                         heroes = current.content.hero,
                         onPlay = onPlay,
                         onNotifications = onNotifications,
+                        hasUnread = hasUnread,
                     )
                 }
             }

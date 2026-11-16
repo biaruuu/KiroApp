@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
@@ -132,11 +133,21 @@ private fun KiroScaffold() {
         if (com.biaruuu.kiro.data.UpdateChecker.consumeJustUpdated(context)) backStack.add("s:whatsnew-current")
     }
     // Also check right now (not only in the background), so the notification never depends on the phone's job scheduler.
-    LaunchedEffect(Unit) {
-        com.biaruuu.kiro.data.UpdateChecker.latest()?.let {
-            com.biaruuu.kiro.data.UpdateWorker.notifyIfNew(context, it)
+    // While Kiro is on screen it asks once a minute, so a release published right now reaches every
+    // open app within a minute (a repeat check costs almost nothing, see UpdateChecker).
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
+            while (true) {
+                com.biaruuu.kiro.data.UpdateChecker.latest()?.let {
+                    com.biaruuu.kiro.data.UpdateChecker.onLatest(context, it)
+                    com.biaruuu.kiro.data.UpdateWorker.notifyIfNew(context, it)
+                }
+                kotlinx.coroutines.delay(60_000L)
+            }
         }
     }
+    val hasUnread by com.biaruuu.kiro.data.UpdateChecker.unread.collectAsState()
     val updateRequest by com.biaruuu.kiro.data.UpdateChecker.request.collectAsState()
     LaunchedEffect(updateRequest) {
         if (updateRequest != null) {
@@ -197,9 +208,8 @@ private fun KiroScaffold() {
                     onAnimeClick = onAnimeClick,
                     onPlay = onAnimeClick,
                     onContinue = { id, ep -> backStack.add("p:$id:$ep") },
-                    onNotifications = {
-                        Toast.makeText(context, "No new notifications", Toast.LENGTH_SHORT).show()
-                    },
+                    onNotifications = { backStack.add("s:notifications") },
+                    hasUnread = hasUnread,
                     modifier = contentModifier,
                 )
 
@@ -215,7 +225,7 @@ private fun KiroScaffold() {
                     refreshKey = backStack.size,
                     modifier = contentModifier,
                 )
-                TAB_ME -> MeScreen(onOpen = { backStack.add("s:$it") }, modifier = contentModifier)
+                TAB_ME -> MeScreen(onOpen = { backStack.add("s:$it") }, hasUnread = hasUnread, modifier = contentModifier)
             }
         }
     }
@@ -228,6 +238,7 @@ private fun KiroScaffold() {
             SettingsPage(
                 page = parts.getOrNull(1) ?: "",
                 onBack = { backStack.removeAt(backStack.lastIndex) },
+                onOpen = { backStack.add("s:$it") },
                 modifier = Modifier.fillMaxSize(),
             )
         } else if (id != null) {

@@ -85,7 +85,7 @@ private val DisabledText = Color(0xFF5E5E63)
 
 /** A full-screen settings page opened from the Me tab. */
 @Composable
-fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier, onOpen: (String) -> Unit = {}) {
     var sub by remember { mutableStateOf<String?>(null) }
     BackHandler(enabled = page == "account" && sub != null) { sub = null }
     val title = when (page) {
@@ -98,7 +98,8 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
         "whatsnew-latest", "whatsnew-current" -> "What's new"
         "terms" -> "Terms of Use"
         "privacy" -> "Privacy Policy"
-        else -> "Version"
+        "notifications" -> "Notifications"
+        else -> if (page.startsWith("release-")) "What's new" else "Version"
     }
     Box(modifier = modifier.background(KiroBackground), contentAlignment = Alignment.TopCenter) {
         Column(modifier = Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
@@ -114,7 +115,8 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
                 "whatsnew-current" -> WhatsNewPage(latest = false, onBack = onBack)
                 "terms" -> com.biaruuu.kiro.ui.legal.LegalContent(terms = true)
                 "privacy" -> com.biaruuu.kiro.ui.legal.LegalContent(terms = false)
-                else -> VersionPage()
+                "notifications" -> NotificationsPage(onOpen)
+                else -> if (page.startsWith("release-")) WhatsNewPage(latest = false, onBack = onBack, version = page.removePrefix("release-")) else VersionPage()
             }
         }
     }

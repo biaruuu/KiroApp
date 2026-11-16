@@ -26,6 +26,7 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
 
     override suspend fun doWork(): Result {
         val release = UpdateChecker.latest() ?: return Result.success()
+        UpdateChecker.onLatest(applicationContext, release)
         notifyIfNew(applicationContext, release)
         return Result.success()
     }
@@ -84,8 +85,8 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
             val online = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
             wm.enqueueUniquePeriodicWork(
                 "update-check",
-                ExistingPeriodicWorkPolicy.KEEP,
-                PeriodicWorkRequestBuilder<UpdateWorker>(6, TimeUnit.HOURS).setConstraints(online).build(),
+                ExistingPeriodicWorkPolicy.UPDATE,
+                PeriodicWorkRequestBuilder<UpdateWorker>(15, TimeUnit.MINUTES).setConstraints(online).build(),
             )
             wm.enqueueUniqueWork(
                 "update-check-now",

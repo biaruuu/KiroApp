@@ -51,7 +51,7 @@ private val Hairline = Color(0xFF2B2B2F)
 
 /** The Me tab: account header and the settings list. [onOpen] pushes a settings page. */
 @Composable
-fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
+fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread: Boolean = false) {
     val context = LocalContext.current
     val configured = remember { AuthRepository.isConfigured(context) }
     val state by AuthRepository.state.collectAsState()
@@ -110,9 +110,7 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
             Spacer(Modifier.height(32.dp))
             Text("Settings", color = Muted, fontSize = 14.sp)
             Spacer(Modifier.height(6.dp))
-            SettingsRow(R.drawable.fluent_alert_regular, "Notification") {
-                Toast.makeText(context, "No new notifications", Toast.LENGTH_SHORT).show()
-            }
+            SettingsRow(R.drawable.fluent_alert_regular, "Notification", badge = hasUnread) { onOpen("notifications") }
             SettingsRow(R.drawable.fluent_arrow_download_regular, "Download") { onOpen("download") }
             SettingsRow(R.drawable.fluent_play_circle_regular, "Play") { onOpen("play") }
             SettingsRow(R.drawable.fluent_language_regular, "Language") { onOpen("language") }
@@ -150,7 +148,7 @@ private fun Chevron() {
 }
 
 @Composable
-private fun SettingsRow(@DrawableRes icon: Int, label: String, value: String? = null, onClick: () -> Unit) {
+private fun SettingsRow(@DrawableRes icon: Int, label: String, value: String? = null, badge: Boolean = false, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -171,6 +169,10 @@ private fun SettingsRow(@DrawableRes icon: Int, label: String, value: String? = 
         if (value != null) {
             Text(value, color = Muted, fontSize = 13.sp)
             Spacer(Modifier.size(4.dp))
+        }
+        if (badge) {
+            Box(Modifier.size(9.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color(0xFFFF4D4F)))
+            Spacer(Modifier.size(6.dp))
         }
         Chevron()
     }
