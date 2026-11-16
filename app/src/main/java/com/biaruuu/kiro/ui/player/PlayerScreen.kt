@@ -1350,7 +1350,6 @@ private fun TrackColumn(title: String, labels: List<String>, picked: Int, onPick
     }
 }
 
-@Composable
 private val SkipAmber = Color(0xFFFFC857)
 
 @Composable
