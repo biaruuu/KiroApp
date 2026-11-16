@@ -36,33 +36,38 @@ object SkipTimes {
     private class Raw(val segment: Segment, val episodeLength: Double)
 
     private const val BASE = "https://api.aniskip.com/v2/skip-times"
-    private const val CUT_TOLERANCE_SEC = 15.0
+    private const val CUT_TOLERANCE_SEC = 3.0
     private val cache = HashMap<String, List<Segment>>()
 
+    /**
+     * Only timestamps Aniskip has stored for a cut of this episode with (almost) the same length
+     * as the video that is playing are used. Entries with no length on record, or for a clearly
+     * different cut, would be guesses, so they are dropped: no timestamps means no skip button.
+     */
     suspend fun load(malId: Int, episode: Int, durationSec: Double): List<Segment> {
         if (malId <= 0 || episode <= 0 || durationSec < 60) return emptyList()
         val key = "$malId:$episode:${durationSec.roundToInt()}"
         cache[key]?.let { return it }
-
-        var found = pickBest(query(malId, episode, durationSec), durationSec)
-        if (found.isEmpty()) {
-            // Nothing stored for this exact length: accept a nearly identical cut of the episode.
-            found = pickBest(
-                query(malId, episode, 0.0).filter { it.episodeLength > 0 && abs(it.episodeLength - durationSec) <= CUT_TOLERANCE_SEC },
-                durationSec,
-            )
-        }
+        val found = pickBest(query(malId, episode, durationSec), durationSec)
         cache[key] = found
         return found
     }
 
     private fun pickBest(raws: List<Raw>, durationSec: Double): List<Segment> {
-        val seen = HashSet<String>()
         val out = ArrayList<Segment>()
-        for (r in raws) {
+        val seen = HashSet<String>()
+        val verified = raws
+            .filter { it.episodeLength > 0 && abs(it.episodeLength - durationSec) <= CUT_TOLERANCE_SEC }
+            .sortedBy { abs(it.episodeLength - durationSec) }
+        for (r in verified) {
             val s = r.segment
             val length = s.end - s.start
-            if (length < 5.0 || length > 300.0 || s.start >= durationSec) continue
+            if (length < 5.0 || length > 300.0 || s.end > durationSec + CUT_TOLERANCE_SEC) continue
+            // An opening belongs in the first half of an episode and an ending in the second.
+            val opening = s.type == "op" || s.type == "mixed-op"
+            val ending = s.type == "ed" || s.type == "mixed-ed"
+            if (opening && s.start > durationSec * 0.5) continue
+            if (ending && s.start < durationSec * 0.5) continue
             if (seen.add(s.type)) out.add(Segment(s.type, s.start, minOf(s.end, durationSec)))
         }
         return out.sortedBy { it.start }

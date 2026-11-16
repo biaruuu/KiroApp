@@ -115,7 +115,7 @@ private val MutedText = Color(0xFF8E8E93)
 
 private const val NO_SOURCE = "This episode isn't available right now"
 
-private enum class Panel { Menu, Tracks, Episodes, Speed, Quality, SubStyle, Boost, Hdr }
+private enum class Panel { Menu, Tracks, Episodes, Speed, Quality, SubStyle, Boost, Hdr, AutoSkip }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -673,20 +673,18 @@ fun PlayerScreen(
                     Panel.SubStyle -> "Subtitle style"
                     Panel.Boost -> "Audio boost"
                     Panel.Hdr -> "HDR & Dolby Vision"
+                    Panel.AutoSkip -> "Auto Skip Intro/Outro"
                     Panel.Tracks -> "Audio & Subtitles"
                     Panel.Episodes -> "Episodes"
                     Panel.Speed -> "Playback speed"
                 },
                 onClose = { panel = null },
-                width = if (open == Panel.Episodes) 470.dp else 340.dp,
+                wide = open == Panel.Episodes,
             ) {
                 when (open) {
                     Panel.Menu -> LazyColumn {
                         item {
-                            ToggleMenuRow("Auto Skip Intro/Outro", autoSkip) {
-                                autoSkip = it
-                                com.biaruuu.kiro.data.AppSettings.setAutoSkip(context, it)
-                            }
+                            MenuRow("Auto Skip Intro/Outro", if (autoSkip) "On" else "Off") { panel = Panel.AutoSkip }
                         }
                         item {
                             MenuRow("Quality", if (quality == 0) "Auto" else "${quality}p") { panel = Panel.Quality }
@@ -694,7 +692,7 @@ fun PlayerScreen(
                         item {
                             MenuRow(
                                 "Subtitle style",
-                                "${subStyle.font} · ${SubtitleOptions.sizes[subStyle.size].first} · ${SubtitleOptions.backgrounds[subStyle.background].first}",
+                                subStyle.font,
                             ) { panel = Panel.SubStyle }
                         }
                         item { MenuRow("Audio boost", if (boostDb == 0) "Off" else "+$boostDb dB") { panel = Panel.Boost } }
@@ -735,6 +733,22 @@ fun PlayerScreen(
                         item {
                             Text(
                                 "Makes quiet dialogue louder. Loud scenes may distort at +20 dB.",
+                                color = Color(0xFF8E8E93), fontSize = 12.sp,
+                                modifier = Modifier.padding(20.dp),
+                            )
+                        }
+                    }
+                    Panel.AutoSkip -> LazyColumn {
+                        items(listOf(true, false)) { on ->
+                            PanelRow(label = if (on) "On" else "Off", selected = autoSkip == on) {
+                                autoSkip = on
+                                com.biaruuu.kiro.data.AppSettings.setAutoSkip(context, on)
+                                panel = null
+                            }
+                        }
+                        item {
+                            Text(
+                                "When on, Kiro skips the intro, outro and recap for you after a short countdown. Only parts that are confirmed for this exact episode are skipped; nothing is guessed.",
                                 color = Color(0xFF8E8E93), fontSize = 12.sp,
                                 modifier = Modifier.padding(20.dp),
                             )
@@ -1045,36 +1059,44 @@ private fun SeekBar(
 }
 
 @Composable
-private fun SidePanel(title: String, onClose: () -> Unit, width: androidx.compose.ui.unit.Dp = 340.dp, content: @Composable () -> Unit) {
-    Box(
+private fun SidePanel(title: String, onClose: () -> Unit, wide: Boolean = false, content: @Composable () -> Unit) {
+    val shown = remember { androidx.compose.animation.core.MutableTransitionState(false).apply { targetState = true } }
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.7f))
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClose),
     ) {
-        Column(
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .fillMaxHeight()
-                .width(width)
-                .background(Color.Black)
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
-                .padding(top = 12.dp),
+        // The panel grows with the screen (phones, tablets, fold-outs) instead of a fixed width.
+        val panelWidth = if (wide) (maxWidth * 0.5f).coerceIn(380.dp, 560.dp) else (maxWidth * 0.42f).coerceIn(300.dp, 440.dp)
+        AnimatedVisibility(
+            visibleState = shown,
+            enter = androidx.compose.animation.slideInHorizontally(androidx.compose.animation.core.tween(220)) { it } + fadeIn(),
+            modifier = Modifier.align(Alignment.CenterEnd),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(panelWidth)
+                    .background(Color.Black)
+                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
+                    .padding(top = 12.dp),
             ) {
-                Text(title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                if (title.isEmpty()) Spacer(Modifier.weight(1f))
-                Icon(
-                    painter = painterResource(R.drawable.fluent_dismiss_regular),
-                    contentDescription = "Close",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp).clip(CircleShape).clickable(onClick = onClose),
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    if (title.isEmpty()) Spacer(Modifier.weight(1f))
+                    Icon(
+                        painter = painterResource(R.drawable.fluent_dismiss_regular),
+                        contentDescription = "Close",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp).clip(CircleShape).clickable(onClick = onClose),
+                    )
+                }
+                content()
             }
-            content()
         }
     }
 }
@@ -1351,29 +1373,6 @@ private fun TrackColumn(title: String, labels: List<String>, picked: Int, onPick
 }
 
 private val SkipAmber = Color(0xFFFFC857)
-
-@Composable
-private fun ToggleMenuRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().height(52.dp).clickable { onChange(!checked) }.padding(horizontal = 20.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
-        androidx.compose.material3.Switch(
-            modifier = Modifier.scale(0.8f),
-            checked = checked,
-            onCheckedChange = onChange,
-            colors = androidx.compose.material3.SwitchDefaults.colors(
-                checkedTrackColor = KiroPurple,
-                checkedThumbColor = Color.White,
-                checkedBorderColor = KiroPurple,
-                uncheckedTrackColor = Color(0xFF3A3A3E),
-                uncheckedThumbColor = Color(0xFFB4B4BA),
-                uncheckedBorderColor = Color(0xFF3A3A3E),
-            ),
-        )
-    }
-}
 
 @Composable
 private fun MenuRow(label: String, value: String, onClick: () -> Unit) {

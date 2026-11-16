@@ -4,6 +4,16 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.23.1] - 2026-11-16
+
+### Changed
+- **Auto Skip Intro/Outro** is now a row in the player menu, just like HDR & Dolby Vision: tap it to choose On or Off.
+- The 3-dots menu slides in and sizes itself to your screen, so it fits phones and tablets.
+- Subtitle style shows just the font name (for example Trebuchet MS).
+
+### Fixed
+- Skip buttons are now accurate: Kiro only uses timestamps confirmed for the exact version of the episode you are watching. If none exist, no skip button or marker is shown instead of a guess.
+
 ## [1.23.0] - 2026-11-16
 
 ### Added
