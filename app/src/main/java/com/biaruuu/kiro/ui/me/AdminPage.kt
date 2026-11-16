@@ -57,7 +57,7 @@ private val Green = Color(0xFF3DDC84)
 private const val ONLINE_WINDOW_MS = 90_000L
 
 private class PresenceUser(val uid: String, val name: String, val online: Boolean, val lastSeen: Long, val version: String, val watching: String?)
-private class Letter(val id: String, val name: String, val message: String, val version: String, val createdAt: Long)
+private class Letter(val id: String, val name: String, val message: String, val version: String, val createdAt: Long, val topic: String)
 
 /** The developer's tools: who is online and watching, letters from users, and announcements. */
 @Composable
@@ -71,16 +71,27 @@ fun AdminPage() {
     }
     // Keeps the public developer card (name, photo, bio) on every notification in step with this profile.
     val profile by ProfileRepository.profile.collectAsState()
+    val context = LocalContext.current
+    val rulesError by Announcements.error.collectAsState()
     LaunchedEffect(profile.username, profile.avatar, profile.bio) {
         if (profile.username.isNotBlank()) {
             FirebaseFirestore.getInstance().collection("meta").document("admin").set(
                 hashMapOf("username" to profile.username, "bio" to profile.bio, "avatar" to profile.avatar, "email" to Admin.EMAIL),
-            )
+            ).addOnFailureListener {
+                Toast.makeText(context, "Couldn't save your developer card: ${it.message}", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
     var tab by remember { mutableIntStateOf(0) }
     Column(modifier = Modifier.fillMaxSize()) {
+        if (rulesError != null) {
+            Text(
+                "Firestore refused access: ${rulesError}. Publish the latest firestore.rules in the Firebase Console, then reopen Kiro.",
+                color = Color(0xFFFF6B6B), fontSize = 12.sp, lineHeight = 17.sp,
+                modifier = Modifier.fillMaxWidth().background(Color(0xFF2A1618)).padding(12.dp),
+            )
+        }
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
             listOf("Online", "Letters", "Announce").forEachIndexed { i, label ->
                 Column(
@@ -89,7 +100,7 @@ fun AdminPage() {
                 ) {
                     Text(label, color = if (tab == i) Color.White else Muted, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
-                    Box(Modifier.fillMaxWidth().height(2.dp).background(if (tab == i) KiroPurple else Color.Transparent))
+                    Box(Modifier.fillMaxWidth().height(2.dp).background(if (tab == i) Color.White else Color.Transparent))
                 }
             }
         }
@@ -157,7 +168,7 @@ private fun UserRow(u: PresenceUser, online: Boolean, now: Long) {
             Text(u.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Text(
                 if (online) (u.watching?.let { "Watching: $it" } ?: "Browsing") else "Last seen ${ago(u.lastSeen)}",
-                color = if (online && u.watching != null) KiroPurple else Muted, fontSize = 12.sp,
+                color = if (online && u.watching != null) Color.White else Muted, fontSize = 12.sp,
             )
         }
         if (u.version.isNotEmpty()) Text("v${u.version}", color = Muted, fontSize = 11.sp)
@@ -175,7 +186,7 @@ private fun LettersTab() {
                 letters = snap.documents.map { d ->
                     Letter(
                         d.id, d.getString("username").orEmpty().ifBlank { d.getString("uid").orEmpty().take(8) },
-                        d.getString("message").orEmpty(), d.getString("version").orEmpty(), d.getLong("createdAt") ?: 0L,
+                        d.getString("message").orEmpty(), d.getString("version").orEmpty(), d.getLong("createdAt") ?: 0L, d.getString("topic").orEmpty(),
                     )
                 }
             }
@@ -191,7 +202,15 @@ private fun LettersTab() {
         items(letters, key = { it.id }) { l ->
             Column(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Card).padding(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(l.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Text(l.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    if (l.topic.isNotEmpty()) {
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            l.topic, color = Color.Black, fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(Color.White).padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
                     Text(listOf(ago(l.createdAt), if (l.version.isNotEmpty()) "v${l.version}" else "").filter { it.isNotEmpty() }.joinToString(" · "), color = Muted, fontSize = 11.sp)
                 }
                 Spacer(Modifier.height(6.dp))
@@ -240,12 +259,15 @@ private fun AnnounceTab() {
                 onClick = {
                     val col = FirebaseFirestore.getInstance().collection("announcements")
                     val id = editing
+                    val fail = { e: Exception -> Toast.makeText(context, "Couldn't save: ${e.message}", Toast.LENGTH_LONG).show() }
                     if (id == null) {
                         col.add(hashMapOf("title" to title.trim(), "body" to body.trim(), "createdAt" to System.currentTimeMillis()))
-                        Toast.makeText(context, "Announcement sent.", Toast.LENGTH_SHORT).show()
+                            .addOnSuccessListener { Toast.makeText(context, "Announcement sent.", Toast.LENGTH_SHORT).show() }
+                            .addOnFailureListener(fail)
                     } else {
                         col.document(id).update(mapOf("title" to title.trim(), "body" to body.trim()))
-                        Toast.makeText(context, "Announcement updated.", Toast.LENGTH_SHORT).show()
+                            .addOnSuccessListener { Toast.makeText(context, "Announcement updated.", Toast.LENGTH_SHORT).show() }
+                            .addOnFailureListener(fail)
                     }
                     title = ""; body = ""; editing = null
                 },
@@ -265,7 +287,7 @@ private fun AnnounceTab() {
                 Spacer(Modifier.height(8.dp))
                 Row {
                     Text(ago(a.createdAt), color = Muted, fontSize = 11.sp, modifier = Modifier.weight(1f))
-                    Text("Edit", color = KiroPurple, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.clickable { title = a.title; body = a.body; editing = a.id })
+                    Text("Edit", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.clickable { title = a.title; body = a.body; editing = a.id })
                     Spacer(Modifier.width(18.dp))
                     Text("Delete", color = Color(0xFFFF6B6B), fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.clickable {
                         FirebaseFirestore.getInstance().collection("announcements").document(a.id).delete()

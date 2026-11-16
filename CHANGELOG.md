@@ -4,6 +4,15 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.26.1] - 2026-11-17
+
+### Changed
+- **Contact us** is redesigned: pick what it's about (Bug, Suggestion, Question or Other), write in a roomy box, and see a confirmation when it is sent.
+- Notifications show the developer's own username and profile photo with a short "Dev" tag.
+
+### Fixed
+- Admin panel tabs use white instead of purple, and problems saving or reading announcements are now shown instead of failing silently.
+
 ## [1.26.0] - 2026-11-17
 
 ### Added

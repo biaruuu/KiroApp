@@ -171,6 +171,16 @@ private fun KiroScaffold() {
             }
         }
     }
+    LaunchedEffect(authState, myName.username, myName.avatar, myName.bio) {
+        if (com.biaruuu.kiro.data.Admin.isAdmin(authState) && myName.username.isNotBlank()) {
+            com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("meta").document("admin").set(
+                hashMapOf(
+                    "username" to myName.username, "bio" to myName.bio, "avatar" to myName.avatar,
+                    "email" to com.biaruuu.kiro.data.Admin.EMAIL,
+                ),
+            )
+        }
+    }
     LaunchedEffect(watchingNow, myName.username) {
         if (!signedInUid.isNullOrEmpty()) com.biaruuu.kiro.data.Presence.write(signedInUid, true)
     }

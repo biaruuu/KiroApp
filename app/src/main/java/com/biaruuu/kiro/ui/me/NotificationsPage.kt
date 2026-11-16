@@ -61,7 +61,13 @@ fun NotificationsPage(onOpen: (String) -> Unit) {
     val context = LocalContext.current
     var releases by remember { mutableStateOf<List<UpdateChecker.Release>?>(null) }
     val announcements by Announcements.list.collectAsState()
-    val admin by Announcements.admin.collectAsState()
+    val publicCard by Announcements.admin.collectAsState()
+    val authState by com.biaruuu.kiro.data.auth.AuthRepository.state.collectAsState()
+    val myProfile by com.biaruuu.kiro.data.ProfileRepository.profile.collectAsState()
+    // When the developer looks, their own live profile is used; everyone else reads the public card.
+    val admin = if (Admin.isAdmin(authState) && myProfile.username.isNotBlank()) {
+        com.biaruuu.kiro.data.AdminCard(myProfile.username, myProfile.bio, myProfile.avatar, Admin.EMAIL)
+    } else publicCard
     // What counts as new is decided before this visit clears it.
     val seenVersion = remember { UpdateChecker.seenVersion(context) }
     val seenAnnouncement = remember { context.getSharedPreferences("kiro_update", android.content.Context.MODE_PRIVATE).getLong("ann_seen", Long.MAX_VALUE) }
@@ -151,7 +157,7 @@ fun NotificationsPage(onOpen: (String) -> Unit) {
 /** Avatar, name with the blue verified tick, a Developer badge and the developer's email. */
 @Composable
 private fun DeveloperHeader(card: com.biaruuu.kiro.data.AdminCard?, time: String, unread: Boolean) {
-    val name = card?.username?.ifBlank { null } ?: "Kiro Developer"
+    val name = card?.username?.ifBlank { null } ?: "Developer"
     Row(verticalAlignment = Alignment.CenterVertically) {
         Avatar(card?.avatar.orEmpty(), name, 40.dp)
         Spacer(Modifier.width(10.dp))
@@ -162,7 +168,7 @@ private fun DeveloperHeader(card: com.biaruuu.kiro.data.AdminCard?, time: String
                 VerifiedBadge()
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    "Developer",
+                    "Dev",
                     color = KiroPurple, fontSize = 10.sp, fontWeight = FontWeight.Bold,
                     modifier = Modifier
                         .border(1.dp, KiroPurple, RoundedCornerShape(4.dp))

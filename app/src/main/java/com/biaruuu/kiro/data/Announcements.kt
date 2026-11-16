@@ -30,6 +30,9 @@ object Announcements {
     val admin = MutableStateFlow<AdminCard?>(null)
     val unread = MutableStateFlow(false)
 
+    /** Set when Firestore refuses the read (usually: the security rules have not been published). */
+    val error = MutableStateFlow<String?>(null)
+
     private const val PREFS = "kiro_update"
     private const val CHANNEL = "announcements"
     private var started = false
@@ -48,7 +51,12 @@ object Announcements {
         val db = FirebaseFirestore.getInstance()
         db.collection("announcements").orderBy("createdAt", Query.Direction.DESCENDING).limit(30)
             .addSnapshotListener { snap, err ->
-                if (err != null || snap == null) return@addSnapshotListener
+                if (err != null) {
+                    error.value = err.message
+                    return@addSnapshotListener
+                }
+                if (snap == null) return@addSnapshotListener
+                error.value = null
                 val items = snap.documents.map {
                     Announcement(it.id, it.getString("title").orEmpty(), it.getString("body").orEmpty(), it.getLong("createdAt") ?: 0L)
                 }

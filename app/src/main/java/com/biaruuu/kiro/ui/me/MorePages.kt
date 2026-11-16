@@ -18,6 +18,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.launch
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -197,52 +200,124 @@ fun HelpPage() {
     }
 }
 
-/** A message box that saves feedback with the account (in the cloud), so nothing public is needed. */
+/** Send the developer a message. It lands in the admin panel's Letters tab with your username. */
 @Composable
 fun ContactPage(onDone: () -> Unit) {
     val context = LocalContext.current
     val state by AuthRepository.state.collectAsState()
+    val profile by com.biaruuu.kiro.data.ProfileRepository.profile.collectAsState()
     val signedIn = state as? AuthState.SignedIn
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val topics = listOf("Bug", "Suggestion", "Question", "Other")
+    var topic by remember { mutableStateOf(0) }
     var message by remember { mutableStateOf("") }
+    var sending by remember { mutableStateOf(false) }
+    var sent by remember { mutableStateOf(false) }
+
+    if (sent) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+        ) {
+            Box(Modifier.size(64.dp).clip(CircleShape).background(KiroPurple), contentAlignment = Alignment.Center) {
+                androidx.compose.material3.Icon(
+                    painter = androidx.compose.ui.res.painterResource(com.biaruuu.kiro.R.drawable.fluent_checkmark_regular),
+                    contentDescription = null, tint = Color.White, modifier = Modifier.size(34.dp),
+                )
+            }
+            Spacer(Modifier.height(18.dp))
+            Text("Message sent", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+            Text("Thanks! The developer reads every message.", color = Body, fontSize = 14.sp)
+            Spacer(Modifier.height(28.dp))
+            PrimaryButton(label = "Done", enabled = true, busy = false, onClick = onDone)
+        }
+        return
+    }
 
     Column(modifier = Modifier.fillMaxSize().imePadding().padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 16.dp)) {
-        Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             if (signedIn == null) {
-                Text("Log in to send us a message.", color = Body, fontSize = 14.sp)
+                Text("Log in to send the developer a message.", color = Body, fontSize = 14.sp)
             } else {
-                Text("Message", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                UnderlineField(
-                    value = message,
-                    onChange = { if (it.length <= 1000) message = it },
-                    hint = "Tell us what's wrong or what you'd like",
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Default,
-                    onImeAction = {},
-                    singleLine = false,
-                )
+                Text("What's it about?", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(10.dp))
+                Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                    topics.forEachIndexed { i, label ->
+                        val on = topic == i
+                        Text(
+                            label,
+                            color = if (on) Color.Black else Color.White,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(20.dp))
+                                .background(if (on) Color.White else Color(0xFF2A2A2D))
+                                .clickable { topic = i }
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
+                        )
+                    }
+                }
+                Spacer(Modifier.height(20.dp))
+                Text("Your message", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(10.dp))
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(190.dp)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                        .background(Color(0xFF1A1A1D))
+                        .padding(14.dp),
+                ) {
+                    androidx.compose.foundation.text.BasicTextField(
+                        value = message,
+                        onValueChange = { if (it.length <= 1000) message = it },
+                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 15.sp, lineHeight = 22.sp),
+                        cursorBrush = androidx.compose.ui.graphics.SolidColor(KiroPurple),
+                        modifier = Modifier.fillMaxSize(),
+                        decorationBox = { inner ->
+                            if (message.isEmpty()) Text("Tell us what's wrong or what you'd like to see", color = Muted, fontSize = 15.sp)
+                            inner()
+                        },
+                    )
+                }
                 Spacer(Modifier.height(8.dp))
-                Text("${message.length} / 1000", color = Muted, fontSize = 12.sp)
+                Row(Modifier.fillMaxWidth()) {
+                    Text("Sending as ${profile.username.ifBlank { signedIn.name }}", color = Muted, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                    Text("${message.length} / 1000", color = Muted, fontSize = 12.sp)
+                }
             }
         }
         PrimaryButton(
             label = if (signedIn == null) "Log in" else "Send",
-            enabled = signedIn == null || message.isNotBlank(),
-            busy = false,
+            enabled = signedIn == null || (message.isNotBlank() && !sending),
+            busy = sending,
             onClick = {
                 if (signedIn == null) {
                     AuthRepository.requestLogin()
                 } else {
+                    sending = true
                     FirebaseFirestore.getInstance().collection("feedback").add(
                         hashMapOf(
                             "uid" to signedIn.uid,
-                            "username" to com.biaruuu.kiro.data.ProfileRepository.profile.value.username,
+                            "username" to profile.username.ifBlank { signedIn.name },
+                            "topic" to topics[topic],
                             "message" to message.trim(),
                             "version" to BuildConfig.VERSION_NAME,
                             "createdAt" to System.currentTimeMillis(),
                         ),
-                    )
-                    Toast.makeText(context, "Thanks! Your message was sent.", Toast.LENGTH_SHORT).show()
-                    onDone()
+                    ).addOnCompleteListener { t ->
+                        if (!sending) return@addOnCompleteListener
+                        sending = false
+                        if (t.isSuccessful) sent = true
+                        else Toast.makeText(context, "Couldn't send. Check your connection and try again.", Toast.LENGTH_LONG).show()
+                    }
+                    // Offline, the message is kept and sent later; don't leave the person waiting.
+                    scope.launch {
+                        kotlinx.coroutines.delay(8_000L)
+                        if (sending) { sending = false; sent = true }
+                    }
                 }
             },
         )
