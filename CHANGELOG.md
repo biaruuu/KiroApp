@@ -4,6 +4,17 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.20.0] - 2026-11-16
+
+### Added
+- **Login with a trailer background**: trending anime trailers play muted behind the welcome page and rotate, fading into the dark page at the bottom (a still shows first, or if a trailer can't play).
+- **Continue as Guest** replaces the X. It opens a full page asking "Are you sure you want to continue as a guest?" and explains that progress, My List, ratings and watched episodes are not saved.
+- **Terms of Use and Privacy Policy** pages. The two links on the login page now open them, and both are listed in the Me tab.
+
+### Changed
+- The KIRO text is back on Home and on the login page.
+- Delete account now also deletes the saved profile and library from the cloud, after checking that the sign-in is recent enough.
+
 ## [1.19.3] - 2026-11-16
 
 ### Changed

@@ -127,6 +127,8 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier) {
                 openUrl(context, "$REPO_URL/issues/new")
             }
             SettingsRow(R.drawable.fluent_document_regular, "License") { onOpen("license") }
+            SettingsRow(R.drawable.fluent_document_regular, "Terms of Use") { onOpen("terms") }
+            SettingsRow(R.drawable.fluent_document_regular, "Privacy Policy") { onOpen("privacy") }
             SettingsRow(R.drawable.fluent_phone_regular, "Version", value = BuildConfig.VERSION_NAME.substringBefore('-')) {
                 onOpen("version")
             }

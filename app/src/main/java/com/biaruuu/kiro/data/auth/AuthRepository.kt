@@ -150,15 +150,46 @@ object AuthRepository {
             onDone("You are signed out.")
             return
         }
-        user.delete().addOnCompleteListener { t ->
-            if (t.isSuccessful) {
-                appContext?.let { CloudSync.clearLocal(it) }
-                _guest.value = false
-                onDone(null)
-            } else if (t.exception is FirebaseAuthRecentLoginRequiredException) {
+        // Firebase only deletes accounts that signed in recently. Check that before touching any
+        // saved data, so a refused delete never leaves a signed-in account without its library.
+        user.getIdToken(false).addOnCompleteListener { tokenTask ->
+            val signedInAt = tokenTask.result?.authTimestamp ?: 0L
+            if (System.currentTimeMillis() - signedInAt > 4 * 60_000L) {
                 onDone("For security, log out, log in again, then delete your account.")
             } else {
-                onDone(message(t.exception))
+                deleteNow(user, onDone)
+            }
+        }
+    }
+
+    private fun deleteNow(user: FirebaseUser, onDone: (String?) -> Unit) {
+        // Delete the saved profile and library first, then the sign-in itself.
+        val uid = user.uid
+        CloudSync.stop()
+        ProfileRepository.stop()
+        val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+        val profile = db.collection("users").document(uid)
+        profile.collection("data").document("library").delete().addOnCompleteListener {
+            profile.delete().addOnCompleteListener {
+                user.delete().addOnCompleteListener { t ->
+                    if (t.isSuccessful) {
+                        appContext?.let { CloudSync.clearLocal(it) }
+                        _guest.value = false
+                        onDone(null)
+                    } else if (t.exception is FirebaseAuthRecentLoginRequiredException) {
+                        appContext?.let { c ->
+                            ProfileRepository.start(c, uid)
+                            CloudSync.start(c, uid)
+                        }
+                        onDone("For security, log out, log in again, then delete your account.")
+                    } else {
+                        appContext?.let { c ->
+                            ProfileRepository.start(c, uid)
+                            CloudSync.start(c, uid)
+                        }
+                        onDone(message(t.exception))
+                    }
+                }
             }
         }
     }

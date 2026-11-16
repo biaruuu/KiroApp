@@ -94,6 +94,8 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
         "play" -> "Play Setting"
         "language" -> "Language"
         "license" -> "License"
+        "terms" -> "Terms of Use"
+        "privacy" -> "Privacy Policy"
         else -> "Version"
     }
     Box(modifier = modifier.background(KiroBackground), contentAlignment = Alignment.TopCenter) {
@@ -105,6 +107,8 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
                 "play" -> PlayPage()
                 "language" -> LanguagePage()
                 "license" -> LicensePage()
+                "terms" -> com.biaruuu.kiro.ui.legal.LegalContent(terms = true)
+                "privacy" -> com.biaruuu.kiro.ui.legal.LegalContent(terms = false)
                 else -> VersionPage()
             }
         }

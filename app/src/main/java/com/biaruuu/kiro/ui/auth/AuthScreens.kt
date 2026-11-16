@@ -31,6 +31,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.draw.alpha
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -113,11 +115,75 @@ fun AuthGate(content: @Composable () -> Unit) {
 
 @Composable
 private fun LoginFlow() {
+    // 0 welcome, 1 email, 2 guest confirmation, 3 terms, 4 privacy
     var screen by rememberSaveable { mutableIntStateOf(0) }
-    if (screen == 0) {
-        WelcomeScreen(onEmail = { screen = 1 })
-    } else {
-        EmailFlow(onBack = { screen = 0 })
+    when (screen) {
+        0 -> WelcomeScreen(
+            onEmail = { screen = 1 },
+            onGuest = { screen = 2 },
+            onTerms = { screen = 3 },
+            onPrivacy = { screen = 4 },
+        )
+        1 -> EmailFlow(onBack = { screen = 0 })
+        2 -> GuestConfirm(onBack = { screen = 0 })
+        else -> {
+            BackHandler { screen = 0 }
+            CenteredPage {
+                Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+                    PageTopBar(if (screen == 3) "Terms of Use" else "Privacy Policy", onBack = { screen = 0 })
+                    com.biaruuu.kiro.ui.legal.LegalContent(terms = screen == 3)
+                }
+            }
+        }
+    }
+}
+
+/** The "are you sure?" page shown before browsing without an account. */
+@Composable
+private fun GuestConfirm(onBack: () -> Unit) {
+    BackHandler(onBack = onBack)
+    CenteredPage {
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+            PageTopBar("Continue as Guest", onBack = onBack)
+            Column(modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp, vertical = 28.dp)) {
+                Text(
+                    "Are you sure you want to continue as a guest?",
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    lineHeight = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    "You won't save your progress. As a guest, your My List, ratings, Continue Watching and watched episodes are not saved or synced.",
+                    color = Color(0xFFB4B4BA),
+                    fontSize = 14.sp,
+                    lineHeight = 21.sp,
+                )
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    "You can log in or create an account any time from the Me tab.",
+                    color = Muted,
+                    fontSize = 13.sp,
+                    lineHeight = 19.sp,
+                )
+            }
+            Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+                PrimaryButton(label = "Yes, continue as guest", enabled = true, busy = false, onClick = { AuthRepository.continueAsGuest() })
+                Spacer(Modifier.height(12.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(ButtonGray)
+                        .clickable(onClick = onBack),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("Go back", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
     }
 }
 
@@ -132,7 +198,7 @@ internal fun CenteredPage(modifier: Modifier = Modifier, content: @Composable ()
 // ---------------------------------------------------------------- Welcome
 
 @Composable
-private fun WelcomeScreen(onEmail: () -> Unit) {
+private fun WelcomeScreen(onEmail: () -> Unit, onGuest: () -> Unit, onTerms: () -> Unit, onPrivacy: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val lastLogin = remember { AppSettings.lastLogin(context) }
@@ -140,36 +206,14 @@ private fun WelcomeScreen(onEmail: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
 
     CenteredPage {
-        // Soft purple glow behind the wordmark; the page itself stays flat dark.
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        0f to Color(0xFF2B2452),
-                        0.55f to Color(0xFF181628),
-                        1f to KiroBackground,
-                    ),
-                ),
-        )
+        LoginBackdrop()
         Column(
             modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Row(modifier = Modifier.fillMaxWidth().height(48.dp).padding(end = 5.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End) {
-                Box(
-                    modifier = Modifier.size(48.dp).clickable { AuthRepository.continueAsGuest() },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.fluent_dismiss_regular),
-                        contentDescription = "Skip",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
             Spacer(Modifier.weight(1f))
+            Text("KIRO", color = KiroPurple, fontSize = 52.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
+            Spacer(Modifier.height(10.dp))
             Text(
                 "Discover your favorite anime and\ncustomize your library.",
                 color = Color(0xFFB4B4BA),
@@ -177,7 +221,7 @@ private fun WelcomeScreen(onEmail: () -> Unit) {
                 lineHeight = 21.sp,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(36.dp))
 
             Box(Modifier.fillMaxWidth()) {
                 WideButton(
@@ -189,7 +233,7 @@ private fun WelcomeScreen(onEmail: () -> Unit) {
                 )
                 if (lastLogin == "email") LastLoginBubble(Modifier.align(Alignment.TopCenter))
             }
-            Box(Modifier.padding(horizontal = 16.dp, vertical = 22.dp).fillMaxWidth().height(1.dp).background(BoxBorder))
+            Box(Modifier.padding(horizontal = 8.dp, vertical = 22.dp).fillMaxWidth().height(1.dp).background(BoxBorder))
             Box(Modifier.fillMaxWidth()) {
                 WideButton(
                     label = "Continue with Google",
@@ -212,30 +256,130 @@ private fun WelcomeScreen(onEmail: () -> Unit) {
                 )
                 if (lastLogin == "google") LastLoginBubble(Modifier.align(Alignment.TopCenter))
             }
+            Spacer(Modifier.height(16.dp))
+            WideButton(
+                label = "Continue as Guest",
+                icon = R.drawable.fluent_emoji_regular,
+                iconTint = Color.White,
+                container = ButtonGray,
+                onClick = onGuest,
+            )
             error?.let {
                 Spacer(Modifier.height(12.dp))
                 Text(it, color = ErrorRed, fontSize = 14.sp, textAlign = TextAlign.Center)
             }
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(20.dp))
             val link = SpanStyle(textDecoration = TextDecoration.Underline)
-            Text(
-                buildAnnotatedString {
-                    append("By creating an account, you agree to the ")
-                    withStyle(link) { append("Terms of Use") }
-                    append(" and ")
-                    withStyle(link) { append("Privacy Policy") }
-                    append(".")
+            val legal = buildAnnotatedString {
+                append("By creating an account, you agree to the ")
+                pushStringAnnotation("page", "terms")
+                withStyle(link) { append("Terms of Use") }
+                pop()
+                append(" and ")
+                pushStringAnnotation("page", "privacy")
+                withStyle(link) { append("Privacy Policy") }
+                pop()
+                append(".")
+            }
+            androidx.compose.foundation.text.ClickableText(
+                text = legal,
+                style = TextStyle(color = Color(0xFF77777C), fontSize = 12.sp, lineHeight = 17.sp, textAlign = TextAlign.Center),
+                modifier = Modifier.padding(horizontal = 4.dp),
+                onClick = { offset ->
+                    legal.getStringAnnotations("page", offset, offset).firstOrNull()?.let {
+                        if (it.item == "terms") onTerms() else onPrivacy()
+                    }
                 },
-                color = Color(0xFF77777C),
-                fontSize = 12.sp,
-                lineHeight = 17.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .padding(horizontal = 12.dp)
-                    .clickable { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(REPO_URL))) },
             )
             Spacer(Modifier.height(20.dp))
         }
+    }
+}
+
+/**
+ * Trending anime trailers playing muted behind the buttons (like Laftel's login). A still of the
+ * show shows first and stays if a trailer can't play; the bottom fades into the page colour.
+ */
+@Composable
+private fun LoginBackdrop() {
+    val heroes by androidx.compose.runtime.produceState<List<com.biaruuu.kiro.data.Anime>>(emptyList()) {
+        value = try {
+            com.biaruuu.kiro.data.AniListRepository.loadHome().hero.take(5)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    var index by remember { mutableIntStateOf(0) }
+    var videoId by remember { mutableStateOf<String?>(null) }
+    var playing by remember { mutableStateOf(false) }
+    val anime = heroes.getOrNull(index)
+
+    LaunchedEffect(anime?.id) {
+        playing = false
+        videoId = null
+        if (anime != null) {
+            videoId = try {
+                com.biaruuu.kiro.data.AniListRepository.tmdbTrailers(anime).firstOrNull()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+    // Moves on to the next show every so often.
+    LaunchedEffect(heroes.size, index) {
+        if (heroes.size > 1) {
+            delay(14_000)
+            index = (index + 1) % heroes.size
+        }
+    }
+
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().background(KiroBackground)) {
+        val coverWidth = maxOf(maxWidth, maxHeight * (16f / 9f)) * 1.08f
+        val coverHeight = coverWidth * (9f / 16f)
+        androidx.compose.animation.Crossfade(targetState = anime?.heroUrl, label = "login-still") { url ->
+            if (url != null) {
+                coil.compose.AsyncImage(
+                    model = url,
+                    contentDescription = null,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+        val id = videoId
+        if (id != null) {
+            androidx.compose.runtime.key(id) {
+                val alpha by androidx.compose.animation.core.animateFloatAsState(
+                    if (playing) 1f else 0f,
+                    androidx.compose.animation.core.tween(700),
+                    label = "login-video",
+                )
+                com.biaruuu.kiro.ui.detail.TrailerPlayer(
+                    videoId = id,
+                    muted = true,
+                    onPlaying = { playing = true },
+                    onFailed = { videoId = null },
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .requiredSize(coverWidth, coverHeight)
+                        .alpha(alpha),
+                )
+            }
+        }
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.verticalGradient(
+                    0f to Color.Black.copy(alpha = 0.40f),
+                    0.45f to Color.Black.copy(alpha = 0.30f),
+                    0.72f to KiroBackground.copy(alpha = 0.94f),
+                    1f to KiroBackground,
+                ),
+            ),
+        )
     }
 }
 

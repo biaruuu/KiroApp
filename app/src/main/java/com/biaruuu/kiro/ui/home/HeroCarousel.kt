@@ -149,7 +149,14 @@ fun HeroCarousel(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Spacer(Modifier)
+                Text(
+                    text = "KIRO",
+                    style = TextStyle(shadow = TextShadow),
+                    color = Color.White,
+                    fontSize = dims.wordmark,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.sp,
+                )
                 IconButton(onClick = onNotifications) {
                     // Plain white bell like the reference. A faint offset copy underneath keeps
                     // it readable on bright artwork without putting a dark disc behind it.
