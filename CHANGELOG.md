@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.24.1] - 2026-11-17
+
+### Added
+- **Satoshi subtitle font**, now the default caption font for new installs. Pick it any time under Subtitle style.
+
+### Fixed
+- HDR detection now reads every display mode and format your screen reports (HDR10, HLG, HDR10+, Dolby Vision), and the HDR & Dolby Vision panel lists what your screen supports.
+
 ## [1.24.0] - 2026-11-17
 
 ### Added

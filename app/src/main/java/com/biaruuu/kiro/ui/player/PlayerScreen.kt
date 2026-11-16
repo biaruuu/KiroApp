@@ -134,14 +134,31 @@ private fun hdrLabel(tracks: Tracks): String? {
     return null
 }
 
-/** Whether this screen reports any HDR format (HDR10, HLG, HDR10+ or Dolby Vision). */
-private fun screenSupportsHdr(context: Context): Boolean {
-    if (android.os.Build.VERSION.SDK_INT < 26) return false
-    val activity = context.findActivity() ?: return false
+/** HDR formats this screen reports (HDR10, HLG, HDR10+, Dolby Vision); empty if it has none. */
+private fun screenHdrTypes(context: Context): List<String> {
+    if (android.os.Build.VERSION.SDK_INT < 26) return emptyList()
+    val activity = context.findActivity() ?: return emptyList()
     val display = if (android.os.Build.VERSION.SDK_INT >= 30) activity.display else @Suppress("DEPRECATION") activity.windowManager.defaultDisplay
-    if (display == null) return false
-    return if (android.os.Build.VERSION.SDK_INT >= 34) display.mode.supportedHdrTypes.isNotEmpty()
-    else @Suppress("DEPRECATION") (display.hdrCapabilities?.supportedHdrTypes?.isNotEmpty() == true)
+    val types = HashSet<Int>()
+    if (display != null) {
+        @Suppress("DEPRECATION")
+        display.hdrCapabilities?.supportedHdrTypes?.let { for (t in it) types.add(t) }
+        if (android.os.Build.VERSION.SDK_INT >= 34) {
+            for (t in display.mode.supportedHdrTypes) types.add(t)
+            for (m in display.supportedModes) for (t in m.supportedHdrTypes) types.add(t)
+        }
+    }
+    val names = types.mapNotNull {
+        when (it) {
+            android.view.Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION -> "Dolby Vision"
+            android.view.Display.HdrCapabilities.HDR_TYPE_HDR10 -> "HDR10"
+            android.view.Display.HdrCapabilities.HDR_TYPE_HLG -> "HLG"
+            android.view.Display.HdrCapabilities.HDR_TYPE_HDR10_PLUS -> "HDR10+"
+            else -> null
+        }
+    }.sorted()
+    // Some phones only flag HDR through the screen configuration.
+    return if (names.isEmpty() && activity.resources.configuration.isScreenHdr) listOf("HDR") else names
 }
 
 private enum class Panel { Menu, Tracks, Episodes, Speed, Quality, SubStyle, Boost, Hdr, AutoSkip }
@@ -394,7 +411,8 @@ fun PlayerScreen(
     // Dolby Vision) is playing on a screen that can show it, so the panel really switches to HDR
     // and everything else stays in normal SDR. Hardware tunneling is the separate "On" option.
     val videoHdr = remember(tracks) { hdrLabel(tracks) }
-    val screenHdr = remember { screenSupportsHdr(context) }
+    val screenHdrList = remember { screenHdrTypes(context) }
+    val screenHdr = screenHdrList.isNotEmpty()
     DisposableEffect(hdrOn) {
         prefs.edit().putBoolean("hdr_tunneling", hdrOn).apply()
         (exo.trackSelector as? androidx.media3.exoplayer.trackselection.DefaultTrackSelector)?.let { sel ->
@@ -806,8 +824,8 @@ fun PlayerScreen(
                                 when {
                                     videoHdr != null && screenHdr -> "Playing in true $videoHdr: your screen is switched into HDR mode for this video."
                                     videoHdr != null -> "This video is $videoHdr, but your screen doesn't report HDR support, so it is shown in SDR."
-                                    screenHdr -> "Your screen supports HDR. It switches to HDR automatically when a video is HDR; this one is SDR."
-                                    else -> "Your screen doesn't report HDR support, so videos play in SDR."
+                                    screenHdr -> "Your screen supports ${screenHdrList.joinToString(", ")}. It switches to HDR automatically when a video is HDR; this one is SDR."
+                                    else -> "Your screen doesn't report HDR support, so videos play in SDR. Some phones only offer HDR in certain display modes, so check the display settings."
                                 },
                                 color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium,
                                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp),
@@ -1448,7 +1466,7 @@ private fun MenuRow(label: String, value: String, onClick: () -> Unit) {
 @Composable
 private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -> Unit) {
     val context = LocalContext.current
-    val trebuchet = remember { FontFamily(SubtitleOptions.typeface(context, SubtitleOptions.DEFAULT_FONT)) }
+    val trebuchet = remember { FontFamily(SubtitleOptions.typeface(context, SubtitleOptions.TREBUCHET)) }
     var customName by remember { mutableStateOf(SubtitleOptions.customName(context)) }
     val pickFont = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {

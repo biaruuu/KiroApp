@@ -26,15 +26,17 @@ data class SubtitleStyle(
 )
 
 object SubtitleOptions {
-    /** Netflix-style captions: the real Trebuchet MS file is bundled. */
-    const val DEFAULT_FONT = "Trebuchet MS"
+    /** Captions default to Satoshi, the bundled Satoshi Bold file. */
+    const val DEFAULT_FONT = "Satoshi"
+    const val TREBUCHET = "Trebuchet MS"
     const val CUSTOM = "Custom"
 
     /** Font name, bundled file (null = not a file) and the weight to use for variable fonts. */
     private data class Face(val asset: String?, val weight: Int)
 
     private val faces = linkedMapOf(
-        DEFAULT_FONT to Face("fonts/trebuchet.ttf", 0),
+        DEFAULT_FONT to Face("fonts/satoshi_bold.otf", 0),
+        TREBUCHET to Face("fonts/trebuchet.ttf", 0),
         "Roboto" to Face(null, 0),
         "Inter" to Face("fonts/inter.ttf", 600),
         "Open Sans" to Face("fonts/opensans.ttf", 600),
@@ -110,7 +112,7 @@ object SubtitleOptions {
                     if (face.weight > 0) builder.setFontVariationSettings("'wght' ${face.weight}")
                     val tf = builder.build()
                     // Static regular files (Trebuchet MS) get the same semi-bold look as the others.
-                    if (font == DEFAULT_FONT && tf != null) Typeface.create(tf, Typeface.BOLD) else tf
+                    if (font == TREBUCHET && tf != null) Typeface.create(tf, Typeface.BOLD) else tf
                 } catch (_: Exception) {
                     null
                 }
