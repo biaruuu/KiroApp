@@ -192,7 +192,8 @@ private fun DetailContent(
         )
     }
 
-    val trailerId = trailerIds.getOrNull(trailerIndex)
+    // Every trailer gets two chances (a slow start or a one-off error shouldn't hide it for good).
+    val trailerId = if (trailerIds.isNotEmpty() && trailerIndex < trailerIds.size * 2) trailerIds[trailerIndex % trailerIds.size] else null
 
     val episodes = remember(detail, episodesFromState, newestFirst) {
         val list = episodesFromState.ifEmpty { detail?.episodes.orEmpty() }
@@ -230,8 +231,8 @@ private fun DetailContent(
                     )
                     androidx.compose.runtime.key(trailerId) {
                         LaunchedEffect(trailerId) {
-                            // Give each video 12 seconds to start before moving on.
-                            delay(12_000)
+                            // Give each video 25 seconds to start before moving on.
+                            delay(25_000)
                             if (!trailerPlaying) trailerIndex++
                         }
                         TrailerPlayer(

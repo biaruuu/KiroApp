@@ -131,6 +131,12 @@ private fun KiroScaffold() {
     LaunchedEffect(Unit) {
         if (com.biaruuu.kiro.data.UpdateChecker.consumeJustUpdated(context)) backStack.add("s:whatsnew-current")
     }
+    // Also check right now (not only in the background), so the notification never depends on the phone's job scheduler.
+    LaunchedEffect(Unit) {
+        com.biaruuu.kiro.data.UpdateChecker.latest()?.let {
+            com.biaruuu.kiro.data.UpdateWorker.notifyIfNew(context, it)
+        }
+    }
     val updateRequest by com.biaruuu.kiro.data.UpdateChecker.request.collectAsState()
     LaunchedEffect(updateRequest) {
         if (updateRequest != null) {

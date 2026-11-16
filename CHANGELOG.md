@@ -4,6 +4,20 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.23.0] - 2026-11-16
+
+### Added
+- **Auto Skip Intro/Outro**: a new switch in the player's 3-dots menu. When it is on, Kiro skips the intro, outro and recap for you after a short countdown. Turn it off to skip by hand.
+- **Skip markers on the seek bar**: the parts you can skip (intro, outro, recap) are highlighted in amber on the progress line, so you can see where a skip will happen.
+
+### Changed
+- The skip button is bigger and easier to see: a white button that fills while auto skip counts down, and it moves up out of the way of the controls when they are showing.
+
+### Fixed
+- Tapping Next Episode many times in a row no longer ends in "Couldn't play this video". Kiro now loads only the episode you land on.
+- Trailers on the details page appear more reliably, even when a source is slow or temporarily unavailable.
+- The update notification now shows up reliably: Kiro also checks when you open the app, and the notification is shown with high priority.
+
 ## [1.22.0] - 2026-11-16
 
 ### Added

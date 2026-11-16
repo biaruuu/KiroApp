@@ -14,6 +14,10 @@ object AppSettings {
     fun downloadWifiOnly(c: Context): Boolean = prefs(c).getBoolean("download_wifi_only", true)
     fun setDownloadWifiOnly(c: Context, on: Boolean) = prefs(c).edit().putBoolean("download_wifi_only", on).apply()
 
+    /** Skip intros, outros and recaps by itself (player menu). */
+    fun autoSkip(c: Context): Boolean = prefs(c).getBoolean("auto_skip", false)
+    fun setAutoSkip(c: Context, on: Boolean) = prefs(c).edit().putBoolean("auto_skip", on).apply()
+
     val DOWNLOAD_QUALITIES = listOf("Auto", "1080p", "720p", "480p")
     fun downloadQuality(c: Context): String = prefs(c).getString("download_quality", "Auto") ?: "Auto"
     fun setDownloadQuality(c: Context, q: String) = prefs(c).edit().putString("download_quality", q).apply()

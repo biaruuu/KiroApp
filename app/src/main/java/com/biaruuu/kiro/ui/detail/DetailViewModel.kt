@@ -166,16 +166,7 @@ class DetailViewModel(private val animeId: Int) : ViewModel() {
                 publishEpisodes(detail)
                 loadEpisodeNames(detail)
                 loadTmdbEpisodes(detail)
-                if (tmdb.isEmpty() && anilist.isEmpty() && jikan.isEmpty()) {
-                    jikan = try {
-                        AniListRepository.jikanTrailers(detail.malId)
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (_: Exception) {
-                        emptyList()
-                    }
-                    publishTrailers()
-                }
+                loadJikanIfNeeded(detail.malId)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -190,14 +181,42 @@ class DetailViewModel(private val animeId: Int) : ViewModel() {
         if (tmdb.isEmpty()) {
             viewModelScope.launch {
                 val anime = baseReady.await() ?: return@launch
+                repeat(2) { attempt ->
+                    try {
+                        tmdb = AniListRepository.tmdbTrailers(anime)
+                        publishTrailers()
+                        _state.value.detail?.let { loadJikanIfNeeded(it.malId) }
+                        return@launch
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (_: Exception) {
+                        // TMDB unavailable: try once more, the other sources still apply.
+                        kotlinx.coroutines.delay(1_500L)
+                    }
+                }
+            }
+        }
+    }
+
+    private var jikanStarted = false
+
+    /** Last resort when TMDB and AniList have no trailer: MyAnimeList's, retried if the lookup is throttled. */
+    private fun loadJikanIfNeeded(malId: Int) {
+        if (jikanStarted || malId <= 0 || tmdb.isNotEmpty() || anilist.isNotEmpty() || jikan.isNotEmpty()) return
+        jikanStarted = true
+        viewModelScope.launch {
+            repeat(3) { attempt ->
                 try {
-                    tmdb = AniListRepository.tmdbTrailers(anime)
-                    publishTrailers()
+                    jikan = AniListRepository.jikanTrailers(malId)
+                    if (jikan.isNotEmpty()) {
+                        publishTrailers()
+                        return@launch
+                    }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Exception) {
-                    // TMDB unavailable: the other sources still apply.
                 }
+                kotlinx.coroutines.delay(1_500L * (attempt + 1))
             }
         }
     }

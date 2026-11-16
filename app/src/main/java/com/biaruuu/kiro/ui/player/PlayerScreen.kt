@@ -52,6 +52,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.draw.scale
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -67,6 +69,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -218,6 +221,9 @@ fun PlayerScreen(
     var retry by remember { mutableIntStateOf(0) }
 
     // Intro / outro / recap times for this exact episode (Aniskip), looked up once the real length is known.
+    var autoSkip by remember { mutableStateOf(com.biaruuu.kiro.data.AppSettings.autoSkip(context)) }
+    val handledSkips = remember(current) { mutableStateListOf<String>() }
+    val autoProgress = remember { androidx.compose.animation.core.Animatable(0f) }
     var skipSegments by remember { mutableStateOf<List<com.biaruuu.kiro.data.SkipTimes.Segment>>(emptyList()) }
     val skipMalId = ui.detail?.malId ?: 0
     val durationSec = duration / 1000
@@ -243,6 +249,8 @@ fun PlayerScreen(
     val watchedEps = remember(watchedVersion, animeId) { com.biaruuu.kiro.data.WatchedStore.watchedEpisodes(context, animeId) }
     var rewatchEp by remember { mutableStateOf<Int?>(null) }
     fun playEpisode(number: Int) {
+        if (number == current) return
+        saveProgress() // keep the place in the episode being left
         current = number
         position = 0
     }
@@ -260,11 +268,17 @@ fun PlayerScreen(
 
     // 1. Ask every provider for this episode; the best (quality + speed) comes first.
     LaunchedEffect(current, retry) {
+        // Stop the old episode at once and wait a moment, so tapping Next over and over only
+        // ever looks up the episode you land on (and never hammers the streaming server).
+        exo.stop()
+        exo.clearMediaItems()
+        duration = 0
         error = null
         buffering = true
         resolving = true
         sources = emptyList()
         sourceIndex = 0
+        delay(350)
         pendingSeek = WatchHistory.positionFor(context, animeId, current)
         val request = StreamRequest(
             animeId,
@@ -385,6 +399,8 @@ fun PlayerScreen(
             }
 
             override fun onPlayerError(e: PlaybackException) {
+                // An error from an episode we already left must not mark the new one as broken.
+                if (resolving) return
                 // Instant failover: try the next-best source before giving up.
                 if (latestIndex + 1 < latestSources.size) {
                     pendingSeek = exo.currentPosition
@@ -523,30 +539,68 @@ fun PlayerScreen(
         if (!locked && error == null) {
             val posSec = position / 1000.0
             val active = skipSegments.firstOrNull { posSec >= it.start - 0.5 && posSec < it.end - 1.0 }
+            val activeKey = active?.let { "${it.type}:${it.start}" }
+            val skipNow = { seg: com.biaruuu.kiro.data.SkipTimes.Segment ->
+                val target = (seg.end * 1000).toLong().coerceAtMost(if (duration > 0) duration else Long.MAX_VALUE)
+                exo.seekTo(target)
+                position = target
+                handledSkips.add("${seg.type}:${seg.start}")
+            }
+            // Auto skip: a short, visible countdown, then jump. Each part is skipped once, so
+            // going back into it with the seek bar is never fought over.
+            LaunchedEffect(activeKey, autoSkip) {
+                autoProgress.snapTo(0f)
+                if (active != null && autoSkip && activeKey !in handledSkips) {
+                    autoProgress.animateTo(1f, androidx.compose.animation.core.tween(2500, easing = androidx.compose.animation.core.LinearEasing))
+                    skipNow(active)
+                }
+            }
+            val counting = active != null && autoSkip && activeKey !in handledSkips
+            val bottomPad by androidx.compose.animation.core.animateDpAsState(
+                if (controlsVisible) 118.dp else 40.dp,
+                androidx.compose.animation.core.tween(220),
+                label = "skip-bottom",
+            )
             AnimatedVisibility(
                 visible = active != null,
-                enter = fadeIn(),
+                enter = fadeIn() + androidx.compose.animation.slideInHorizontally { it / 2 },
                 exit = fadeOut(),
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 28.dp, bottom = 84.dp),
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 32.dp, bottom = bottomPad),
             ) {
-                val label = active?.label ?: "Skip"
-                val end = active?.end ?: 0.0
-                Text(
-                    label,
-                    color = Color.White,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
+                val seg = active
+                val shape = RoundedCornerShape(6.dp)
+                Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color.Black.copy(alpha = 0.65f))
-                        .border(1.dp, Color.White, RoundedCornerShape(4.dp))
-                        .clickable {
-                            val target = (end * 1000).toLong().coerceAtMost(if (duration > 0) duration else Long.MAX_VALUE)
-                            exo.seekTo(target)
-                            position = target
+                        .height(44.dp)
+                        .clip(shape)
+                        .background(Color.White)
+                        .drawBehind {
+                            if (counting) {
+                                drawRect(KiroPurple.copy(alpha = 0.35f), size = androidx.compose.ui.geometry.Size(size.width * autoProgress.value, size.height))
+                            }
                         }
-                        .padding(horizontal = 16.dp, vertical = 9.dp),
-                )
+                        .clickable { if (seg != null) skipNow(seg) },
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            if (counting) "Skipping ${seg?.noun?.lowercase() ?: ""}..." else (seg?.label ?: "Skip"),
+                            color = Color.Black,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Icon(
+                            painter = painterResource(R.drawable.fluent_next_regular),
+                            contentDescription = null,
+                            tint = Color.Black,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
             }
         }
 
@@ -577,6 +631,7 @@ fun PlayerScreen(
                     position = position,
                     duration = duration,
                     hasNext = nextEpisode != null,
+                    skipSegments = skipSegments,
                     onClose = onClose,
                     onMore = { panel = Panel.Menu },
                     onTogglePlay = {
@@ -627,6 +682,12 @@ fun PlayerScreen(
             ) {
                 when (open) {
                     Panel.Menu -> LazyColumn {
+                        item {
+                            ToggleMenuRow("Auto Skip Intro/Outro", autoSkip) {
+                                autoSkip = it
+                                com.biaruuu.kiro.data.AppSettings.setAutoSkip(context, it)
+                            }
+                        }
                         item {
                             MenuRow("Quality", if (quality == 0) "Auto" else "${quality}p") { panel = Panel.Quality }
                         }
@@ -756,6 +817,7 @@ private fun Controls(
     position: Long,
     duration: Long,
     hasNext: Boolean,
+    skipSegments: List<com.biaruuu.kiro.data.SkipTimes.Segment>,
     onClose: () -> Unit,
     onMore: () -> Unit,
     onTogglePlay: () -> Unit,
@@ -862,6 +924,7 @@ private fun Controls(
                 SeekBar(
                     position = position,
                     duration = duration,
+                    skipSegments = skipSegments,
                     onSeekStart = onSeekStart,
                     onSeekPreview = onSeekPreview,
                     onSeekEnd = onSeekEnd,
@@ -913,6 +976,7 @@ private fun RoundButton(icon: Int, description: String, onClick: () -> Unit) {
 private fun SeekBar(
     position: Long,
     duration: Long,
+    skipSegments: List<com.biaruuu.kiro.data.SkipTimes.Segment>,
     onSeekStart: () -> Unit,
     onSeekPreview: (Long) -> Unit,
     onSeekEnd: (Long) -> Unit,
@@ -953,6 +1017,22 @@ private fun SeekBar(
     ) {
         val travel = maxWidth - thumb
         Box(modifier = Modifier.fillMaxWidth().height(2.dp).background(TrackGrey))
+        // Amber stretches on the line mark what can be skipped (intro, outro, recap).
+        if (duration > 0) {
+            val usable = maxWidth - thumb
+            for (seg in skipSegments) {
+                val from = (seg.start * 1000 / duration).toFloat().coerceIn(0f, 1f)
+                val to = (seg.end * 1000 / duration).toFloat().coerceIn(from, 1f)
+                Box(
+                    modifier = Modifier
+                        .padding(start = thumb / 2 + usable * from)
+                        .width(usable * (to - from))
+                        .height(5.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(SkipAmber),
+                )
+            }
+        }
         Box(modifier = Modifier.width(thumb / 2 + travel * fraction).height(2.dp).background(KiroPurple))
         Box(
             modifier = Modifier
@@ -1267,6 +1347,32 @@ private fun TrackColumn(title: String, labels: List<String>, picked: Int, onPick
                 }
             }
         }
+    }
+}
+
+@Composable
+private val SkipAmber = Color(0xFFFFC857)
+
+@Composable
+private fun ToggleMenuRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(52.dp).clickable { onChange(!checked) }.padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+        androidx.compose.material3.Switch(
+            modifier = Modifier.scale(0.8f),
+            checked = checked,
+            onCheckedChange = onChange,
+            colors = androidx.compose.material3.SwitchDefaults.colors(
+                checkedTrackColor = KiroPurple,
+                checkedThumbColor = Color.White,
+                checkedBorderColor = KiroPurple,
+                uncheckedTrackColor = Color(0xFF3A3A3E),
+                uncheckedThumbColor = Color(0xFFB4B4BA),
+                uncheckedBorderColor = Color(0xFF3A3A3E),
+            ),
+        )
     }
 }
 

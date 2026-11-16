@@ -18,6 +18,13 @@ import kotlin.math.roundToInt
 object SkipTimes {
 
     class Segment(val type: String, val start: Double, val end: Double) {
+        val noun: String
+            get() = when (type) {
+                "op", "mixed-op" -> "Intro"
+                "ed", "mixed-ed" -> "Outro"
+                else -> "Recap"
+            }
+
         val label: String
             get() = when (type) {
                 "op", "mixed-op" -> "Skip Intro"
