@@ -101,6 +101,7 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
         "notifications" -> "Notifications"
         "admin" -> "Admin panel"
         "customize" -> "Customize profile"
+        "achievements" -> "Achievements"
         else -> if (page.startsWith("release-")) "What's new" else "Version"
     }
     Box(modifier = modifier.background(KiroBackground), contentAlignment = Alignment.TopCenter) {
@@ -120,6 +121,7 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
                 "notifications" -> NotificationsPage(onOpen)
                 "admin" -> AdminPage()
                 "customize" -> CustomizePage()
+                "achievements" -> AchievementsPage()
                 else -> if (page.startsWith("release-")) WhatsNewPage(latest = false, onBack = onBack, version = page.removePrefix("release-")) else VersionPage()
             }
         }
@@ -184,6 +186,10 @@ private fun DownloadPage() {
     var wifi by remember { mutableStateOf(AppSettings.downloadWifiOnly(context)) }
     var quality by remember { mutableStateOf(AppSettings.downloadQuality(context)) }
     var sheet by remember { mutableStateOf(false) }
+    var limit by remember { mutableStateOf(AppSettings.downloadLimitGb(context)) }
+    var limitSheet by remember { mutableStateOf(false) }
+    val downloads by com.biaruuu.kiro.data.Downloads.items.collectAsState()
+    val usedBytes = downloads.sumOf { it.bytes }
 
     Spacer(Modifier.height(10.dp))
     ToggleRow("Wi-Fi only", wifi) {
@@ -192,12 +198,55 @@ private fun DownloadPage() {
         com.biaruuu.kiro.data.Downloads.applyRequirements(context)
     }
     ChevronRow("Video quality", quality) { sheet = true }
+    ChevronRow("Storage limit", if (limit == 0) "No limit" else "$limit GB") { limitSheet = true }
+    Text(
+        "Downloads use ${formatBytes(usedBytes)}" + if (limit > 0) " of $limit GB" else "",
+        color = Muted, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+    )
     ChevronRow("Delete all downloads") {
         if (com.biaruuu.kiro.data.Downloads.items.value.isEmpty()) {
             Toast.makeText(context, "You have no downloads", Toast.LENGTH_SHORT).show()
         } else {
             com.biaruuu.kiro.data.Downloads.removeAll(context)
             Toast.makeText(context, "All downloads deleted", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    if (limitSheet) {
+        val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val scope = rememberCoroutineScope()
+        ModalBottomSheet(
+            onDismissRequest = { limitSheet = false },
+            sheetState = state,
+            containerColor = Color(0xFF141414),
+            scrimColor = Color.Black.copy(alpha = 0.72f),
+            shape = RectangleShape,
+            tonalElevation = 0.dp,
+            dragHandle = null,
+        ) {
+            Column(modifier = Modifier.navigationBarsPadding().padding(vertical = 8.dp)) {
+                AppSettings.DOWNLOAD_LIMITS_GB.forEach { gb ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .clickable {
+                                limit = gb
+                                AppSettings.setDownloadLimitGb(context, gb)
+                                scope.launch { state.hide() }.invokeOnCompletion { limitSheet = false }
+                            }
+                            .padding(horizontal = 22.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(Modifier.width(44.dp)) {
+                            if (gb == limit) {
+                                Icon(painterResource(R.drawable.fluent_checkmark_regular), null, tint = Color.White, modifier = Modifier.size(26.dp))
+                            }
+                        }
+                        Text(if (gb == 0) "No limit" else "$gb GB", color = Color.White, fontSize = 19.sp)
+                    }
+                }
+            }
         }
     }
 
@@ -243,6 +292,12 @@ private fun DownloadPage() {
             }
         }
     }
+}
+
+internal fun formatBytes(b: Long): String = when {
+    b >= 1L shl 30 -> String.format(java.util.Locale.US, "%.1f GB", b / (1024.0 * 1024.0 * 1024.0))
+    b >= 1L shl 20 -> String.format(java.util.Locale.US, "%.0f MB", b / (1024.0 * 1024.0))
+    else -> "0 MB"
 }
 
 @Composable

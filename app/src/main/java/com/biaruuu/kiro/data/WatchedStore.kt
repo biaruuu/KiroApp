@@ -71,6 +71,15 @@ object WatchedStore {
     fun watchedEpisodes(c: Context, id: Int): Set<Int> =
         read(c).optJSONObject(id.toString())?.let { episodes(it) } ?: emptySet()
 
+    /** Every episode ever finished, over all anime. */
+    fun totalEpisodes(c: Context): Int {
+        val all = read(c)
+        var n = 0
+        val keys = all.keys()
+        while (keys.hasNext()) n += all.optJSONObject(keys.next())?.let { episodes(it).size } ?: 0
+        return n
+    }
+
     fun isCompleted(c: Context, id: Int): Boolean =
         read(c).optJSONObject(id.toString())?.let { isDone(it) } ?: false
 

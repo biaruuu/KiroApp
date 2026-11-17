@@ -173,6 +173,14 @@ fun PlayerScreen(
             parameters = buildUponParameters()
                 .setMaxVideoSize(Int.MAX_VALUE, AUTO_MAX_HEIGHT)
                 .clearViewportSizeConstraints()
+                .apply {
+                    // The subtitle choice from last time: off, or a language.
+                    when (val sp = com.biaruuu.kiro.data.AppSettings.subtitlePref(context)) {
+                        "" -> Unit
+                        "off" -> setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+                        else -> setPreferredTextLanguage(sp)
+                    }
+                }
                 .build()
         }
         // Start playing after 1.5 s of data, recover quickly, and keep a deep buffer ahead on good Wi-Fi.
@@ -188,6 +196,8 @@ fun PlayerScreen(
             .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(com.biaruuu.kiro.data.Downloads.dataSourceFactory(context)))
             .build()
     }
+    // Choices from last time: playback speed and subtitles.
+    LaunchedEffect(exo) { exo.setPlaybackSpeed(com.biaruuu.kiro.data.AppSettings.playSpeed(context)) }
     // The player listener lives for the whole screen, so it must read the latest values.
     val latestEpisodes by rememberUpdatedState(episodes)
     val latestCurrent by rememberUpdatedState(current)
@@ -202,6 +212,7 @@ fun PlayerScreen(
         val pos = exo.currentPosition
         if (ep <= 0 || dur <= 0 || pos <= 0) return
         val base = latestUi.base ?: return
+        com.biaruuu.kiro.data.Achievements.recordWatch(context)
         val info = latestEpisodes.firstOrNull { it.number == ep }
         if (pos >= dur * 0.93) {
             val total = if (base.episodes > 0) base.episodes
@@ -231,7 +242,7 @@ fun PlayerScreen(
     var position by remember { mutableLongStateOf(0L) }
     var error by remember { mutableStateOf<String?>(null) }
     var tracks by remember { mutableStateOf(Tracks.EMPTY) }
-    var speed by remember { mutableFloatStateOf(1f) }
+    var speed by remember { mutableFloatStateOf(com.biaruuu.kiro.data.AppSettings.playSpeed(context)) }
 
     var controlsVisible by remember { mutableStateOf(true) }
     var interaction by remember { mutableIntStateOf(0) }
@@ -359,8 +370,9 @@ fun PlayerScreen(
         com.biaruuu.kiro.data.stream.StreamHeaders.activate(com.biaruuu.kiro.data.stream.StreamHeaders.Slot.Playback, source.url, source.headers)
         error = null
         buffering = true
-        quality = 0
-        applyQuality(exo, 0)
+        // The quality picked last time (the best one at or below it when this stream has no such size).
+        quality = com.biaruuu.kiro.data.AppSettings.qualityPref(context)
+        applyQuality(exo, quality)
         exo.setMediaItem(
             MediaItem.Builder()
                 .setUri(source.url)
@@ -486,7 +498,10 @@ fun PlayerScreen(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE) {
                 saveProgress()
-                exo.pause()
+                // Picture in picture keeps playing; only a normal leave pauses.
+                if (!PipState.inPip.value) exo.pause()
+            } else if (event == Lifecycle.Event.ON_STOP) {
+                exo.pause() // the small window was closed or the screen turned off
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -504,6 +519,19 @@ fun PlayerScreen(
         onDispose {
             controller?.show(WindowInsetsCompat.Type.systemBars())
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
+    // Picture in picture: allowed while a video plays; controls are hidden in the small window.
+    val inPip by PipState.inPip.collectAsState()
+    DisposableEffect(isPlaying) {
+        PipState.canEnter = isPlaying
+        onDispose { PipState.canEnter = false }
+    }
+    LaunchedEffect(inPip) {
+        if (inPip) {
+            controlsVisible = false
+            panel = null
         }
     }
 
@@ -743,7 +771,7 @@ fun PlayerScreen(
             }
         } else {
             AnimatedVisibility(
-                visible = controlsVisible,
+                visible = controlsVisible && !inPip,
                 enter = fadeIn(),
                 exit = fadeOut(),
                 modifier = Modifier.fillMaxSize(),
@@ -828,6 +856,16 @@ fun PlayerScreen(
                         item { MenuRow("Audio boost", if (boostDb == 0) "Off" else "+$boostDb dB") { panel = Panel.Boost } }
                         item { MenuRow("HDR & Dolby Vision", if (hdrOn) "On" else "Auto") { panel = Panel.Hdr } }
                         item { MenuRow("Playback speed", if (speed == 1f) "Normal" else "${speed}x") { panel = Panel.Speed } }
+                        if (PipState.supported(context.findActivity())) {
+                            item {
+                                MenuRow("Picture in picture", "") {
+                                    panel = null
+                                    if (!PipState.enter(context.findActivity())) {
+                                        Toast.makeText(context, "Picture in picture isn't available", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        }
                     }
                     Panel.Quality -> {
                         val heights = remember(tracks) { videoHeights(tracks) }
@@ -835,6 +873,7 @@ fun PlayerScreen(
                             item {
                                 PanelRow(label = "Auto", selected = quality == 0) {
                                     quality = 0
+                                    com.biaruuu.kiro.data.AppSettings.setQualityPref(context, 0)
                                     applyQuality(exo, 0)
                                     panel = null
                                 }
@@ -842,6 +881,7 @@ fun PlayerScreen(
                             items(heights) { h ->
                                 PanelRow(label = "${h}p", selected = quality == h) {
                                     quality = h
+                                    com.biaruuu.kiro.data.AppSettings.setQualityPref(context, h)
                                     applyQuality(exo, h)
                                     panel = null
                                 }
@@ -923,6 +963,7 @@ fun PlayerScreen(
                                 selected = s == speed,
                             ) {
                                 speed = s
+                                com.biaruuu.kiro.data.AppSettings.setPlaySpeed(context, s)
                                 exo.setPlaybackSpeed(s)
                                 panel = null
                             }
@@ -1387,6 +1428,7 @@ private fun TracksDialog(
         return out
     }
 
+    val ctx = LocalContext.current
     val audio = remember(tracks) { build(C.TRACK_TYPE_AUDIO, false) }
     val subs = remember(tracks) { build(C.TRACK_TYPE_TEXT, true) }
     // When the episode has a Japanese and an English stream, the Audio list is just those two
@@ -1462,7 +1504,11 @@ private fun TracksDialog(
                                 subs.getOrNull(pickSub)?.let { c ->
                                     if (c.group == null) {
                                         params.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+                                        com.biaruuu.kiro.data.AppSettings.setSubtitlePref(ctx, "off")
                                     } else {
+                                        com.biaruuu.kiro.data.AppSettings.setSubtitlePref(
+                                            ctx, c.group.getTrackFormat(c.index).language ?: "",
+                                        )
                                         params.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
                                         params.setOverrideForType(TrackSelectionOverride(c.group.mediaTrackGroup, c.index))
                                     }

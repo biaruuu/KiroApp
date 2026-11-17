@@ -116,6 +116,7 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
             Text("Settings", color = Muted, fontSize = 14.sp)
             Spacer(Modifier.height(6.dp))
             if (signedIn != null) SettingsRow(R.drawable.fluent_sparkle_regular, "Customize profile") { onOpen("customize") }
+            SettingsRow(R.drawable.fluent_trophy_regular, "Achievements") { onOpen("achievements") }
             SettingsRow(R.drawable.fluent_alert_regular, "Notification", badge = hasUnread) { onOpen("notifications") }
             SettingsRow(R.drawable.fluent_arrow_download_regular, "Download") { onOpen("download") }
             SettingsRow(R.drawable.fluent_play_circle_regular, "Play") { onOpen("play") }

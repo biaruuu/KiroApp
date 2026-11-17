@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.35.0] - 2026-11-18
+
+### Added
+- **Picture in picture:** pressing Home while a video plays shrinks it into a floating window, or use Menu > Picture in picture in the player. Closing the window stops playback.
+- **Remembered choices:** the player now remembers your subtitle choice (off or language), playback speed and quality between episodes and app launches (the sub/dub choice was already remembered).
+- **Storage limit:** Me > Download > Storage limit (No limit, 2, 5, 10, 20 or 50 GB), with the space your downloads use shown below it. New downloads are blocked, and running ones paused, when the limit is reached. Wi-Fi only was already there.
+- **Achievements:** a new page in Me with 20 badges (episodes watched, series completed, ratings, My List, downloads, watch streaks, night owl, watch parties). A message appears the moment you earn one.
+
 ## [1.34.3] - 2026-11-18
 
 ### Fixed

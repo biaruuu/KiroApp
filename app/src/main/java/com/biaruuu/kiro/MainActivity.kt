@@ -24,6 +24,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /** Pressing Home while a video plays shrinks it into the floating window. */
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (com.biaruuu.kiro.ui.player.PipState.canEnter) com.biaruuu.kiro.ui.player.PipState.enter(this)
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: android.content.res.Configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        com.biaruuu.kiro.ui.player.PipState.inPip.value = isInPictureInPictureMode
+    }
+
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)

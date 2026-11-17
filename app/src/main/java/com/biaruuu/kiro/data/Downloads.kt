@@ -177,7 +177,18 @@ object Downloads {
     private fun startProgressTicker(app: Context) {
         val tick = object : Runnable {
             override fun run() {
-                if (_items.value.any { it.active } || manager(app).currentDownloads.isNotEmpty()) refresh(app)
+                if (_items.value.any { it.active } || manager(app).currentDownloads.isNotEmpty()) {
+                    refresh(app)
+                    // Over the storage limit: stop what is running so the phone is not filled up.
+                    val limit = AppSettings.downloadLimitBytes(app)
+                    val over = limit > 0 && _items.value.sumOf { it.bytes } >= limit
+                    if (over && manager(app).currentDownloads.isNotEmpty()) {
+                        manager(app).pauseDownloads()
+                        toast(app, "Download paused: storage limit reached")
+                    } else if (!over && manager(app).downloadsPaused) {
+                        manager(app).resumeDownloads()
+                    }
+                }
                 main.postDelayed(this, 1000L)
             }
         }
@@ -286,6 +297,11 @@ object Downloads {
         onError: (String) -> Unit,
     ) {
         val app = context.applicationContext
+        val limit = AppSettings.downloadLimitBytes(app)
+        if (limit > 0 && _items.value.sumOf { it.bytes } >= limit) {
+            main.post { onError("Storage limit reached. Raise it in Me > Download > Storage limit.") }
+            return
+        }
         val id = idOf(animeId, episode)
         errors.remove(id)
         attempts.remove(id)

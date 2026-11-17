@@ -150,6 +150,24 @@ private fun KiroScaffold() {
     val releaseUnread by com.biaruuu.kiro.data.UpdateChecker.unread.collectAsState()
     val announcementUnread by com.biaruuu.kiro.data.Announcements.unread.collectAsState()
     val hasUnread = releaseUnread || announcementUnread
+    // Achievements: announce a badge the moment it is earned.
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
+            while (true) {
+                val fresh = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    com.biaruuu.kiro.data.Achievements.checkNew(context)
+                }
+                if (fresh.isNotEmpty()) {
+                    Toast.makeText(
+                        context,
+                        if (fresh.size == 1) "Achievement unlocked: ${fresh[0].title}" else "${fresh.size} achievements unlocked",
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+                delay(20_000L)
+            }
+        }
+    }
     LaunchedEffect(Unit) {
         com.biaruuu.kiro.data.Announcements.start(context)
         com.biaruuu.kiro.data.Designs.start(context)
