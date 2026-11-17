@@ -218,7 +218,7 @@ object Downloads {
                 DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(true),
             )
             helper.prepare(object : DownloadHelper.Callback {
-                override fun onPrepared(helper: DownloadHelper, tracksInfoAvailable: Boolean) {
+                override fun onPrepared(helper: DownloadHelper) {
                     try {
                         if (source.isHls && maxHeight > 0 && helper.periodCount > 0) {
                             helper.clearTrackSelections(0)
