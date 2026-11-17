@@ -606,6 +606,8 @@ private fun ActionButton(label: String, icon: Int, tint: Color, onClick: () -> U
     }
 }
 
+private val awardDesign = com.biaruuu.kiro.data.Design("award_medal", "badge", "Award", asset = "badges/award_medal.png")
+
 /** The gold medal: dim until you give this anime an award. */
 @Composable
 private fun AwardButton(given: Boolean, onClick: () -> Unit) {
@@ -613,15 +615,13 @@ private fun AwardButton(given: Boolean, onClick: () -> Unit) {
         modifier = Modifier.clip(RoundedCornerShape(6.dp)).clickable(onClick = onClick).padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Image(
-            painter = painterResource(R.drawable.award_medal),
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            alpha = if (given) 1f else 0.6f,
-            colorFilter = if (given) null else androidx.compose.ui.graphics.ColorFilter.colorMatrix(
-                androidx.compose.ui.graphics.ColorMatrix().apply { setToSaturation(0.15f) },
-            ),
-            modifier = Modifier.height(22.dp),
+        // An animated PNG: a soft light sweeps across the gold every few seconds.
+        com.biaruuu.kiro.ui.components.AnimatedAsset(
+            design = awardDesign,
+            modifier = Modifier
+                .height(30.dp)
+                .width(24.dp)
+                .alpha(if (given) 1f else 0.55f),
         )
         Spacer(Modifier.height(5.dp))
         Text("Award", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Normal)

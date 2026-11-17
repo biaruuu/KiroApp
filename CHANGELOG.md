@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.33.1] - 2026-11-17
+
+### Changed
+- Redrawn badges. The Award medal is now an animated PNG: a gold medal with a star and laurel wreath that has a soft shimmer sweeping across it and little sparkles. The Completed stamp is a new, static design with a check mark, tick ring and "Finished watching / Well done" text.
+
 ## [1.33.0] - 2026-11-17
 
 ### Added
