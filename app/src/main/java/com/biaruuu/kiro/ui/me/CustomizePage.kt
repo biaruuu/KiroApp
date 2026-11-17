@@ -66,12 +66,12 @@ fun CustomizePage() {
     val name = profile.username.ifBlank { signedIn.name }
     val decorations = remember(remote) { Designs.all(Designs.DECORATION) }
     var fontsVersion by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
-    val fonts = remember(fontsVersion) { NameStyles.options(context) }
+    val fonts = NameStyles.options()
     val importFont = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            if (NameStyles.importCustom(context, uri)) {
+            if (NameStyles.importGta(context, uri)) {
                 fontsVersion++
-                ProfileRepository.save(nameFont = NameStyles.CUSTOM)
+                ProfileRepository.save(nameFont = NameStyles.GTA)
             } else {
                 android.widget.Toast.makeText(context, "That file isn't a font Kiro can use (try .ttf or .otf).", android.widget.Toast.LENGTH_LONG).show()
             }
@@ -82,7 +82,9 @@ fun CustomizePage() {
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
         // The card you are building, exactly as it appears at the top of Your Library.
-        com.biaruuu.kiro.ui.components.LibraryBanner(profile = profile, name = name, height = 140.dp)
+        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Color(0xFF121214))) {
+            com.biaruuu.kiro.ui.components.LibraryHeader(profile = profile, name = name)
+        }
 
         Section("Avatar Decoration")
         Grid(
@@ -121,32 +123,26 @@ fun CustomizePage() {
         Section("Display Name Style")
         for (font in fonts) {
             val on = profile.nameFont == font
+            val needsFile = font == NameStyles.GTA && fontsVersion >= 0 && !NameStyles.hasGta(context)
             Row(
                 modifier = Modifier
                     .fillMaxWidth().height(52.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .clickable { ProfileRepository.save(nameFont = font) }
+                    .clickable { if (needsFile) importFont.launch(arrayOf("*/*")) else ProfileRepository.save(nameFont = font) }
                     .padding(horizontal = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(name, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = NameStyles.family(context, font), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(NameStyles.label(context, font), color = Muted, fontSize = 12.sp)
+                Text(if (needsFile) "Tap to add" else NameStyles.label(font), color = Muted, fontSize = 12.sp)
                 Spacer(Modifier.size(10.dp))
                 Box(Modifier.size(22.dp)) {
                     if (on) Icon(painterResource(R.drawable.fluent_checkmark_regular), null, tint = Color.White, modifier = Modifier.size(22.dp))
                 }
             }
         }
-        Spacer(Modifier.height(10.dp))
-        Text(
-            "Import a font file",
-            color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Color(0xFF2A2A2D))
-                .clickable { importFont.launch(arrayOf("*/*")) }.padding(vertical = 14.dp),
-        )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Pick a .ttf or .otf you own, such as Pricedown. It stays on this phone and only you see it; other people see the normal font.",
+            "GTA is the Pricedown Bl font. Tap it once and pick your Pricedown Bl.otf file; it stays on this phone, so only you see it. Other people see the normal font.",
             color = Muted, fontSize = 12.sp, lineHeight = 17.sp,
         )
         Spacer(Modifier.height(24.dp))

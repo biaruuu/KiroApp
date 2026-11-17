@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.29.1] - 2026-11-17
+
+### Fixed
+- Library effects and decorations no longer make the Your Library header bigger. They now play inside the same slim header you get with "None".
+
+### Added
+- **GTA** name style (Pricedown Bl). Tap it in Customize profile and pick your Pricedown Bl.otf file once; it stays on your phone.
+
 ## [1.29.0] - 2026-11-17
 
 ### Added

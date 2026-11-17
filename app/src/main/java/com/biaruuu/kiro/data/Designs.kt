@@ -122,67 +122,45 @@ object Designs {
     }
 }
 
-/** Fonts for the display name. "Pricedown" only shows up when its font file has been added to the app. */
+/**
+ * Fonts for the display name. "GTA" is the Pricedown font: it is not bundled with Kiro (its licence
+ * covers desktop use only), so each person adds their own copy once and it is used on their phone.
+ */
 object NameStyles {
-    const val PRICEDOWN = "Pricedown"
-    private const val PRICEDOWN_ASSET = "fonts/pricedown.otf"
+    const val GTA = "GTA"
+    private const val GTA_FILE = "name_font_gta.otf"
 
     private val cache = HashMap<String, androidx.compose.ui.text.font.FontFamily?>()
 
-    private fun hasPricedown(context: Context): Boolean =
-        try { context.assets.open(PRICEDOWN_ASSET).close(); true } catch (_: Exception) { false }
+    private fun gtaFile(context: Context) = java.io.File(context.filesDir, GTA_FILE)
 
-    /**
-     * A font file the person picked from their own phone. It stays on this phone only, so nothing is
-     * redistributed and it is their own copy of the font that is used.
-     */
-    const val CUSTOM = "Custom"
-    private const val CUSTOM_FILE = "name_font.ttf"
+    fun hasGta(context: Context) = gtaFile(context).exists()
 
-    private fun customFile(context: Context) = java.io.File(context.filesDir, CUSTOM_FILE)
-
-    fun hasCustom(context: Context) = customFile(context).exists()
-
-    fun customName(context: Context): String =
-        context.getSharedPreferences("kiro_user_data", Context.MODE_PRIVATE).getString("name_font_label", null) ?: "My font"
-
-    /** Copies the picked font into the app; false if the file isn't a usable font. */
-    fun importCustom(context: Context, uri: android.net.Uri): Boolean = try {
-        val target = customFile(context)
+    /** Copies the picked font file into the app; false if it isn't a usable font. */
+    fun importGta(context: Context, uri: android.net.Uri): Boolean = try {
+        val target = gtaFile(context)
         context.contentResolver.openInputStream(uri)?.use { input -> target.outputStream().use { input.copyTo(it) } }
         android.graphics.Typeface.createFromFile(target)
-        val label = context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
-            if (it.moveToFirst()) it.getString(0) else null
-        }?.substringBeforeLast('.') ?: "My font"
-        context.getSharedPreferences("kiro_user_data", Context.MODE_PRIVATE).edit().putString("name_font_label", label).apply()
-        cache.remove(CUSTOM)
+        cache.remove(GTA)
         true
     } catch (_: Throwable) {
-        customFile(context).delete()
+        gtaFile(context).delete()
+        cache.remove(GTA)
         false
     }
 
     /** "" is the normal Kiro font. */
-    fun options(context: Context): List<String> =
-        listOf("", "Satoshi", "Cinzel", "Roboto Mono", "Comic Neue", "Poppins", "Montserrat") +
-            (if (hasPricedown(context)) listOf(PRICEDOWN) else emptyList()) +
-            (if (hasCustom(context)) listOf(CUSTOM) else emptyList())
+    fun options(): List<String> = listOf("", "Satoshi", "Cinzel", "Roboto Mono", "Comic Neue", "Poppins", "Montserrat", GTA)
 
-    fun label(context: Context, style: String) = when (style) {
-        "" -> "Default"
-        CUSTOM -> customName(context)
-        else -> style
-    }
+    fun label(style: String) = style.ifEmpty { "Default" }
 
     fun family(context: Context, style: String): androidx.compose.ui.text.font.FontFamily? {
         if (style.isEmpty()) return null
+        if (style == GTA && !hasGta(context)) return null
         return cache.getOrPut(style) {
             try {
-                val tf = if (style == PRICEDOWN) {
-                    android.graphics.Typeface.createFromAsset(context.assets, PRICEDOWN_ASSET)
-                } else if (style == CUSTOM) {
-                    if (!hasCustom(context)) return@getOrPut null
-                    android.graphics.Typeface.createFromFile(customFile(context))
+                val tf = if (style == GTA) {
+                    android.graphics.Typeface.createFromFile(gtaFile(context))
                 } else {
                     com.biaruuu.kiro.ui.player.SubtitleOptions.typeface(context, style)
                 }
