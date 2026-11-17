@@ -170,7 +170,6 @@ private fun DetailContent(
 
     var inList by remember(anime.id) { mutableStateOf(MyListStore.isInList(context, anime.id)) }
     var awarded by remember(anime.id) { mutableStateOf(com.biaruuu.kiro.data.AwardStore.has(context, anime.id)) }
-    val completedByMe = remember(watchedVersion, anime.id) { com.biaruuu.kiro.data.WatchedStore.isCompleted(context, anime.id) }
     var rating by remember(anime.id) { mutableIntStateOf(MyListStore.getRating(context, anime.id)) }
     // Sound is on as soon as the trailer plays; the speaker button mutes it.
     var muted by rememberSaveable { mutableStateOf(false) }
@@ -184,6 +183,7 @@ private fun DetailContent(
     var expanded by rememberSaveable { mutableStateOf(false) }
     val watchedVersion by com.biaruuu.kiro.data.WatchedStore.version.collectAsState()
     val watchedEps = remember(watchedVersion, anime.id) { com.biaruuu.kiro.data.WatchedStore.watchedEpisodes(context, anime.id) }
+    val completedByMe = remember(watchedVersion, anime.id) { com.biaruuu.kiro.data.WatchedStore.isCompleted(context, anime.id) }
     var rewatch by remember { mutableStateOf<Int?>(null) }
     rewatch?.let { n ->
         com.biaruuu.kiro.ui.components.RewatchDialog(
