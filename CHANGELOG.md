@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.33.4] - 2026-11-17
+
+### Changed
+- The green COMPLETED stamp is straight now, and a gold trophy (still image, no animation) sits to its right.
+
+### Fixed
+- The loading spinner in the player now really spins. It was Material's spinner, which freezes when the phone has animations turned off or scaled down; Kiro now draws its own, driven by the screen's frame clock.
+
 ## [1.33.3] - 2026-11-17
 
 ### Changed

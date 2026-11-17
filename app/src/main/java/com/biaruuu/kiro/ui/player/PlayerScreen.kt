@@ -541,11 +541,7 @@ fun PlayerScreen(
         // sits inside them (below), so the dimming layer never turns it grey.
         if (buffering && error == null) {
             if (!controlsVisible) {
-                CircularProgressIndicator(
-                    color = Color.White,
-                    strokeWidth = 3.dp,
-                    modifier = Modifier.align(Alignment.Center).size(44.dp),
-                )
+                com.biaruuu.kiro.ui.components.KiroSpinner(Modifier.align(Alignment.Center), size = 48.dp)
             }
             if (resolving) {
                 Text(
@@ -1011,11 +1007,7 @@ private fun Controls(
                 contentAlignment = Alignment.Center,
             ) {
                 if (buffering) {
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        strokeWidth = 3.dp,
-                        modifier = Modifier.size(44.dp),
-                    )
+                    com.biaruuu.kiro.ui.components.KiroSpinner(size = 48.dp)
                 } else {
                     if (isPlaying) {
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

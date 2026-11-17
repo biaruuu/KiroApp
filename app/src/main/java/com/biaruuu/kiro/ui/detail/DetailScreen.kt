@@ -378,7 +378,7 @@ private fun DetailContent(
                     }
                 }
                 Spacer(Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(if (completedByMe) 16.dp else 24.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(if (completedByMe) 12.dp else 24.dp), verticalAlignment = Alignment.CenterVertically) {
                     ActionButton(
                         label = "My List",
                         icon = if (inList) R.drawable.fluent_checkmark_regular else R.drawable.fluent_add_regular,
@@ -417,7 +417,14 @@ private fun DetailContent(
                             painter = painterResource(R.drawable.completed_green),
                             contentDescription = "Completed",
                             contentScale = ContentScale.Fit,
-                            modifier = Modifier.height(36.dp).weight(1f, fill = false),
+                            modifier = Modifier.height(30.dp).weight(1f, fill = false),
+                        )
+                        // A gold trophy, right of the stamp.
+                        Image(
+                            painter = painterResource(R.drawable.award_trophy),
+                            contentDescription = "Trophy",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.height(34.dp),
                         )
                     }
                 }
@@ -734,7 +741,7 @@ private fun DownloadButton(item: com.biaruuu.kiro.data.Downloads.Item?, onStart:
                 if (p > 0f) {
                     androidx.compose.material3.CircularProgressIndicator(progress = { p }, color = Color.White, trackColor = Color(0xFF3A3A3D), strokeWidth = 2.5.dp, modifier = Modifier.size(24.dp))
                 } else {
-                    androidx.compose.material3.CircularProgressIndicator(color = Color.White, strokeWidth = 2.5.dp, modifier = Modifier.size(24.dp))
+                    com.biaruuu.kiro.ui.components.KiroSpinner(size = 24.dp, strokeWidth = 2.5.dp)
                 }
                 Text(if (p > 0f) "${(p * 100).toInt()}" else "", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
             }
