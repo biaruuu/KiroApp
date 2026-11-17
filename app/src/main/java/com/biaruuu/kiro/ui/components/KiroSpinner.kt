@@ -29,10 +29,11 @@ fun KiroSpinner(modifier: Modifier = Modifier, size: Dp = 44.dp, color: Color = 
             androidx.compose.runtime.withFrameNanos { nanos = it }
         }
     }
-    val t = (nanos / 1_000_000L) / 1000f
-    val rotation = (t * 300f) % 360f                        // one turn every 1.2 s
-    val sweep = 90f + 150f * (0.5f + 0.5f * kotlin.math.sin(t * 3.2f))  // the arc breathes
     Canvas(modifier.size(size)) {
+        // Read the clock here, in the draw step, so each frame only redraws (no recomposition).
+        val t = (nanos / 1_000_000L) / 1000f
+        val rotation = (t * 300f) % 360f
+        val sweep = 90f + 150f * (0.5f + 0.5f * kotlin.math.sin(t * 3.2f))
         val stroke = strokeWidth.toPx()
         val inset = stroke / 2f
         drawArc(

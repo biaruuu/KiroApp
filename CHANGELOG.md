@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.34.1] - 2026-11-18
+
+### Changed
+- Player: the 10-second back and forward buttons now use a Laftel-style icon: a nearly closed ring with an arrowhead and a bold 10 inside, slightly larger.
+- Smoother loading spinner: its animation is now drawn frame by frame without recomposing the screen, so it no longer stutters.
+- Source ranking now puts resolution first, so the highest-quality working source is chosen, with speed as the tie-breaker.
+
 ## [1.34.0] - 2026-11-18
 
 ### Added

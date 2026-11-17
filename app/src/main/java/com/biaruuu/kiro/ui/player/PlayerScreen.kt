@@ -1000,7 +1000,7 @@ private fun Controls(
                 painter = painterResource(R.drawable.fluent_skip_back_10_regular),
                 contentDescription = "Back 10 seconds",
                 tint = Color.White,
-                modifier = Modifier.size(38.dp).clip(CircleShape).clickable(onClick = onBack10),
+                modifier = Modifier.size(46.dp).clip(CircleShape).clickable(onClick = onBack10),
             )
             Box(
                 modifier = Modifier.size(56.dp).clip(CircleShape).clickable(onClick = onTogglePlay),
@@ -1035,7 +1035,7 @@ private fun Controls(
                 painter = painterResource(R.drawable.fluent_skip_forward_10_regular),
                 contentDescription = "Forward 10 seconds",
                 tint = Color.White,
-                modifier = Modifier.size(38.dp).clip(CircleShape).clickable(onClick = onForward10),
+                modifier = Modifier.size(46.dp).clip(CircleShape).clickable(onClick = onForward10),
             )
         }
 

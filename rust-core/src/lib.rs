@@ -127,7 +127,7 @@ pub fn compact_count(n: i32) -> String {
 
 /// Orders video sources best first. `spec` is "height,latency_ms,hls;height,latency_ms,hls;...".
 /// Returns the indexes of the entries, best first, as "2,0,1".
-/// Score = up to 60 points for resolution (2160p = 60) + up to 40 for speed (0 ms = 40, 4 s = 0)
+/// Score = resolution first (1080p = 50, 2160p = 100) + up to 30 for speed (0 ms = 30, 4 s = 0)
 /// + 3 for HLS (adapts to the connection). Ties keep their original order.
 pub fn rank_streams(spec: &str) -> String {
     let mut scored: Vec<(usize, f64)> = Vec::new();
@@ -136,8 +136,8 @@ pub fn rank_streams(spec: &str) -> String {
         let height: f64 = parts.next().and_then(|p| p.parse().ok()).unwrap_or(0.0);
         let latency: f64 = parts.next().and_then(|p| p.parse().ok()).unwrap_or(4000.0);
         let hls = parts.next() == Some("1");
-        let quality = height.clamp(0.0, 2160.0) / 2160.0 * 60.0;
-        let speed = 40.0 * (1.0 - latency.clamp(0.0, 4000.0) / 4000.0);
+        let quality = height.clamp(0.0, 2160.0) / 1080.0 * 50.0;
+        let speed = 30.0 * (1.0 - latency.clamp(0.0, 4000.0) / 4000.0);
         let bonus = if hls { 3.0 } else { 0.0 };
         scored.push((i, quality + speed + bonus));
     }
