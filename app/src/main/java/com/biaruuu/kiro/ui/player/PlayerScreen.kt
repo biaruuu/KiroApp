@@ -167,18 +167,24 @@ fun PlayerScreen(
         val renderers = androidx.media3.exoplayer.DefaultRenderersFactory(context)
             .setExtensionRendererMode(androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
         // Reads downloaded episodes from the offline cache; everything else comes from the network.
-        // No resolution cap: 1080p, 1440p, 4K (2160p) and above play when the phone's decoder can handle them,
-        // and Auto starts from the best the phone supports instead of the screen size.
+        // Auto adapts to the real connection speed and stops at 1080p so it never stalls trying to start
+        // a huge 4K stream; pick 1440p / 2160p by hand in Quality to play those (every size is listed).
         val selector = androidx.media3.exoplayer.trackselection.DefaultTrackSelector(context).apply {
             parameters = buildUponParameters()
-                .setMaxVideoSize(Int.MAX_VALUE, Int.MAX_VALUE)
-                .setMaxVideoBitrate(Int.MAX_VALUE)
+                .setMaxVideoSize(Int.MAX_VALUE, AUTO_MAX_HEIGHT)
                 .clearViewportSizeConstraints()
-                .setForceHighestSupportedBitrate(true)
                 .build()
         }
+        // Start playing after 1.5 s of data, recover quickly, and keep a deep buffer ahead on good Wi-Fi.
+        val load = androidx.media3.exoplayer.DefaultLoadControl.Builder()
+            .setBufferDurationsMs(25_000, 60_000, 1_500, 3_000)
+            .setPrioritizeTimeOverSizeThresholds(true)
+            .build()
+        val meter = androidx.media3.exoplayer.upstream.DefaultBandwidthMeter.Builder(context).build()
         ExoPlayer.Builder(context, renderers)
             .setTrackSelector(selector)
+            .setLoadControl(load)
+            .setBandwidthMeter(meter)
             .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(com.biaruuu.kiro.data.Downloads.dataSourceFactory(context)))
             .build()
     }
@@ -940,10 +946,12 @@ private fun videoHeights(tracks: Tracks): List<Int> {
     return out.toList().sortedDescending()
 }
 
+private const val AUTO_MAX_HEIGHT = 1080
+
 /** 0 = Auto (adapts to the connection); otherwise the best track at or below that height. */
 private fun applyQuality(exo: ExoPlayer, height: Int) {
     val p = exo.trackSelectionParameters.buildUpon()
-    if (height == 0) p.setMaxVideoSize(Int.MAX_VALUE, Int.MAX_VALUE) else p.setMaxVideoSize(Int.MAX_VALUE, height)
+    if (height == 0) p.setMaxVideoSize(Int.MAX_VALUE, AUTO_MAX_HEIGHT) else p.setMaxVideoSize(Int.MAX_VALUE, height)
     exo.trackSelectionParameters = p.build()
 }
 

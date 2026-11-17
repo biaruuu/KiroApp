@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.34.3] - 2026-11-18
+
+### Fixed
+- Playback no longer sits loading at 4K: Auto now adapts to the real connection speed and tops out at 1080p. Choose 1440p or 2160p manually in Quality when you want them.
+- Faster start and recovery: playback begins after 1.5 s of data, rebuffers resume after 3 s, and a deeper buffer (up to 60 s) is kept on good connections.
+
 ## [1.34.2] - 2026-11-18
 
 ### Changed
