@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.30.1] - 2026-11-17
+
+### Fixed
+- Downloads that fail are now retried automatically a few times, keeping what was already saved, and you can tap a failed download in Library > Download to retry it.
+- A failed download now says why, so a real cause can be found.
+
 ## [1.30.0] - 2026-11-17
 
 ### Added

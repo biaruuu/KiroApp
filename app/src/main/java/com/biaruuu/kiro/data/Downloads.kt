@@ -55,6 +55,7 @@ object Downloads {
         val bytes: Long,
         val waitingForNetwork: Boolean,
         val subtitles: List<SubtitleTrack>,
+        val error: String = "",
     ) {
         val completed get() = state == Download.STATE_COMPLETED
         val failed get() = state == Download.STATE_FAILED
@@ -68,6 +69,10 @@ object Downloads {
     private var database: DatabaseProvider? = null
     private var cache: SimpleCache? = null
     private var manager: DownloadManager? = null
+
+    private val errors = HashMap<String, String>()
+    private val attempts = HashMap<String, Int>()
+    private val maxHeights = HashMap<String, Int>()
 
     private val _items = MutableStateFlow<List<Item>>(emptyList())
     val items: StateFlow<List<Item>> = _items
@@ -99,16 +104,45 @@ object Downloads {
             DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(true),
             Executors.newFixedThreadPool(4),
         )
-        dm.maxParallelDownloads = 2
+        dm.maxParallelDownloads = 1
         dm.requirements = requirements(app)
         dm.addListener(object : DownloadManager.Listener {
             override fun onInitialized(downloadManager: DownloadManager) = refresh(app)
-            override fun onDownloadChanged(downloadManager: DownloadManager, download: Download, finalException: Exception?) = refresh(app)
+            override fun onDownloadChanged(downloadManager: DownloadManager, download: Download, finalException: Exception?) {
+                val id = download.request.id
+                if (download.state == Download.STATE_FAILED) {
+                    errors[id] = describe(finalException, download.failureReason)
+                    // Streaming servers drop connections now and then: try again a few times
+                    // before giving up. Parts already saved are kept.
+                    val n = (attempts[id] ?: 0) + 1
+                    attempts[id] = n
+                    if (n <= 3) {
+                        main.postDelayed({
+                            try {
+                                DownloadService.sendAddDownload(app, DownloadsService::class.java, download.request, true)
+                            } catch (_: Exception) {
+                            }
+                        }, 4000L * n)
+                    }
+                } else if (download.state == Download.STATE_COMPLETED) {
+                    errors.remove(id)
+                    attempts.remove(id)
+                }
+                refresh(app)
+            }
             override fun onDownloadRemoved(downloadManager: DownloadManager, download: Download) = refresh(app)
             override fun onRequirementsStateChanged(downloadManager: DownloadManager, requirements: Requirements, notMetRequirements: Int) = refresh(app)
         })
         manager = dm
         return dm
+    }
+
+    private fun describe(e: Exception?, reason: Int): String {
+        if (e == null) return "reason $reason"
+        var t: Throwable = e
+        while (t.cause != null && t.cause !== t) t = t.cause!!
+        val code = (t as? androidx.media3.datasource.HttpDataSource.InvalidResponseCodeException)?.responseCode
+        return if (code != null) "server answered $code" else (t.message ?: t.javaClass.simpleName).take(90)
     }
 
     private fun requirements(context: Context) =
@@ -182,6 +216,7 @@ object Downloads {
                                 bytes = d.bytesDownloaded,
                                 waitingForNetwork = notMet && d.state == Download.STATE_QUEUED,
                                 subtitles = subs,
+                                error = errors[d.request.id].orEmpty(),
                             ),
                         )
                     }
@@ -208,6 +243,8 @@ object Downloads {
     ) {
         val app = context.applicationContext
         val id = idOf(animeId, episode)
+        errors.remove(id)
+        attempts.remove(id)
         val mediaItem = MediaItem.Builder()
             .setUri(source.url)
             .apply { if (source.isHls) setMimeType(MimeTypes.APPLICATION_M3U8) }
@@ -278,6 +315,12 @@ object Downloads {
             storeMeta(context, meta)
             refresh(context)
         }
+    }
+
+    /** Tries a failed download again. */
+    fun retry(context: Context, item: Item) {
+        val source = StreamSource("Saved", item.url, 0, item.hls, emptyList())
+        start(context, item.animeId, item.title, item.poster, item.episode, item.episodeTitle, source, 0) { toast(context, it) }
     }
 
     fun remove(context: Context, animeId: Int, episode: Int) {

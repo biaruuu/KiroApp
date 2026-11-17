@@ -647,7 +647,13 @@ private fun DownloadList(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { if (d.completed) onPlay(d.animeId, d.episode) else onOpenAnime(d.animeId) }
+                    .clickable {
+                        when {
+                            d.completed -> onPlay(d.animeId, d.episode)
+                            d.failed -> com.biaruuu.kiro.data.Downloads.retry(context, d)
+                            else -> onOpenAnime(d.animeId)
+                        }
+                    }
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -666,7 +672,7 @@ private fun DownloadList(
                     Spacer(Modifier.height(3.dp))
                     val status = when {
                         d.completed -> "Downloaded \u00b7 ${sizeLabel(d.bytes)}"
-                        d.failed -> "Failed. Open the anime to try again"
+                        d.failed -> "Failed (${d.error.ifEmpty { "unknown" }}). Tap to retry"
                         d.waitingForNetwork -> "Waiting for Wi-Fi"
                         d.percent > 0f -> "Downloading ${d.percent.toInt()}% \u00b7 ${sizeLabel(d.bytes)}"
                         else -> "Starting..."
