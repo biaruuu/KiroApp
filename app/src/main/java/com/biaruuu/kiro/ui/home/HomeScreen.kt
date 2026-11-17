@@ -54,11 +54,12 @@ fun HomeScreen(
     // "Because you watched ..." rows, from what was watched most recently.
     val appContext = androidx.compose.ui.platform.LocalContext.current
     val watchedVersion by com.biaruuu.kiro.data.WatchedStore.version.collectAsState()
+    // The single latest thing watched or finished decides the recommendations.
     val seeds = remember(history, watchedVersion) {
-        val s = LinkedHashMap<Int, String>()
-        history.take(2).forEach { s[it.animeId] = it.title }
-        com.biaruuu.kiro.data.WatchedStore.completed(appContext).firstOrNull()?.let { if (it.title.isNotBlank()) s.putIfAbsent(it.id, it.title) }
-        s.toList()
+        val recent = ArrayList<Triple<Long, Int, String>>()
+        history.take(2).forEach { recent.add(Triple(it.updatedAt, it.animeId, it.title)) }
+        com.biaruuu.kiro.data.WatchedStore.completed(appContext).take(1).forEach { recent.add(Triple(it.at, it.id, it.title)) }
+        recent.sortedByDescending { it.first }.map { it.second to it.third }.distinctBy { it.first }
     }
     var because by remember { mutableStateOf<List<com.biaruuu.kiro.data.BecauseYouWatched.Row>>(emptyList()) }
     LaunchedEffect(seeds) {
@@ -98,22 +99,19 @@ fun HomeScreen(
                     ContinueWatchingRow(items = history, onContinue = onContinue)
                 }
             }
-            items(because, key = { "by:" + it.title }, contentType = { "row" }) { row ->
-                AnimeRow(title = row.title, items = row.items, onAnimeClick = onAnimeClick)
-            }
-            items(current.content.sections, key = { it.title }, contentType = { if (it.isRanked) "ranked" else "row" }) { section ->
-                if (section.isRanked) {
-                    RankedRow(
-                        title = section.title,
-                        items = section.items,
-                        onAnimeClick = onAnimeClick,
-                    )
-                } else {
-                    AnimeRow(
-                        title = section.title,
-                        items = section.items,
-                        onAnimeClick = onAnimeClick,
-                    )
+            current.content.sections.forEachIndexed { index, section ->
+                item(key = section.title, contentType = if (section.isRanked) "ranked" else "row") {
+                    if (section.isRanked) {
+                        RankedRow(title = section.title, items = section.items, onAnimeClick = onAnimeClick)
+                    } else {
+                        AnimeRow(title = section.title, items = section.items, onAnimeClick = onAnimeClick)
+                    }
+                }
+                // Right under Trending Now.
+                if (index == 0) {
+                    items(because, key = { "by:" + it.title }, contentType = { "row" }) { row ->
+                        AnimeRow(title = row.title, items = row.items, onAnimeClick = onAnimeClick)
+                    }
                 }
             }
         }

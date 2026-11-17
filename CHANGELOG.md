@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.37.1] - 2026-11-18
+
+### Changed
+- Home: one recommendation row instead of two. It is called "Recommended for you" and is based on the single latest anime you watched or finished.
+- Trending Now now sits directly under Continue Watching, with Recommended for you right below it.
+
 ## [1.37.0] - 2026-11-18
 
 ### Added
