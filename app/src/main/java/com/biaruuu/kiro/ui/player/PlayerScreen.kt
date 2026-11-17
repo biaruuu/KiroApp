@@ -537,12 +537,25 @@ fun PlayerScreen(
                 },
         )
 
+        // The spinner is drawn here only while the controls are hidden; with the controls up it
+        // sits inside them (below), so the dimming layer never turns it grey.
         if (buffering && error == null) {
-            CircularProgressIndicator(
-                color = Color.White,
-                strokeWidth = 3.dp,
-                modifier = Modifier.align(Alignment.Center).size(40.dp),
-            )
+            if (!controlsVisible) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    strokeWidth = 3.dp,
+                    modifier = Modifier.align(Alignment.Center).size(44.dp),
+                )
+            }
+            if (resolving) {
+                Text(
+                    "Finding the best source...",
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.align(Alignment.Center).padding(top = 84.dp),
+                )
+            }
         }
 
         error?.let { message ->
@@ -997,7 +1010,13 @@ private fun Controls(
                 modifier = Modifier.size(56.dp).clip(CircleShape).clickable(onClick = onTogglePlay),
                 contentAlignment = Alignment.Center,
             ) {
-                if (!buffering) {
+                if (buffering) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        strokeWidth = 3.dp,
+                        modifier = Modifier.size(44.dp),
+                    )
+                } else {
                     if (isPlaying) {
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             repeat(2) {

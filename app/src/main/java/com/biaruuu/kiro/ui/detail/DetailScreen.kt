@@ -345,15 +345,6 @@ private fun DetailContent(
                         Text(genres, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Normal)
                     }
                 }
-                // "Completed" stamp, top right of the hero, once you have finished this anime.
-                if (completedByMe) {
-                    Image(
-                        painter = painterResource(R.drawable.completed_stamp),
-                        contentDescription = "Completed",
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.align(Alignment.TopEnd).padding(top = 12.dp, end = 12.dp).width(118.dp),
-                    )
-                }
             }
         }
 
@@ -387,7 +378,7 @@ private fun DetailContent(
                     }
                 }
                 Spacer(Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(if (completedByMe) 16.dp else 24.dp), verticalAlignment = Alignment.CenterVertically) {
                     ActionButton(
                         label = "My List",
                         icon = if (inList) R.drawable.fluent_checkmark_regular else R.drawable.fluent_add_regular,
@@ -421,6 +412,13 @@ private fun DetailContent(
                         Box(Modifier.height(48.dp), contentAlignment = Alignment.Center) {
                             com.biaruuu.kiro.ui.components.AnimatedAsset(awardDesign, Modifier.height(38.dp).width(30.dp))
                         }
+                        // The green "COMPLETED" rubber stamp, right of the medal.
+                        Image(
+                            painter = painterResource(R.drawable.completed_green),
+                            contentDescription = "Completed",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.height(36.dp).weight(1f, fill = false),
+                        )
                     }
                 }
                 Spacer(Modifier.height(14.dp))

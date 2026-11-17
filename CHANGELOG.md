@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.33.3] - 2026-11-17
+
+### Changed
+- Removed the blue Completed badge from the top of the details page. A green "COMPLETED" rubber stamp now sits to the right of the award medal instead.
+
+### Fixed
+- The loading spinner in the video player is now white and clearly visible (it was drawn under the dimming layer and looked grey and stuck). It shows "Finding the best source..." while the episode is being looked up.
+
 ## [1.33.2] - 2026-11-17
 
 ### Changed
