@@ -102,6 +102,7 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
         "admin" -> "Admin panel"
         "customize" -> "Customize profile"
         "achievements" -> "Achievements"
+        "alerts" -> "Episode alerts"
         else -> if (page.startsWith("release-")) "What's new" else "Version"
     }
     Box(modifier = modifier.background(KiroBackground), contentAlignment = Alignment.TopCenter) {
@@ -122,6 +123,7 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
                 "admin" -> AdminPage()
                 "customize" -> CustomizePage()
                 "achievements" -> AchievementsPage()
+                "alerts" -> AlertsPage()
                 else -> if (page.startsWith("release-")) WhatsNewPage(latest = false, onBack = onBack, version = page.removePrefix("release-")) else VersionPage()
             }
         }

@@ -60,12 +60,14 @@ import kotlinx.coroutines.delay
 
 private const val TAB_HOME = 0
 private const val TAB_SEARCH = 1
-private const val TAB_LIBRARY = 2
-private const val TAB_ME = 3
+private const val TAB_SCHEDULE = 2
+private const val TAB_LIBRARY = 3
+private const val TAB_ME = 4
 
 private val Destinations = listOf(
     NavDestination("Home", R.drawable.fluent_home_regular, R.drawable.fluent_home_filled),
     NavDestination("Search", R.drawable.fluent_search_regular, R.drawable.fluent_search_filled),
+    NavDestination("Schedule", R.drawable.fluent_calendar_regular, R.drawable.fluent_calendar_filled),
     NavDestination("Your Library", R.drawable.fluent_inbox_regular, R.drawable.fluent_inbox_regular),
     NavDestination("Me", R.drawable.fluent_emoji_regular, R.drawable.fluent_emoji_filled),
 )
@@ -206,6 +208,14 @@ private fun KiroScaffold() {
     LaunchedEffect(watchingNow, myName.username) {
         if (!signedInUid.isNullOrEmpty()) com.biaruuu.kiro.data.Presence.write(signedInUid, true)
     }
+    // A tap on a "new episode" notification opens that anime.
+    val deepLink by com.biaruuu.kiro.data.DeepLink.request.collectAsState()
+    LaunchedEffect(deepLink) {
+        deepLink?.let {
+            backStack.add(it)
+            com.biaruuu.kiro.data.DeepLink.request.value = null
+        }
+    }
     val updateRequest by com.biaruuu.kiro.data.UpdateChecker.request.collectAsState()
     LaunchedEffect(updateRequest) {
         if (updateRequest != null) {
@@ -273,6 +283,11 @@ private fun KiroScaffold() {
 
                 TAB_SEARCH -> SearchScreen(
                     gridState = searchGridState,
+                    onAnimeClick = onAnimeClick,
+                    modifier = contentModifier,
+                )
+
+                TAB_SCHEDULE -> com.biaruuu.kiro.ui.schedule.ScheduleScreen(
                     onAnimeClick = onAnimeClick,
                     modifier = contentModifier,
                 )

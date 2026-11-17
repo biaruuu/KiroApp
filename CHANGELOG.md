@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.36.0] - 2026-11-18
+
+### Added
+- **Schedule tab:** a new bottom tab with the weekly airing schedule. One page per day for the next 7 days, in your own time zone, with the Your Library style tab strip, the air time, a live "in 2h 10m" countdown, an "In your list" tag, and a My list only filter.
+- **New episode alerts:** a notification when an anime in My List or Continue Watching airs a new episode (checked every 30 minutes). Tap it to open the anime. Turn it on or off in Me > Episode alerts, which also lists what from your list airs this week.
+- **Because you watched rows** on Home: recommendations based on what you watched lately, without anime already in your library.
+
 ## [1.35.0] - 2026-11-18
 
 ### Added

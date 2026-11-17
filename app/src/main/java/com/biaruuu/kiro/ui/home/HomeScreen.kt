@@ -20,6 +20,10 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -46,6 +50,22 @@ fun HomeScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val dims = LocalDimens.current
     val history = rememberWatchHistory()
+
+    // "Because you watched ..." rows, from what was watched most recently.
+    val appContext = androidx.compose.ui.platform.LocalContext.current
+    val watchedVersion by com.biaruuu.kiro.data.WatchedStore.version.collectAsState()
+    val seeds = remember(history, watchedVersion) {
+        val s = LinkedHashMap<Int, String>()
+        history.take(2).forEach { s[it.animeId] = it.title }
+        com.biaruuu.kiro.data.WatchedStore.completed(appContext).firstOrNull()?.let { if (it.title.isNotBlank()) s.putIfAbsent(it.id, it.title) }
+        s.toList()
+    }
+    var because by remember { mutableStateOf<List<com.biaruuu.kiro.data.BecauseYouWatched.Row>>(emptyList()) }
+    LaunchedEffect(seeds) {
+        because = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            com.biaruuu.kiro.data.BecauseYouWatched.load(appContext, seeds)
+        }
+    }
 
     when (val current = state) {
         HomeUiState.Loading -> HomeSkeleton(modifier = modifier)
@@ -77,6 +97,9 @@ fun HomeScreen(
                 item(key = "continue", contentType = "continue") {
                     ContinueWatchingRow(items = history, onContinue = onContinue)
                 }
+            }
+            items(because, key = { "by:" + it.title }, contentType = { "row" }) { row ->
+                AnimeRow(title = row.title, items = row.items, onAnimeClick = onAnimeClick)
             }
             items(current.content.sections, key = { it.title }, contentType = { if (it.isRanked) "ranked" else "row" }) { section ->
                 if (section.isRanked) {

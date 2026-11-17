@@ -48,6 +48,10 @@ class MainActivity : ComponentActivity() {
         } else if (intent?.getStringExtra(com.biaruuu.kiro.data.UpdateWorker.EXTRA_OPEN) == "notifications") {
             com.biaruuu.kiro.data.UpdateChecker.request.value = "notifications"
             intent.removeExtra(com.biaruuu.kiro.data.UpdateWorker.EXTRA_OPEN)
+        } else if (intent?.getStringExtra(com.biaruuu.kiro.data.UpdateWorker.EXTRA_OPEN) == "anime") {
+            val id = intent.getIntExtra("anime_id", 0)
+            if (id > 0) com.biaruuu.kiro.data.DeepLink.request.value = "d:$id"
+            intent.removeExtra(com.biaruuu.kiro.data.UpdateWorker.EXTRA_OPEN)
         }
     }
 }
