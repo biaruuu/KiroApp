@@ -48,6 +48,7 @@ object Downloads {
         val poster: String,
         val episodeTitle: String,
         val url: String,
+        val headers: Map<String, String>,
         val hls: Boolean,
         val quality: String,
         val state: Int,
@@ -89,7 +90,15 @@ object Downloads {
     fun dataSourceFactory(context: Context): DataSource.Factory =
         CacheDataSource.Factory()
             .setCache(cache(context))
-            .setUpstreamDataSourceFactory(DefaultDataSource.Factory(context, DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(true)))
+            .setUpstreamDataSourceFactory(
+                DefaultDataSource.Factory(
+                    context,
+                    com.biaruuu.kiro.data.stream.StreamHeaders.wrap(
+                        DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(true),
+                        com.biaruuu.kiro.data.stream.StreamHeaders.Slot.Playback,
+                    ),
+                ),
+            )
             .setCacheWriteDataSinkFactory(null)
             .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
 
@@ -101,7 +110,7 @@ object Downloads {
             app,
             db(app),
             cache(app),
-            DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(true),
+            downloadUpstream(),
             Executors.newFixedThreadPool(4),
         )
         dm.maxParallelDownloads = 1
@@ -143,6 +152,20 @@ object Downloads {
         while (t.cause != null && t.cause !== t) t = t.cause!!
         val code = (t as? androidx.media3.datasource.HttpDataSource.InvalidResponseCodeException)?.responseCode
         return if (code != null) "server answered $code" else (t.message ?: t.javaClass.simpleName).take(90)
+    }
+
+    private fun downloadUpstream(): DataSource.Factory =
+        com.biaruuu.kiro.data.stream.StreamHeaders.wrap(
+            DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(true),
+            com.biaruuu.kiro.data.stream.StreamHeaders.Slot.Download,
+        )
+
+    private fun headersJson(h: Map<String, String>) = JSONObject().also { o -> h.forEach { (k, v) -> o.put(k, v) } }
+
+    private fun headersOf(o: JSONObject?): Map<String, String> {
+        val out = LinkedHashMap<String, String>()
+        o?.keys()?.forEach { k -> out[k] = o.optString(k) }
+        return out
     }
 
     private fun requirements(context: Context) =
@@ -200,6 +223,7 @@ object Downloads {
                                 }
                             }
                         }
+                        com.biaruuu.kiro.data.stream.StreamHeaders.remember(m.optString("url"), headersOf(m.optJSONObject("headers")))
                         list.add(
                             Item(
                                 id = d.request.id,
@@ -209,6 +233,7 @@ object Downloads {
                                 poster = m.optString("poster"),
                                 episodeTitle = m.optString("epTitle"),
                                 url = m.optString("url"),
+                                headers = headersOf(m.optJSONObject("headers")),
                                 hls = m.optBoolean("hls"),
                                 quality = m.optString("quality"),
                                 state = d.state,
@@ -250,10 +275,10 @@ object Downloads {
             .apply { if (source.isHls) setMimeType(MimeTypes.APPLICATION_M3U8) }
             .build()
         main.post {
-            val helper = DownloadHelper.forMediaItem(
-                app, mediaItem, DefaultRenderersFactory(app),
-                DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(true),
+            com.biaruuu.kiro.data.stream.StreamHeaders.activate(
+                com.biaruuu.kiro.data.stream.StreamHeaders.Slot.Download, source.url, source.headers,
             )
+            val helper = DownloadHelper.forMediaItem(app, mediaItem, DefaultRenderersFactory(app), downloadUpstream())
             helper.prepare(object : DownloadHelper.Callback {
                 override fun onPrepared(helper: DownloadHelper) {
                     try {
@@ -273,7 +298,8 @@ object Downloads {
                             .put("animeId", animeId).put("episode", episode)
                             .put("title", title).put("poster", poster).put("epTitle", episodeTitle)
                             .put("url", source.url).put("hls", source.isHls)
-                            .put("quality", source.qualityLabel))
+                            .put("quality", source.qualityLabel)
+                            .put("headers", headersJson(source.headers)))
                         DownloadService.sendAddDownload(app, DownloadsService::class.java, request, true)
                         saveSubtitles(app, id, source)
                         refresh(app)
@@ -293,6 +319,7 @@ object Downloads {
 
     private fun saveSubtitles(context: Context, id: String, source: StreamSource) {
         if (source.subtitles.isEmpty()) return
+        val hdrs = source.headers
         io.execute {
             val dir = File(context.filesDir, "dl_subs").apply { mkdirs() }
             val saved = JSONArray()
@@ -300,7 +327,7 @@ object Downloads {
                 try {
                     val ext = if (t.mimeType.contains("vtt", true)) "vtt" else "srt"
                     val file = File(dir, "${id.replace(':', '_')}_$i.$ext")
-                    HttpClientProvider.get().newCall(Request.Builder().url(t.url).build()).execute().use { r ->
+                    HttpClientProvider.get().newCall(Request.Builder().url(t.url).apply { hdrs.forEach { (k, v) -> header(k, v) } }.build()).execute().use { r ->
                         if (!r.isSuccessful) return@use
                         r.body?.byteStream()?.use { input -> file.outputStream().use { input.copyTo(it) } }
                     }
@@ -319,7 +346,7 @@ object Downloads {
 
     /** Tries a failed download again. */
     fun retry(context: Context, item: Item) {
-        val source = StreamSource("Saved", item.url, 0, item.hls, emptyList())
+        val source = StreamSource("Saved", item.url, 0, item.hls, emptyList()).withHeaders(item.headers)
         start(context, item.animeId, item.title, item.poster, item.episode, item.episodeTitle, source, 0) { toast(context, it) }
     }
 
@@ -341,7 +368,7 @@ object Downloads {
     /** A finished download as a playable source, or null. */
     fun playbackSource(context: Context, animeId: Int, episode: Int): StreamSource? {
         val item = item(animeId, episode)?.takeIf { it.completed } ?: return null
-        return StreamSource("Offline", item.url, 0, item.hls, item.subtitles)
+        return StreamSource("Offline", item.url, 0, item.hls, item.subtitles).withHeaders(item.headers)
     }
 
     // ---- small metadata store (title, poster, source address) ----

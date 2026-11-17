@@ -324,6 +324,8 @@ fun PlayerScreen(
                 .setSelectionFlags(if (i == 0) C.SELECTION_FLAG_DEFAULT else 0)
                 .build()
         }
+        // Some servers only answer with their own Referer / Origin; the player adds them.
+        com.biaruuu.kiro.data.stream.StreamHeaders.activate(com.biaruuu.kiro.data.stream.StreamHeaders.Slot.Playback, source.url, source.headers)
         error = null
         buffering = true
         quality = 0

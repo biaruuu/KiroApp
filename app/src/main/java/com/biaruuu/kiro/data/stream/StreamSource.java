@@ -16,6 +16,7 @@ public final class StreamSource {
     private final List<SubtitleTrack> subtitles;
     private final int latencyMs;
     private final String audio;
+    private final java.util.Map<String, String> headers;
 
     public StreamSource(
             @NonNull String providerName,
@@ -39,6 +40,13 @@ public final class StreamSource {
     private StreamSource(
             String providerName, String url, int height, boolean hls, List<SubtitleTrack> subtitles,
             String audio, int latencyMs) {
+        this(providerName, url, height, hls, subtitles, audio, latencyMs, Collections.<String, String>emptyMap());
+    }
+
+    private StreamSource(
+            String providerName, String url, int height, boolean hls, List<SubtitleTrack> subtitles,
+            String audio, int latencyMs, java.util.Map<String, String> headers) {
+        this.headers = Collections.unmodifiableMap(new java.util.LinkedHashMap<>(headers));
         this.audio = audio;
         this.providerName = providerName;
         this.url = url;
@@ -50,7 +58,18 @@ public final class StreamSource {
 
     @NonNull
     public StreamSource withLatency(int ms) {
-        return new StreamSource(providerName, url, height, hls, subtitles, audio, ms);
+        return new StreamSource(providerName, url, height, hls, subtitles, audio, ms, headers);
+    }
+
+    /** Request headers (Referer, Origin, User-Agent) the address needs; empty for most. */
+    @NonNull
+    public java.util.Map<String, String> getHeaders() {
+        return headers;
+    }
+
+    @NonNull
+    public StreamSource withHeaders(@NonNull java.util.Map<String, String> newHeaders) {
+        return new StreamSource(providerName, url, height, hls, subtitles, audio, latencyMs, newHeaders);
     }
 
     @NonNull

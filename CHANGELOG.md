@@ -4,6 +4,15 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.31.0] - 2026-11-17
+
+### Added
+- More streaming providers, the same sources the Nivio app uses: **Animetsu** (Bee, Koto, Wave, GG), **Animex** and **Miruro**. Each is found by the anime's AniList id, checked before it is offered, and shown in the source list with sub or dub.
+- Sources that need their own Referer / Origin now play, and download for offline viewing, with the right headers.
+
+### Changed
+- Episodes start as soon as the first provider answers instead of waiting for all of them.
+
 ## [1.30.1] - 2026-11-17
 
 ### Fixed

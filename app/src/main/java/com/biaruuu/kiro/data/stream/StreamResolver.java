@@ -30,6 +30,7 @@ public final class StreamResolver {
 
     private static final ExecutorService POOL = Executors.newCachedThreadPool();
     private static final int PROVIDER_TIMEOUT_S = 32;
+    private static final long PROVIDER_GRACE_MS = 5000L;
     private static final int PROBE_TIMEOUT_S = 8;
 
     private StreamResolver() {
@@ -61,17 +62,44 @@ public final class StreamResolver {
         // 1. All providers at once.
         List<StreamProvider> providers = new ArrayList<>();
         providers.add(new AnivaultProvider());
+        providers.add(new AnimetsuProvider());
+        providers.add(new AnimexProvider());
+        providers.add(new MiruroProvider());
 
-        List<Callable<List<StreamSource>>> tasks = new ArrayList<>();
+        // Take answers as they arrive; once one has sources, the others get a short grace period.
+        java.util.concurrent.ExecutorCompletionService<List<StreamSource>> done =
+                new java.util.concurrent.ExecutorCompletionService<>(POOL);
+        List<Future<List<StreamSource>>> pending = new ArrayList<>();
         for (StreamProvider p : providers) {
-            tasks.add(() -> p.resolve(request));
+            pending.add(done.submit(() -> p.resolve(request)));
         }
         List<StreamSource> candidates = new ArrayList<>();
-        for (Future<List<StreamSource>> f : POOL.invokeAll(tasks, PROVIDER_TIMEOUT_S, TimeUnit.SECONDS)) {
-            try {
-                candidates.addAll(f.get());
-            } catch (Exception ignored) {
-                // A provider that fails or times out is simply skipped.
+        long deadline = System.currentTimeMillis() + PROVIDER_TIMEOUT_S * 1000L;
+        int remaining = pending.size();
+        try {
+            while (remaining > 0) {
+                long wait = deadline - System.currentTimeMillis();
+                if (wait <= 0) {
+                    break;
+                }
+                Future<List<StreamSource>> f = done.poll(wait, TimeUnit.MILLISECONDS);
+                if (f == null) {
+                    break;
+                }
+                remaining--;
+                try {
+                    List<StreamSource> got = f.get();
+                    if (!got.isEmpty() && candidates.isEmpty()) {
+                        deadline = Math.min(deadline, System.currentTimeMillis() + PROVIDER_GRACE_MS);
+                    }
+                    candidates.addAll(got);
+                } catch (Exception ignored) {
+                    // A provider that fails is simply skipped.
+                }
+            }
+        } finally {
+            for (Future<List<StreamSource>> f : pending) {
+                f.cancel(true);
             }
         }
 
