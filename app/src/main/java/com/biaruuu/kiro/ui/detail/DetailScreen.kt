@@ -419,13 +419,6 @@ private fun DetailContent(
                             contentScale = ContentScale.Fit,
                             modifier = Modifier.height(30.dp).weight(1f, fill = false),
                         )
-                        // A gold trophy, right of the stamp.
-                        Image(
-                            painter = painterResource(R.drawable.award_trophy),
-                            contentDescription = "Trophy",
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.height(40.dp),
-                        )
                     }
                 }
                 Spacer(Modifier.height(14.dp))

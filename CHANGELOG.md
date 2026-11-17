@@ -4,6 +4,15 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.34.0] - 2026-11-18
+
+### Added
+- More streaming providers from the animestream app: **AnimePahe** (Kwik HLS, sub and dub, several qualities), **AniZone** and **Gojo**. They run alongside the existing providers, so more servers appear in the source list.
+- Accurate matching for providers that search by name: every result is scored against all of the anime's titles, season number, year and episode count, and is only used when it is a confident match. The episode is chosen by its real number, never by list position, so the wrong season or episode is not played.
+
+### Removed
+- The gold trophy next to the COMPLETED stamp.
+
 ## [1.33.5] - 2026-11-17
 
 ### Changed

@@ -65,6 +65,9 @@ public final class StreamResolver {
         providers.add(new AnimetsuProvider());
         providers.add(new AnimexProvider());
         providers.add(new MiruroProvider());
+        providers.add(new AnimePaheProvider());
+        providers.add(new AniZoneProvider());
+        providers.add(new GojoProvider());
 
         // Take answers as they arrive; once one has sources, the others get a short grace period.
         java.util.concurrent.ExecutorCompletionService<List<StreamSource>> done =

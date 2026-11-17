@@ -17,32 +17,32 @@ import java.util.zip.GZIPInputStream
  * source so the player and the downloader can use them.
  */
 
-private const val CHROME = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
-private val POOL = Executors.newCachedThreadPool()
-private val HEIGHT = Regex("RESOLUTION=\\d+x(\\d+)")
+internal const val CHROME = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+internal val POOL = Executors.newCachedThreadPool()
+internal val HEIGHT = Regex("RESOLUTION=\\d+x(\\d+)")
 
-private fun client(seconds: Long = 18): OkHttpClient =
+internal fun client(seconds: Long = 18): OkHttpClient =
     HttpClientProvider.get().newBuilder().callTimeout(seconds, TimeUnit.SECONDS).readTimeout(seconds, TimeUnit.SECONDS).build()
 
-private fun request(url: String, headers: Map<String, String>): Request =
+internal fun request(url: String, headers: Map<String, String>): Request =
     Request.Builder().url(url).apply { headers.forEach { (k, v) -> header(k, v) } }.build()
 
-private fun getBytes(url: String, headers: Map<String, String>): ByteArray? = try {
+internal fun getBytes(url: String, headers: Map<String, String>): ByteArray? = try {
     client().newCall(request(url, headers)).execute().use { r -> if (r.isSuccessful) r.body?.bytes() else null }
 } catch (_: Exception) {
     null
 }
 
-private fun getJson(url: String, headers: Map<String, String>): JSONObject? = try {
+internal fun getJson(url: String, headers: Map<String, String>): JSONObject? = try {
     getBytes(url, headers)?.let { JSONObject(String(it, Charsets.UTF_8)) }
 } catch (_: Exception) {
     null
 }
 
-private class Checked(val hls: Boolean, val height: Int, val ms: Int)
+internal class Checked(val hls: Boolean, val height: Int, val ms: Int)
 
 /** Opens a stream address with its headers: an HLS playlist (with its best height) or a media file. */
-private fun check(url: String, headers: Map<String, String>): Checked? {
+internal fun check(url: String, headers: Map<String, String>): Checked? {
     val start = System.nanoTime()
     return try {
         client(15).newCall(request(url, headers + ("Range" to "bytes=0-"))).execute().use { r ->
@@ -61,7 +61,7 @@ private fun check(url: String, headers: Map<String, String>): Checked? {
     }
 }
 
-private fun languageCode(label: String): String {
+internal fun languageCode(label: String): String {
     val l = label.lowercase()
     return when {
         l.startsWith("english") || l == "en" -> "en"
@@ -76,7 +76,7 @@ private fun languageCode(label: String): String {
 }
 
 /** Subtitle files from a list of {url|file, label|lang|language|name, kind}. Previews and ASS files are left out. */
-private fun subtitlesOf(arr: JSONArray?): List<SubtitleTrack> {
+internal fun subtitlesOf(arr: JSONArray?): List<SubtitleTrack> {
     if (arr == null) return emptyList()
     val out = ArrayList<SubtitleTrack>()
     for (i in 0 until arr.length()) {
@@ -95,12 +95,12 @@ private fun subtitlesOf(arr: JSONArray?): List<SubtitleTrack> {
     return out
 }
 
-private fun origin(referer: String) = referer.trimEnd('/')
+internal fun origin(referer: String) = referer.trimEnd('/')
 
-private fun streamHeaders(referer: String, ua: String = CHROME, extra: Map<String, String> = emptyMap()): Map<String, String> =
+internal fun streamHeaders(referer: String, ua: String = CHROME, extra: Map<String, String> = emptyMap()): Map<String, String> =
     linkedMapOf("User-Agent" to ua, "Referer" to referer, "Origin" to origin(referer)).apply { putAll(extra) }
 
-private fun source(
+internal fun source(
     provider: String, label: String, url: String, headers: Map<String, String>, audio: String,
     subs: List<SubtitleTrack>, qualityHint: Int = 0,
 ): StreamSource? {
@@ -109,10 +109,10 @@ private fun source(
         .withLatency(c.ms).withHeaders(headers)
 }
 
-private fun heightOf(q: String?): Int = Regex("(\\d{3,4})").find(q.orEmpty())?.groupValues?.get(1)?.toInt() ?: 0
+internal fun heightOf(q: String?): Int = Regex("(\\d{3,4})").find(q.orEmpty())?.groupValues?.get(1)?.toInt() ?: 0
 
 /** Runs jobs side by side and gathers what each returns; slow ones are dropped after [seconds]. */
-private fun gather(jobs: List<Callable<List<StreamSource>>>, seconds: Long): List<StreamSource> {
+internal fun gather(jobs: List<Callable<List<StreamSource>>>, seconds: Long): List<StreamSource> {
     val out = ArrayList<StreamSource>()
     for (f in POOL.invokeAll(jobs, seconds, TimeUnit.SECONDS)) {
         try {
@@ -123,7 +123,7 @@ private fun gather(jobs: List<Callable<List<StreamSource>>>, seconds: Long): Lis
     return out
 }
 
-private val AUDIO = listOf("sub", "dub")
+internal val AUDIO = listOf("sub", "dub")
 
 // ------------------------------------------------------------------------------------ Animetsu
 
