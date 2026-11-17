@@ -170,7 +170,8 @@ public final class TrailerApi {
         TmdbMeta meta = new TmdbMeta(
                 logo != null ? "https://image.tmdb.org/t/p/w500" + logo : null,
                 d.optDouble("vote_average", 0.0),
-                cert);
+                cert,
+                d.optString("poster_path", "").isEmpty() ? null : "https://image.tmdb.org/t/p/original" + d.optString("poster_path"));
         META.put(anime.getId(), meta);
         return meta;
     }

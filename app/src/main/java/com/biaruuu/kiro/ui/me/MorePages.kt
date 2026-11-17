@@ -2,6 +2,7 @@ package com.biaruuu.kiro.ui.me
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -243,20 +245,30 @@ fun ContactPage(onDone: () -> Unit) {
             } else {
                 Text("What's it about?", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(10.dp))
-                Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                val hints = listOf("Something isn't working", "An idea to make Kiro better", "Ask the developer anything", "Anything else")
+                Column(
+                    Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).background(Color(0xFF1A1A1D)),
+                ) {
                     topics.forEachIndexed { i, label ->
                         val on = topic == i
-                        Text(
-                            label,
-                            color = if (on) Color.Black else Color.White,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier
-                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(20.dp))
-                                .background(if (on) Color.White else Color(0xFF2A2A2D))
-                                .clickable { topic = i }
-                                .padding(horizontal = 14.dp, vertical = 8.dp),
-                        )
+                        Row(
+                            Modifier.fillMaxWidth().clickable { topic = i }.padding(horizontal = 16.dp, vertical = 13.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(label, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                                Text(hints[i], color = Muted, fontSize = 12.sp)
+                            }
+                            Box(
+                                Modifier.size(20.dp).clip(CircleShape)
+                                    .background(if (on) KiroPurple else Color.Transparent)
+                                    .border(1.5.dp, if (on) KiroPurple else Color(0xFF55555B), CircleShape),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (on) Box(Modifier.size(7.dp).clip(CircleShape).background(Color.White))
+                            }
+                        }
+                        if (i < topics.lastIndex) Box(Modifier.fillMaxWidth().padding(start = 16.dp).height(1.dp).background(Color(0xFF2A2A2D)))
                     }
                 }
                 Spacer(Modifier.height(20.dp))
@@ -265,8 +277,8 @@ fun ContactPage(onDone: () -> Unit) {
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .height(190.dp)
-                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                        .height(180.dp)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
                         .background(Color(0xFF1A1A1D))
                         .padding(14.dp),
                 ) {

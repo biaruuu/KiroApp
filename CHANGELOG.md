@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.29.4] - 2026-11-17
+
+### Changed
+- Contact us has a new layout: the topic is picked from a clear list instead of tab buttons, so nothing is cut off on any screen size.
+- Sharper artwork: posters and cards use the high-resolution cover, and the Home hero and the details page hero now use the full-resolution poster when one is available.
+
 ## [1.29.3] - 2026-11-17
 
 ### Changed

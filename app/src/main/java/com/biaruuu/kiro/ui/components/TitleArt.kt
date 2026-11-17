@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -110,4 +111,20 @@ private fun Badge(top: String, bottom: String, topBg: Color, topFg: Color, botto
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
         )
     }
+}
+
+
+/**
+ * Full-bleed artwork for a hero. AniList's cover is shown straight away and is swapped for the
+ * full-resolution TMDB poster as soon as one is found, so the picture ends up sharp on any screen.
+ */
+@androidx.compose.runtime.Composable
+fun HdArtwork(anime: Anime, modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier, contentDescription: String? = null) {
+    val meta by rememberTmdbMeta(anime)
+    coil.compose.AsyncImage(
+        model = meta?.posterUrl ?: anime.heroUrl,
+        contentDescription = contentDescription,
+        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+        modifier = modifier,
+    )
 }

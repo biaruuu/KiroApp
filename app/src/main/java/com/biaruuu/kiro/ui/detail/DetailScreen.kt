@@ -217,12 +217,7 @@ private fun DetailContent(
         // ---- Hero: the trailer fills it, with rating, title and genres over the video ----
         item(key = "hero") {
             Box(modifier = Modifier.fillMaxWidth().height(heroHeight).clipToBounds().background(Color.Black)) {
-                AsyncImage(
-                    model = anime.heroUrl,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
+                com.biaruuu.kiro.ui.components.HdArtwork(anime, Modifier.fillMaxSize())
                 if (trailerId != null && AppSettings.autoplayPreviews(context)) {
                     val alpha by animateFloatAsState(
                         if (trailerPlaying) 1f else 0.01f,

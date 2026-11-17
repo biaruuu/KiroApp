@@ -6,13 +6,15 @@ import androidx.annotation.Nullable;
 /** Title logo, score and age rating of an anime, from TMDB. Any part can be missing. */
 public final class TmdbMeta {
 
-    public static final TmdbMeta EMPTY = new TmdbMeta(null, 0.0, null);
+    public static final TmdbMeta EMPTY = new TmdbMeta(null, 0.0, null, null);
 
     @Nullable private final String logoUrl;
     private final double rating;
     @Nullable private final String certification;
+    @Nullable private final String posterUrl;
 
-    public TmdbMeta(@Nullable String logoUrl, double rating, @Nullable String certification) {
+    public TmdbMeta(@Nullable String logoUrl, double rating, @Nullable String certification, @Nullable String posterUrl) {
+        this.posterUrl = posterUrl;
         this.logoUrl = logoUrl;
         this.rating = rating;
         this.certification = certification;
@@ -22,6 +24,12 @@ public final class TmdbMeta {
     @Nullable
     public String getLogoUrl() {
         return logoUrl;
+    }
+
+    /** Full-resolution poster, or null. */
+    @Nullable
+    public String getPosterUrl() {
+        return posterUrl;
     }
 
     /** Community score out of 10 (0 when unknown). */

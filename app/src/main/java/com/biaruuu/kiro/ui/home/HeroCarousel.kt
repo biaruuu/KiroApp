@@ -220,12 +220,7 @@ private fun PhoneHeroPage(
     val line = remember(anime.id) { tagline(anime.description) }
 
     Box(modifier = Modifier.fillMaxSize().background(KiroBackground)) {
-        AsyncImage(
-            model = anime.heroUrl,
-            contentDescription = anime.displayTitle,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
-        )
+        com.biaruuu.kiro.ui.components.HdArtwork(anime, Modifier.fillMaxSize(), anime.displayTitle)
         // One flat, even dim over the artwork keeps the white title readable.
         Box(
             modifier = Modifier
@@ -342,13 +337,10 @@ private fun WideHeroPage(
             Spacer(Modifier.height(20.dp))
             PlayButton(onClick = { onPlay(anime) })
         }
-        AsyncImage(
-            model = anime.heroUrl,
-            contentDescription = anime.displayTitle,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .weight(0.54f)
-                .fillMaxHeight(),
+        com.biaruuu.kiro.ui.components.HdArtwork(
+            anime,
+            Modifier.weight(0.54f).fillMaxHeight(),
+            anime.displayTitle,
         )
     }
 }

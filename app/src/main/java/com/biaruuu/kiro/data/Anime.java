@@ -89,7 +89,7 @@ public final class Anime {
     /** Medium poster for cards. */
     @Nullable
     public String getPosterUrl() {
-        return coverLarge != null ? coverLarge : coverExtraLarge;
+        return coverExtraLarge != null ? coverExtraLarge : coverLarge;
     }
 
     /** Large portrait cover for the hero on narrow screens. */
