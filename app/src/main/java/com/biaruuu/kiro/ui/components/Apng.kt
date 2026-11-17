@@ -70,7 +70,7 @@ object Apng {
     }
 
     /** All frames, already combined into full-size pictures; null if the file can't be read. */
-    fun decode(bytes: ByteArray, maxBytes: Long = 80L * 1024 * 1024): Frames? {
+    fun decode(bytes: ByteArray, maxBytes: Long = 64L * 1024 * 1024, maxSide: Int = 640): Frames? {
         val all = chunks(bytes)
         val ihdr = all.firstOrNull { it.type == "IHDR" }?.data ?: return null
         if (ihdr.size < 13) return null
@@ -98,7 +98,12 @@ object Apng {
             }
         }
         if (frames.size < 2) return null
-        if (width.toLong() * height * 4 * frames.size > maxBytes) return null
+        // Big, long animations are shrunk so their frames fit in memory.
+        var scale = minOf(1f, maxSide.toFloat() / maxOf(width, height))
+        while ((width * scale).toLong() * (height * scale).toLong() * 4 * frames.size > maxBytes) scale *= 0.85f
+        val outW = (width * scale).toInt()
+        val outH = (height * scale).toInt()
+        if (minOf(outW, outH) < 64) return null
 
         val canvasBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(canvasBitmap)
@@ -122,7 +127,7 @@ object Apng {
             val region = Rect(f.x, f.y, f.x + f.w, f.y + f.h)
             val backup = if (f.dispose == 2) Bitmap.createBitmap(canvasBitmap, 0, 0, width, height) else null
             canvas.drawBitmap(frame, f.x.toFloat(), f.y.toFloat(), if (f.blend == 0) sourcePaint else null)
-            out.add(canvasBitmap.copy(Bitmap.Config.ARGB_8888, false))
+            out.add(if (scale == 1f) canvasBitmap.copy(Bitmap.Config.ARGB_8888, false) else Bitmap.createScaledBitmap(canvasBitmap, outW, outH, true))
             delays[i] = f.delayMs
             frame.recycle()
 
@@ -136,7 +141,7 @@ object Apng {
             }
         }
         canvasBitmap.recycle()
-        return Frames(out, delays, width, height)
+        return Frames(out, delays, outW, outH)
     }
 }
 

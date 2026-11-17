@@ -49,7 +49,7 @@ import com.biaruuu.kiro.ui.theme.KiroPurple
 private val Muted = Color(0xFF9A9A9F)
 private val Card = Color(0xFF1A1A1D)
 
-/** Pick an avatar decoration, profile effect, nameplate and name font. A live preview is at the top; every pick saves at once. */
+/** Pick an avatar decoration, library effect, library decoration and name font. A live preview is at the top; every pick saves at once. */
 @Composable
 fun CustomizePage() {
     val context = LocalContext.current
@@ -65,8 +65,6 @@ fun CustomizePage() {
     }
     val name = profile.username.ifBlank { signedIn.name }
     val decorations = remember(remote) { Designs.all(Designs.DECORATION) }
-    val effects = remember(remote) { Designs.all(Designs.EFFECT) }
-    val nameplates = remember(remote) { Designs.all(Designs.NAMEPLATE) }
     var fontsVersion by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val fonts = remember(fontsVersion) { NameStyles.options(context) }
     val importFont = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
@@ -79,29 +77,12 @@ fun CustomizePage() {
             }
         }
     }
+    val libraryEffects = remember(remote) { Designs.all(Designs.LIBRARY_EFFECT) }
+    val libraryDecorations = remember(remote) { Designs.all(Designs.LIBRARY_DECORATION) }
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-        // ---- Preview ----
-        val effect = Designs.find(profile.effect)
-        val plate = Designs.find(profile.nameplate)
-        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Card)) {
-            if (effect != null) AnimatedAsset(effect, Modifier.matchParentSizeCompat(), crop = true)
-            Column(modifier = Modifier.fillMaxWidth().padding(18.dp)) {
-                Box(Modifier.padding(8.dp)) { DecoratedAvatar(profile.avatar, name, 76.dp, profile.decoration) }
-                Spacer(Modifier.height(12.dp))
-                Box(Modifier.fillMaxWidth().height(54.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF0E0E10)), contentAlignment = Alignment.CenterStart) {
-                    if (plate != null) AnimatedAsset(plate, Modifier.fillMaxSize(), crop = true)
-                    Text(
-                        name, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        fontFamily = NameStyles.family(context, profile.nameFont),
-                        style = TextStyle(shadow = androidx.compose.ui.graphics.Shadow(Color.Black, androidx.compose.ui.geometry.Offset(0f, 2f), 6f)),
-                        modifier = Modifier.padding(horizontal = 14.dp),
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
-                Text(signedIn.email, color = Muted, fontSize = 12.sp)
-            }
-        }
+        // The card you are building, exactly as it appears at the top of Your Library.
+        com.biaruuu.kiro.ui.components.LibraryBanner(profile = profile, name = name, height = 140.dp)
 
         Section("Avatar Decoration")
         Grid(
@@ -111,28 +92,32 @@ fun CustomizePage() {
             tile = { d -> if (d == null) NoneTile() else TileWithLabel(d.name) { DecoratedAvatar(profile.avatar, name, 46.dp, d.id) } },
         )
 
-        Section("Profile Effect")
+        Section("Library Effect")
         Grid(
-            items = listOf<Design?>(null) + effects,
-            selectedId = profile.effect,
-            onPick = { ProfileRepository.save(effect = it) },
-            tile = { d -> if (d == null) NoneTile() else TileWithLabel(d.name) { AnimatedAsset(d, Modifier.size(52.dp)) } },
-        )
-
-        Section("Nameplate")
-        Grid(
-            items = listOf<Design?>(null) + nameplates,
-            selectedId = profile.nameplate,
-            onPick = { ProfileRepository.save(nameplate = it) },
+            items = listOf<Design?>(null) + libraryEffects,
+            selectedId = profile.libraryEffect,
+            onPick = { ProfileRepository.save(libraryEffect = it) },
             tile = { d ->
                 if (d == null) NoneTile() else TileWithLabel(d.name) {
-                    Box(Modifier.fillMaxWidth().height(34.dp).clip(RoundedCornerShape(6.dp))) { AnimatedAsset(d, Modifier.fillMaxSize(), crop = true) }
+                    Box(Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(6.dp))) { AnimatedAsset(d, Modifier.fillMaxSize(), crop = true) }
                 }
             },
         )
-        if (effects.isEmpty() && nameplates.isEmpty()) {
+
+        Section("Library Decoration")
+        Grid(
+            items = listOf<Design?>(null) + libraryDecorations,
+            selectedId = profile.libraryDecoration,
+            onPick = { ProfileRepository.save(libraryDecoration = it) },
+            tile = { d ->
+                if (d == null) NoneTile() else TileWithLabel(d.name) {
+                    Box(Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFF0E0E10))) { AnimatedAsset(d, Modifier.fillMaxSize()) }
+                }
+            },
+        )
+        if (libraryEffects.isEmpty() && libraryDecorations.isEmpty()) {
             Spacer(Modifier.height(8.dp))
-            Text("More effects and nameplates are coming soon.", color = Muted, fontSize = 12.sp)
+            Text("More library effects and decorations are coming soon.", color = Muted, fontSize = 12.sp)
         }
 
         Section("Display Name Style")
@@ -169,9 +154,6 @@ fun CustomizePage() {
         Spacer(Modifier.height(24.dp))
     }
 }
-
-// A Box has no matchParentSize outside its scope here, so the effect fills the card through a sized column instead.
-private fun Modifier.matchParentSizeCompat(): Modifier = this.fillMaxWidth().height(210.dp)
 
 @Composable
 private fun Section(title: String) {

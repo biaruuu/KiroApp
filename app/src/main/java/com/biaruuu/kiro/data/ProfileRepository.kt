@@ -17,8 +17,8 @@ data class Profile(
     val avatar: String = "",
     /** Ids of the chosen look (see [Designs]); empty means none. [nameFont] "" is the normal font. */
     val decoration: String = "",
-    val effect: String = "",
-    val nameplate: String = "",
+    val libraryEffect: String = "",
+    val libraryDecoration: String = "",
     val nameFont: String = "",
     /** True once the first answer (cache or server) has arrived. */
     val loaded: Boolean = false,
@@ -64,8 +64,8 @@ object ProfileRepository {
                 bio = snap.getString("bio").orEmpty(),
                 avatar = snap.getString("avatar").orEmpty(),
                 decoration = snap.getString("decoration").orEmpty(),
-                effect = snap.getString("effect").orEmpty(),
-                nameplate = snap.getString("nameplate").orEmpty(),
+                libraryEffect = snap.getString("libraryEffect").orEmpty(),
+                libraryDecoration = snap.getString("libraryDecoration").orEmpty(),
                 nameFont = snap.getString("nameFont").orEmpty(),
                 loaded = true,
             )
@@ -95,8 +95,8 @@ object ProfileRepository {
         bio: String? = null,
         avatar: String? = null,
         decoration: String? = null,
-        effect: String? = null,
-        nameplate: String? = null,
+        libraryEffect: String? = null,
+        libraryDecoration: String? = null,
         nameFont: String? = null,
         onDone: (String?) -> Unit = {}) {
         val ref = doc
@@ -109,8 +109,8 @@ object ProfileRepository {
         bio?.let { data["bio"] = it.trim() }
         avatar?.let { data["avatar"] = it }
         decoration?.let { data["decoration"] = it }
-        effect?.let { data["effect"] = it }
-        nameplate?.let { data["nameplate"] = it }
+        libraryEffect?.let { data["libraryEffect"] = it }
+        libraryDecoration?.let { data["libraryDecoration"] = it }
         nameFont?.let { data["nameFont"] = it }
         data["updatedAt"] = System.currentTimeMillis()
         ref.set(data, SetOptions.merge()).addOnCompleteListener { t ->

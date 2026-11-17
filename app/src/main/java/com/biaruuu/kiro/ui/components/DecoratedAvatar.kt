@@ -34,12 +34,12 @@ private val frameCache = java.util.concurrent.ConcurrentHashMap<String, Apng.Fra
 
 /** Decodes an image off the main thread. Animated PNGs share their decoded frames between every place they are shown. */
 private fun load(context: android.content.Context, design: Design): Drawable? = try {
-    val bytes: ByteArray = if (design.asset != null) {
-        context.assets.open(design.asset).use { it.readBytes() }
-    } else {
-        Base64.decode(design.data!!, Base64.DEFAULT)
+    val bytes: ByteArray = when {
+        design.asset != null -> context.assets.open(design.asset).use { it.readBytes() }
+        design.file != null -> java.io.File(design.file).readBytes()
+        else -> design.bytes!!
     }
-    val key = design.asset ?: (design.id + ":" + design.data.hashCode())
+    val key = design.asset ?: design.file ?: (design.id + ":" + System.identityHashCode(design.bytes))
     val frames = frameCache[key] ?: if (Apng.isApng(bytes)) Apng.decode(bytes)?.also { frameCache[key] = it } else null
     if (frames != null) {
         ApngDrawable(frames)
@@ -59,17 +59,19 @@ private fun load(context: android.content.Context, design: Design): Drawable? = 
 @Composable
 fun AnimatedAsset(design: Design, modifier: Modifier = Modifier, crop: Boolean = false) {
     val context = LocalContext.current
-    val drawable by produceState<Drawable?>(null, design.id, design.asset, design.data) {
+    val drawable by produceState<Drawable?>(null, design.id, design.asset, design.file, design.bytes) {
         value = withContext(Dispatchers.Default) { load(context, design) }
     }
-    DisposableEffect(drawable) {
-        onDispose { (drawable as? Animatable)?.stop() }
+    // Stop exactly the drawable this effect was created for (not whichever one is current later).
+    val playing = drawable
+    DisposableEffect(playing) {
+        onDispose { (playing as? Animatable)?.stop() }
     }
     AndroidView(
         factory = { ImageView(it).apply { scaleType = if (crop) ImageView.ScaleType.CENTER_CROP else ImageView.ScaleType.FIT_CENTER } },
         update = {
-            it.setImageDrawable(drawable)
-            (drawable as? Animatable)?.let { a -> if (!a.isRunning) a.start() }
+            it.setImageDrawable(playing)
+            (playing as? Animatable)?.let { a -> if (!a.isRunning) a.start() }
         },
         modifier = modifier,
     )

@@ -36,10 +36,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Avatar decorations, profile effects and nameplates: everyone can read, only the developer publishes.
+    // Avatar decorations and library looks: everyone can read, only the developer publishes.
     match /designs/{id} {
       allow read: if true;
       allow write: if isAdmin();
+      // The image itself, stored in numbered parts (a document holds at most 1 MB).
+      match /parts/{part} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
     }
 
     // Who is online and what they watch: each user writes their own, only the developer can read.

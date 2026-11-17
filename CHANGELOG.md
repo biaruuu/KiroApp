@@ -4,6 +4,19 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.28.0] - 2026-11-17
+
+### Added
+- **Library Effect** and **Library Decoration**: pick an animated effect and a decoration for the profile card at the top of Your Library. The card also shows your avatar decoration and name font. Tap it to change them.
+
+### Changed
+- Customize profile is back to the same style as the other rows in the Me tab.
+- Nameplates and profile effects are gone, replaced by the library looks above.
+
+### Fixed
+- Animated avatar decorations now keep moving on the Notifications page and everywhere else.
+- Larger animated images (up to 5 MB) are shrunk to fit so they play smoothly.
+
 ## [1.27.1] - 2026-11-17
 
 ### Fixed
