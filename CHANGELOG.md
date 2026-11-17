@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.33.2] - 2026-11-17
+
+### Changed
+- The Award medal is no longer a button and has no label. It appears by itself, to the right of Share, once you have finished an anime.
+- New Completed badge: a blue seal with a banner reading "COMPLETED" and curved lettering, at the top right of the details hero with no background.
+
 ## [1.33.1] - 2026-11-17
 
 ### Changed
