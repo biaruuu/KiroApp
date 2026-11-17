@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.33.0] - 2026-11-17
+
+### Added
+- **Award**: a gold medal button on the details page, just left of Share and styled like My List, Rate and Share. Tap it to give an anime your award; it stays dim until you do.
+- **Completed stamp**: once you have finished an anime, a "Completed" stamp (no background) shows at the top right of its details hero.
+
 ## [1.32.0] - 2026-11-17
 
 ### Changed

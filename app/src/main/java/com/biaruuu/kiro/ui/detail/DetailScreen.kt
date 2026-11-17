@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -168,6 +169,8 @@ private fun DetailContent(
     val coverHeight = coverWidth * (9f / 16f)
 
     var inList by remember(anime.id) { mutableStateOf(MyListStore.isInList(context, anime.id)) }
+    var awarded by remember(anime.id) { mutableStateOf(com.biaruuu.kiro.data.AwardStore.has(context, anime.id)) }
+    val completedByMe = remember(watchedVersion, anime.id) { com.biaruuu.kiro.data.WatchedStore.isCompleted(context, anime.id) }
     var rating by remember(anime.id) { mutableIntStateOf(MyListStore.getRating(context, anime.id)) }
     // Sound is on as soon as the trailer plays; the speaker button mutes it.
     var muted by rememberSaveable { mutableStateOf(false) }
@@ -343,6 +346,15 @@ private fun DetailContent(
                         Text(genres, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Normal)
                     }
                 }
+                // "Completed" stamp, top right of the hero, once you have finished this anime.
+                if (completedByMe) {
+                    Image(
+                        painter = painterResource(R.drawable.completed_stamp),
+                        contentDescription = "Completed",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.align(Alignment.TopEnd).padding(top = 12.dp, end = 12.dp).size(88.dp),
+                    )
+                }
             }
         }
 
@@ -398,6 +410,10 @@ private fun DetailContent(
                         icon = if (rating > 0) R.drawable.fluent_star_filled else R.drawable.fluent_star_regular,
                         tint = Color.White,
                     ) { showRating = true }
+                    AwardButton(awarded) {
+                        awarded = com.biaruuu.kiro.data.AwardStore.toggle(context, anime.id)
+                        Toast.makeText(context, if (awarded) "Award given" else "Award removed", Toast.LENGTH_SHORT).show()
+                    }
                     ActionButton(label = "Share", icon = R.drawable.fluent_open_regular, tint = Color.White) {
                         val send = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
@@ -587,6 +603,28 @@ private fun ActionButton(label: String, icon: Int, tint: Color, onClick: () -> U
         Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
         Spacer(Modifier.height(5.dp))
         Text(label, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Normal)
+    }
+}
+
+/** The gold medal: dim until you give this anime an award. */
+@Composable
+private fun AwardButton(given: Boolean, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier.clip(RoundedCornerShape(6.dp)).clickable(onClick = onClick).padding(vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Image(
+            painter = painterResource(R.drawable.award_medal),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            alpha = if (given) 1f else 0.6f,
+            colorFilter = if (given) null else androidx.compose.ui.graphics.ColorFilter.colorMatrix(
+                androidx.compose.ui.graphics.ColorMatrix().apply { setToSaturation(0.15f) },
+            ),
+            modifier = Modifier.height(22.dp),
+        )
+        Spacer(Modifier.height(5.dp))
+        Text("Award", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Normal)
     }
 }
 
