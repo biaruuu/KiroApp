@@ -1,0 +1,157 @@
+package com.biaruuu.kiro.data
+
+import android.content.Context
+import android.os.SystemClock
+import com.biaruuu.kiro.data.auth.AuthRepository
+import com.biaruuu.kiro.data.auth.AuthState
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
+import com.google.firebase.firestore.ListenerRegistration
+import kotlinx.coroutines.flow.MutableStateFlow
+
+/**
+ * Watch party: the host's player state (episode, position, playing or paused) is kept in a
+ * Firestore document `parties/{code}`; everyone who joined with the code follows it in real time.
+ */
+object WatchParty {
+    class Session(val code: String, val host: Boolean)
+
+    /** The host's latest state; [receivedAt] is this phone's clock when it arrived. */
+    class Remote(
+        val animeId: Int, val episode: Int, val title: String, val hostName: String,
+        val positionMs: Long, val playing: Boolean, val receivedAt: Long,
+    )
+
+    val session = MutableStateFlow<Session?>(null)
+    val remote = MutableStateFlow<Remote?>(null)
+    val members = MutableStateFlow<List<String>>(emptyList())
+
+    /** One-shot message for the player to show (for example "The host ended the party"). */
+    val message = MutableStateFlow<String?>(null)
+
+    private var partyReg: ListenerRegistration? = null
+    private var membersReg: ListenerRegistration? = null
+
+    private fun db() = FirebaseFirestore.getInstance()
+    private fun uid() = (AuthRepository.state.value as? AuthState.SignedIn)?.uid
+    private fun myName() = ProfileRepository.profile.value.username.ifBlank { "Guest" }
+
+    private fun friendly(e: Exception): String =
+        if (e is FirebaseFirestoreException && e.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+            "Watch party isn't switched on yet: publish the new Firestore rules (see the release notes)."
+        } else {
+            "Couldn't reach the watch party server. Check your connection."
+        }
+
+    private fun newCode(): String {
+        val alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+        return (1..6).map { alphabet.random() }.joinToString("")
+    }
+
+    /** Starts a party for the episode being watched; [onDone] gets the code, or an error message. */
+    fun host(c: Context, animeId: Int, episode: Int, title: String, onDone: (String?, String?) -> Unit) {
+        val me = uid() ?: return onDone(null, "Log in to start a watch party")
+        val code = newCode()
+        val data = hashMapOf<String, Any>(
+            "hostUid" to me, "hostName" to myName(), "animeId" to animeId, "episode" to episode,
+            "title" to title, "positionMs" to 0L, "playing" to false, "createdAt" to System.currentTimeMillis(),
+        )
+        db().collection("parties").document(code).set(data)
+            .addOnSuccessListener {
+                session.value = Session(code, true)
+                Achievements.bump(c, "hosted")
+                listenMembers(code)
+                onDone(code, null)
+            }
+            .addOnFailureListener { onDone(null, friendly(it)) }
+    }
+
+    /** Looks the code up (without joining yet); [onDone] gets the party's current state, or an error message. */
+    fun lookup(code: String, onDone: (Remote?, String?) -> Unit) {
+        if (uid() == null) return onDone(null, "Log in to join a watch party")
+        db().collection("parties").document(code.trim().uppercase()).get()
+            .addOnSuccessListener { snap ->
+                val r = if (snap.exists()) toRemote(snap.data) else null
+                if (r == null) onDone(null, "No watch party with that code") else onDone(r, null)
+            }
+            .addOnFailureListener { onDone(null, friendly(it)) }
+    }
+
+    private fun toRemote(d: Map<String, Any>?): Remote? {
+        if (d == null) return null
+        return Remote(
+            (d["animeId"] as? Number)?.toInt() ?: return null,
+            (d["episode"] as? Number)?.toInt() ?: return null,
+            d["title"] as? String ?: "",
+            d["hostName"] as? String ?: "Host",
+            (d["positionMs"] as? Number)?.toLong() ?: 0L,
+            d["playing"] as? Boolean ?: false,
+            SystemClock.elapsedRealtime(),
+        )
+    }
+
+    /** Joins the party as a guest and starts following the host. */
+    fun enter(c: Context, rawCode: String) {
+        val code = rawCode.trim().uppercase()
+        val me = uid() ?: return
+        if (session.value?.code == code) return
+        stopListening()
+        session.value = Session(code, false)
+        remote.value = null
+        Achievements.bump(c, "joined")
+        db().collection("parties").document(code).collection("members").document(me)
+            .set(mapOf("name" to myName(), "at" to System.currentTimeMillis()))
+        partyReg = db().collection("parties").document(code).addSnapshotListener { snap, err ->
+            if (err != null || snap == null) return@addSnapshotListener
+            if (!snap.exists()) {
+                if (!snap.metadata.isFromCache) {
+                    message.value = "The host ended the watch party"
+                    stopListening()
+                    session.value = null
+                }
+                return@addSnapshotListener
+            }
+            toRemote(snap.data)?.let { remote.value = it }
+        }
+        listenMembers(code)
+    }
+
+    private fun listenMembers(code: String) {
+        membersReg?.remove()
+        membersReg = db().collection("parties").document(code).collection("members")
+            .addSnapshotListener { snap, _ ->
+                members.value = snap?.documents?.mapNotNull { it.getString("name") } ?: emptyList()
+            }
+    }
+
+    /** The host shares where they are; guests catch up to it. */
+    fun push(animeId: Int, episode: Int, positionMs: Long, playing: Boolean) {
+        val s = session.value ?: return
+        if (!s.host) return
+        db().collection("parties").document(s.code).update(
+            mapOf("animeId" to animeId, "episode" to episode, "positionMs" to positionMs, "playing" to playing),
+        )
+    }
+
+    private fun stopListening() {
+        partyReg?.remove()
+        membersReg?.remove()
+        partyReg = null
+        membersReg = null
+        members.value = emptyList()
+    }
+
+    /** The host ends the party for everyone; a guest just leaves. */
+    fun leave() {
+        val s = session.value ?: return
+        val me = uid()
+        stopListening()
+        session.value = null
+        remote.value = null
+        try {
+            if (s.host) db().collection("parties").document(s.code).delete()
+            else if (me != null) db().collection("parties").document(s.code).collection("members").document(me).delete()
+        } catch (_: Exception) {
+        }
+    }
+}

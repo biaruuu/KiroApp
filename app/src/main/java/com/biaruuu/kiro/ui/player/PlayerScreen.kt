@@ -78,6 +78,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -115,7 +116,7 @@ private val MutedText = Color(0xFF8E8E93)
 
 private const val NO_SOURCE = "This episode isn't available right now"
 
-private enum class Panel { Menu, Tracks, Episodes, Speed, Quality, SubStyle, Boost, Hdr, AutoSkip }
+private enum class Panel { Menu, Tracks, Episodes, Speed, Quality, SubStyle, Boost, Hdr, AutoSkip, Party }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -143,6 +144,7 @@ fun PlayerScreen(
     startEpisode: Int,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
+    partyCode: String? = null,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -298,6 +300,51 @@ fun PlayerScreen(
                 panel = null
             },
         )
+    }
+
+    // ---- Watch party: the host's player drives everyone else's ----
+    val party by com.biaruuu.kiro.data.WatchParty.session.collectAsState()
+    val partyRemote by com.biaruuu.kiro.data.WatchParty.remote.collectAsState()
+    val partyMembers by com.biaruuu.kiro.data.WatchParty.members.collectAsState()
+    val partyMessage by com.biaruuu.kiro.data.WatchParty.message.collectAsState()
+    val isGuest = party?.host == false
+    fun guestBlocked(): Boolean {
+        if (isGuest) Toast.makeText(context, "Only the host controls the watch party", Toast.LENGTH_SHORT).show()
+        return isGuest
+    }
+    LaunchedEffect(partyCode) {
+        if (partyCode != null) com.biaruuu.kiro.data.WatchParty.enter(context, partyCode)
+    }
+    DisposableEffect(Unit) { onDispose { com.biaruuu.kiro.data.WatchParty.leave() } }
+    LaunchedEffect(partyMessage) {
+        partyMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            com.biaruuu.kiro.data.WatchParty.message.value = null
+        }
+    }
+    // Host: share where we are now, and every few seconds while playing.
+    LaunchedEffect(party?.code, party?.host, isPlaying, current) {
+        val p = party ?: return@LaunchedEffect
+        if (!p.host) return@LaunchedEffect
+        com.biaruuu.kiro.data.WatchParty.push(animeId, current, exo.currentPosition, exo.isPlaying)
+        while (isPlaying) {
+            delay(4000)
+            com.biaruuu.kiro.data.WatchParty.push(animeId, current, exo.currentPosition, exo.isPlaying)
+        }
+    }
+    // Guest: follow the host's episode, position and play / pause.
+    LaunchedEffect(partyRemote, hasDuration, party?.code) {
+        val p = party ?: return@LaunchedEffect
+        val r = partyRemote ?: return@LaunchedEffect
+        if (p.host) return@LaunchedEffect
+        if (r.episode != current) {
+            playEpisode(r.episode)
+            return@LaunchedEffect
+        }
+        if (!hasDuration) return@LaunchedEffect
+        val target = r.positionMs + if (r.playing) android.os.SystemClock.elapsedRealtime() - r.receivedAt else 0L
+        if (kotlin.math.abs(exo.currentPosition - target) > 3000L) exo.seekTo(target.coerceAtLeast(0L))
+        if (r.playing && !exo.isPlaying) exo.play() else if (!r.playing && exo.isPlaying) exo.pause()
     }
 
     // Sub and dub come as separate streams; this jumps to the best one of the other kind.
@@ -546,9 +593,11 @@ fun PlayerScreen(
     BackHandler(enabled = panel != null) { panel = null }
 
     fun seekBy(deltaMs: Long) {
+        if (guestBlocked()) return
         val target = (exo.currentPosition + deltaMs).coerceIn(0L, if (duration > 0) duration else Long.MAX_VALUE)
         exo.seekTo(target)
         position = target
+        if (party?.host == true) com.biaruuu.kiro.data.WatchParty.push(animeId, current, target, exo.isPlaying)
         interaction++
     }
 
@@ -787,16 +836,21 @@ fun PlayerScreen(
                     onClose = onClose,
                     onMore = { panel = Panel.Menu },
                     onTogglePlay = {
-                        if (exo.isPlaying) exo.pause() else exo.play()
-                        interaction++
+                        if (!guestBlocked()) {
+                            if (exo.isPlaying) exo.pause() else exo.play()
+                            interaction++
+                        }
                     },
                     onBack10 = { seekBy(-10_000L) },
                     onForward10 = { seekBy(10_000L) },
                     onSeekStart = { seeking = true },
                     onSeekPreview = { position = it },
                     onSeekEnd = {
-                        exo.seekTo(it)
-                        position = it
+                        if (!guestBlocked()) {
+                            exo.seekTo(it)
+                            position = it
+                            if (party?.host == true) com.biaruuu.kiro.data.WatchParty.push(animeId, current, it, exo.isPlaying)
+                        }
                         seeking = false
                         interaction++
                     },
@@ -804,7 +858,8 @@ fun PlayerScreen(
                     onEpisodes = { panel = Panel.Episodes },
                     onNext = {
                         val next = nextEpisode
-                        if (next != null) playEpisode(next.number)
+                        if (guestBlocked()) Unit
+                        else if (next != null) playEpisode(next.number)
                         else Toast.makeText(context, "No more episodes", Toast.LENGTH_SHORT).show()
                     },
                     onLock = {
@@ -835,6 +890,7 @@ fun PlayerScreen(
                     Panel.Tracks -> "Audio & Subtitles"
                     Panel.Episodes -> "Episodes"
                     Panel.Speed -> "Playback speed"
+                    Panel.Party -> "Watch party"
                 },
                 onClose = { panel = null },
                 wide = open == Panel.Episodes,
@@ -856,6 +912,9 @@ fun PlayerScreen(
                         item { MenuRow("Audio boost", if (boostDb == 0) "Off" else "+$boostDb dB") { panel = Panel.Boost } }
                         item { MenuRow("HDR & Dolby Vision", if (hdrOn) "On" else "Auto") { panel = Panel.Hdr } }
                         item { MenuRow("Playback speed", if (speed == 1f) "Normal" else "${speed}x") { panel = Panel.Speed } }
+                        item {
+                            MenuRow("Watch party", party?.code ?: "") { panel = Panel.Party }
+                        }
                         if (PipState.supported(context.findActivity())) {
                             item {
                                 MenuRow("Picture in picture", "") {
@@ -893,6 +952,58 @@ fun PlayerScreen(
                         SubtitleStyleStore.save(context, new)
                     }
                     Panel.Tracks -> Unit
+                    Panel.Party -> Column(
+                        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        val p = party
+                        fun shareCode(code: String) {
+                            val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(
+                                    android.content.Intent.EXTRA_TEXT,
+                                    "Watch ${ui.base?.displayTitle.orEmpty()} with me on Kiro! Open Me > Watch party and enter the code $code",
+                                )
+                            }
+                            context.startActivity(android.content.Intent.createChooser(send, null))
+                        }
+                        if (p == null) {
+                            Text("Watch together", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Start a party and send the code to your friends. Their player follows yours: play, pause, seeking and next episodes. Everyone needs to be logged in.",
+                                color = Color(0xFF8E8E93), fontSize = 12.sp, textAlign = TextAlign.Center,
+                            )
+                            Spacer(Modifier.height(18.dp))
+                            PartyButton("Start a watch party", true) {
+                                com.biaruuu.kiro.data.WatchParty.host(context, animeId, current, ui.base?.displayTitle.orEmpty()) { code, err ->
+                                    if (code != null) shareCode(code)
+                                    else Toast.makeText(context, err ?: "Couldn't start the party", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        } else {
+                            Text(if (p.host) "You are hosting" else "You are in a party", color = Color(0xFF8E8E93), fontSize = 12.sp)
+                            Spacer(Modifier.height(6.dp))
+                            Text(p.code, color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = 5.sp)
+                            Spacer(Modifier.height(10.dp))
+                            Text(
+                                if (partyMembers.isEmpty()) "Waiting for friends to join..."
+                                else "Watching: " + partyMembers.joinToString(", "),
+                                color = Color(0xFFD0D0D4), fontSize = 12.sp, textAlign = TextAlign.Center,
+                            )
+                            if (!p.host) {
+                                Spacer(Modifier.height(6.dp))
+                                Text("The host controls playback.", color = Color(0xFF8E8E93), fontSize = 12.sp)
+                            }
+                            Spacer(Modifier.height(18.dp))
+                            PartyButton("Share code", true) { shareCode(p.code) }
+                            Spacer(Modifier.height(10.dp))
+                            PartyButton(if (p.host) "End party" else "Leave party", false) {
+                                com.biaruuu.kiro.data.WatchParty.leave()
+                                panel = null
+                            }
+                        }
+                    }
                     Panel.Boost -> LazyColumn {
                         items(listOf(0, 10, 20)) { db ->
                             PanelRow(label = if (db == 0) "Off" else "+$db dB", selected = boostDb == db) {
@@ -946,7 +1057,9 @@ fun PlayerScreen(
                         LazyColumn(state = listState) {
                             items(episodes, key = { it.number }) { ep ->
                                 EpisodeRow(ep, ep.number == current, ep.number in watchedEps) {
-                                    if (ep.number in watchedEps && ep.number != current) {
+                                    if (guestBlocked()) {
+                                        // Guests follow the host.
+                                    } else if (ep.number in watchedEps && ep.number != current) {
                                         rewatchEp = ep.number
                                     } else {
                                         playEpisode(ep.number)
@@ -1754,4 +1867,21 @@ private fun StyleRow(label: String, selected: Boolean, onClick: () -> Unit) {
             )
         }
     }
+}
+
+@Composable
+private fun PartyButton(label: String, filled: Boolean, onClick: () -> Unit) {
+    Text(
+        label,
+        color = Color.White,
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Bold,
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .then(if (filled) Modifier.background(KiroPurple) else Modifier.border(1.dp, Color(0xFF5C5C5E), RoundedCornerShape(8.dp)))
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+    )
 }

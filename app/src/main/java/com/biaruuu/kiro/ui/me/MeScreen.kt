@@ -119,6 +119,7 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
             SettingsRow(R.drawable.fluent_trophy_regular, "Achievements") { onOpen("achievements") }
             SettingsRow(R.drawable.fluent_alert_regular, "Notification", badge = hasUnread) { onOpen("notifications") }
             SettingsRow(R.drawable.fluent_calendar_regular, "Episode alerts") { onOpen("alerts") }
+            SettingsRow(R.drawable.fluent_people_regular, "Watch party") { onOpen("party") }
             SettingsRow(R.drawable.fluent_arrow_download_regular, "Download") { onOpen("download") }
             SettingsRow(R.drawable.fluent_play_circle_regular, "Play") { onOpen("play") }
             SettingsRow(R.drawable.fluent_language_regular, "Language") { onOpen("language") }

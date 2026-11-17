@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.37.0] - 2026-11-18
+
+### Added
+- **Watch party (real time):** in the player, open the three dots menu > Watch party > Start, then share the 6 letter code. Friends enter it in Me > Watch party and their player opens on the same episode and follows the host: play, pause, seeking and next episode, with the list of who is watching. The host ends the party, guests can leave any time. You need to be logged in.
+
+### Needs one step from the developer
+- Publish the updated `firestore.rules` file (Firebase console > Firestore Database > Rules > paste the file > Publish). It adds the `parties` rules. Until then, starting or joining a party shows a message that it isn't switched on yet.
+
 ## [1.36.0] - 2026-11-18
 
 ### Added

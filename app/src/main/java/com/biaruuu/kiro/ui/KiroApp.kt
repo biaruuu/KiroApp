@@ -331,6 +331,7 @@ private fun KiroScaffold() {
                 "p" -> PlayerScreen(
                     animeId = id,
                     startEpisode = parts.getOrNull(2)?.toIntOrNull() ?: 1,
+                    partyCode = parts.getOrNull(3),
                     onClose = { pop() },
                     modifier = overlay,
                 )
