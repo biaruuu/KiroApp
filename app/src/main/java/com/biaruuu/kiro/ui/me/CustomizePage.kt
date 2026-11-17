@@ -66,7 +66,18 @@ fun CustomizePage() {
     val decorations = remember(remote) { Designs.all(Designs.DECORATION) }
     val effects = remember(remote) { Designs.all(Designs.EFFECT) }
     val nameplates = remember(remote) { Designs.all(Designs.NAMEPLATE) }
-    val fonts = remember { NameStyles.options(context) }
+    var fontsVersion by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    val fonts = remember(fontsVersion) { NameStyles.options(context) }
+    val importFont = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            if (NameStyles.importCustom(context, uri)) {
+                fontsVersion++
+                ProfileRepository.save(nameFont = NameStyles.CUSTOM)
+            } else {
+                android.widget.Toast.makeText(context, "That file isn't a font Kiro can use (try .ttf or .otf).", android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
         // ---- Preview ----
@@ -135,13 +146,25 @@ fun CustomizePage() {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(name, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = NameStyles.family(context, font), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(NameStyles.label(font), color = Muted, fontSize = 12.sp)
+                Text(NameStyles.label(context, font), color = Muted, fontSize = 12.sp)
                 Spacer(Modifier.size(10.dp))
                 Box(Modifier.size(22.dp)) {
                     if (on) Icon(painterResource(R.drawable.fluent_checkmark_regular), null, tint = Color.White, modifier = Modifier.size(22.dp))
                 }
             }
         }
+        Spacer(Modifier.height(10.dp))
+        Text(
+            "Import a font file",
+            color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Color(0xFF2A2A2D))
+                .clickable { importFont.launch(arrayOf("*/*")) }.padding(vertical = 14.dp),
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Pick a .ttf or .otf you own, such as Pricedown. It stays on this phone and only you see it; other people see the normal font.",
+            color = Muted, fontSize = 12.sp, lineHeight = 17.sp,
+        )
         Spacer(Modifier.height(24.dp))
     }
 }

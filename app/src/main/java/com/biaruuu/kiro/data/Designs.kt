@@ -59,12 +59,47 @@ object NameStyles {
     private fun hasPricedown(context: Context): Boolean =
         try { context.assets.open(PRICEDOWN_ASSET).close(); true } catch (_: Exception) { false }
 
+    /**
+     * A font file the person picked from their own phone. It stays on this phone only, so nothing is
+     * redistributed and it is their own copy of the font that is used.
+     */
+    const val CUSTOM = "Custom"
+    private const val CUSTOM_FILE = "name_font.ttf"
+
+    private fun customFile(context: Context) = java.io.File(context.filesDir, CUSTOM_FILE)
+
+    fun hasCustom(context: Context) = customFile(context).exists()
+
+    fun customName(context: Context): String =
+        context.getSharedPreferences("kiro_user_data", Context.MODE_PRIVATE).getString("name_font_label", null) ?: "My font"
+
+    /** Copies the picked font into the app; false if the file isn't a usable font. */
+    fun importCustom(context: Context, uri: android.net.Uri): Boolean = try {
+        val target = customFile(context)
+        context.contentResolver.openInputStream(uri)?.use { input -> target.outputStream().use { input.copyTo(it) } }
+        android.graphics.Typeface.createFromFile(target)
+        val label = context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
+            if (it.moveToFirst()) it.getString(0) else null
+        }?.substringBeforeLast('.') ?: "My font"
+        context.getSharedPreferences("kiro_user_data", Context.MODE_PRIVATE).edit().putString("name_font_label", label).apply()
+        cache.remove(CUSTOM)
+        true
+    } catch (_: Throwable) {
+        customFile(context).delete()
+        false
+    }
+
     /** "" is the normal Kiro font. */
     fun options(context: Context): List<String> =
         listOf("", "Satoshi", "Cinzel", "Roboto Mono", "Comic Neue", "Poppins", "Montserrat") +
-            (if (hasPricedown(context)) listOf(PRICEDOWN) else emptyList())
+            (if (hasPricedown(context)) listOf(PRICEDOWN) else emptyList()) +
+            (if (hasCustom(context)) listOf(CUSTOM) else emptyList())
 
-    fun label(style: String) = style.ifEmpty { "Default" }
+    fun label(context: Context, style: String) = when (style) {
+        "" -> "Default"
+        CUSTOM -> customName(context)
+        else -> style
+    }
 
     fun family(context: Context, style: String): androidx.compose.ui.text.font.FontFamily? {
         if (style.isEmpty()) return null
@@ -72,6 +107,9 @@ object NameStyles {
             try {
                 val tf = if (style == PRICEDOWN) {
                     android.graphics.Typeface.createFromAsset(context.assets, PRICEDOWN_ASSET)
+                } else if (style == CUSTOM) {
+                    if (!hasCustom(context)) return@getOrPut null
+                    android.graphics.Typeface.createFromFile(customFile(context))
                 } else {
                     com.biaruuu.kiro.ui.player.SubtitleOptions.typeface(context, style)
                 }

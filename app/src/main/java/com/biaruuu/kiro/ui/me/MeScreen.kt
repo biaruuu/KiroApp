@@ -108,6 +108,27 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
                 if (signedIn != null || configured) Chevron()
             }
 
+            // Its own card right under the profile: avatar decorations, effects, nameplates and name fonts.
+            if (signedIn != null) {
+                Spacer(Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                        .background(Color(0xFF1A1A1D))
+                        .clickable { onOpen("customize") }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(painterResource(R.drawable.fluent_sparkle_regular), null, tint = KiroPurple, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.size(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Customize profile", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        Text("Avatar decorations, effects, nameplates and name fonts", color = Muted, fontSize = 12.sp)
+                    }
+                    Chevron()
+                }
+            }
             if (com.biaruuu.kiro.data.Admin.isAdmin(state)) {
                 Spacer(Modifier.height(20.dp))
                 SettingsRow(R.drawable.fluent_shield_regular, "Admin panel") { onOpen("admin") }
@@ -115,7 +136,6 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
             Spacer(Modifier.height(32.dp))
             Text("Settings", color = Muted, fontSize = 14.sp)
             Spacer(Modifier.height(6.dp))
-            if (signedIn != null) SettingsRow(R.drawable.fluent_sparkle_regular, "Customize profile") { onOpen("customize") }
             SettingsRow(R.drawable.fluent_alert_regular, "Notification", badge = hasUnread) { onOpen("notifications") }
             SettingsRow(R.drawable.fluent_arrow_download_regular, "Download") { onOpen("download") }
             SettingsRow(R.drawable.fluent_play_circle_regular, "Play") { onOpen("play") }

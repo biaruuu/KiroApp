@@ -263,6 +263,7 @@ private fun KiroScaffold() {
                     onOpenAnime = { backStack.add("d:$it") },
                     onContinue = { id, ep -> backStack.add("p:$id:$ep") },
                     refreshKey = backStack.size,
+                    onCustomize = { backStack.add("s:customize") },
                     modifier = contentModifier,
                 )
                 TAB_ME -> MeScreen(onOpen = { backStack.add("s:$it") }, hasUnread = hasUnread, modifier = contentModifier)

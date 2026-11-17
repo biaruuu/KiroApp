@@ -4,6 +4,15 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.27.1] - 2026-11-17
+
+### Fixed
+- Animated PNG decorations now really move, on every Android version. Before, many phones showed them as a still picture.
+
+### Added
+- **Import a font file** under Display Name Style: pick a .ttf or .otf from your phone (for example Pricedown) and use it for your name. It stays on your phone.
+- Customize profile has its own card on the Me tab, and tapping your name at the top of Your Library opens it too.
+
 ## [1.27.0] - 2026-11-17
 
 ### Added

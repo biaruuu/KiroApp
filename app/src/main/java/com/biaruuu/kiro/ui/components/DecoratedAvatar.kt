@@ -1,6 +1,10 @@
 package com.biaruuu.kiro.ui.components
 
 import android.graphics.BitmapFactory
+import android.graphics.drawable.Animatable
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.runtime.produceState
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.BitmapDrawable
@@ -26,14 +30,26 @@ import com.biaruuu.kiro.data.Designs
 import com.biaruuu.kiro.ui.auth.Avatar
 import java.nio.ByteBuffer
 
-private fun decode(context: android.content.Context, asset: String?, data: String?): Drawable? = try {
-    val bytes = data?.let { Base64.decode(it, Base64.DEFAULT) }
-    if (Build.VERSION.SDK_INT >= 28) {
-        val source = if (asset != null) ImageDecoder.createSource(context.assets, asset) else ImageDecoder.createSource(ByteBuffer.wrap(bytes!!))
-        ImageDecoder.decodeDrawable(source)
+private val frameCache = java.util.concurrent.ConcurrentHashMap<String, Apng.Frames>()
+
+/** Decodes an image off the main thread. Animated PNGs share their decoded frames between every place they are shown. */
+private fun load(context: android.content.Context, design: Design): Drawable? = try {
+    val bytes: ByteArray = if (design.asset != null) {
+        context.assets.open(design.asset).use { it.readBytes() }
     } else {
-        val bmp = if (asset != null) context.assets.open(asset).use { BitmapFactory.decodeStream(it) } else BitmapFactory.decodeByteArray(bytes, 0, bytes!!.size)
-        BitmapDrawable(context.resources, bmp)
+        Base64.decode(design.data!!, Base64.DEFAULT)
+    }
+    val key = design.asset ?: (design.id + ":" + design.data.hashCode())
+    val frames = frameCache[key] ?: if (Apng.isApng(bytes)) Apng.decode(bytes)?.also { frameCache[key] = it } else null
+    if (frames != null) {
+        ApngDrawable(frames)
+    } else if (Build.VERSION.SDK_INT >= 28) {
+        // GIF and animated WebP: Android plays these itself.
+        ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(bytes))).also {
+            if (it is AnimatedImageDrawable) it.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
+        }
+    } else {
+        BitmapDrawable(context.resources, BitmapFactory.decodeByteArray(bytes, 0, bytes.size))
     }
 } catch (_: Throwable) {
     null
@@ -43,19 +59,18 @@ private fun decode(context: android.content.Context, asset: String?, data: Strin
 @Composable
 fun AnimatedAsset(design: Design, modifier: Modifier = Modifier, crop: Boolean = false) {
     val context = LocalContext.current
-    val drawable = remember(design.id, design.asset, design.data) { decode(context, design.asset, design.data) }
+    val drawable by produceState<Drawable?>(null, design.id, design.asset, design.data) {
+        value = withContext(Dispatchers.Default) { load(context, design) }
+    }
     DisposableEffect(drawable) {
-        if (Build.VERSION.SDK_INT >= 28 && drawable is AnimatedImageDrawable) {
-            drawable.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
-            drawable.start()
-        }
-        onDispose {
-            if (Build.VERSION.SDK_INT >= 28 && drawable is AnimatedImageDrawable) drawable.stop()
-        }
+        onDispose { (drawable as? Animatable)?.stop() }
     }
     AndroidView(
         factory = { ImageView(it).apply { scaleType = if (crop) ImageView.ScaleType.CENTER_CROP else ImageView.ScaleType.FIT_CENTER } },
-        update = { it.setImageDrawable(drawable) },
+        update = {
+            it.setImageDrawable(drawable)
+            (drawable as? Animatable)?.let { a -> if (!a.isRunning) a.start() }
+        },
         modifier = modifier,
     )
 }

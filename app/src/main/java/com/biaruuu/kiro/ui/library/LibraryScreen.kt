@@ -111,6 +111,7 @@ fun LibraryScreen(
     onContinue: (animeId: Int, episode: Int) -> Unit,
     refreshKey: Int,
     modifier: Modifier = Modifier,
+    onCustomize: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val pager = rememberPagerState(pageCount = { Tabs.size })
@@ -157,7 +158,7 @@ fun LibraryScreen(
 
     Column(modifier = modifier.statusBarsPadding()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 16.dp),
+            modifier = Modifier.fillMaxWidth().height(48.dp).clickable(enabled = authState is com.biaruuu.kiro.data.auth.AuthState.SignedIn, onClick = onCustomize).padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             com.biaruuu.kiro.ui.components.DecoratedAvatar(profile.avatar, shownName, 30.dp, profile.decoration)
