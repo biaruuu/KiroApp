@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.31.1] - 2026-11-17
+
+### Added
+- Switch between Japanese (sub) and English (dub) while watching: open Audio & Subtitles and pick the language at the top. It keeps your place, and Kiro remembers your choice for the next episode.
+
 ## [1.31.0] - 2026-11-17
 
 ### Added

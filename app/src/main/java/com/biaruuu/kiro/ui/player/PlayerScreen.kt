@@ -272,6 +272,15 @@ fun PlayerScreen(
         )
     }
 
+    // Sub and dub come as separate streams; this jumps to the best one of the other kind.
+    fun switchAudio(dub: Boolean) {
+        val idx = latestSources.indexOfFirst { it.isDub == dub }
+        if (idx < 0 || idx == latestIndex) return
+        prefs.edit().putBoolean("audio_dub", dub).apply()
+        pendingSeek = exo.currentPosition
+        sourceIndex = idx
+    }
+
     // 1. Ask every provider for this episode; the best (quality + speed) comes first.
     LaunchedEffect(current, retry) {
         // Stop the old episode at once and wait a moment, so tapping Next over and over only
@@ -306,6 +315,11 @@ fun PlayerScreen(
             emptyList()
         }
         sources = found
+        // Start in the language chosen last time, when this episode has it.
+        if (prefs.getBoolean("audio_dub", false)) {
+            val dubIdx = found.indexOfFirst { it.isDub }
+            if (dubIdx > 0) sourceIndex = dubIdx
+        }
         resolving = false
         if (found.isEmpty()) {
             buffering = false
@@ -750,7 +764,13 @@ fun PlayerScreen(
 
         // ---- Side panels ----
         panel?.let { open ->
-            if (open == Panel.Tracks) TracksDialog(exo, tracks) { panel = null } else SidePanel(
+            if (open == Panel.Tracks) TracksDialog(
+                exo, tracks,
+                hasSub = sources.any { !it.isDub },
+                hasDub = sources.any { it.isDub },
+                dubNow = sources.getOrNull(sourceIndex)?.isDub == true,
+                onPickDub = { dub -> switchAudio(dub); panel = null },
+            ) { panel = null } else SidePanel(
                 title = when (open) {
                     Panel.Menu -> ""
                     Panel.Quality -> "Quality"
@@ -1306,7 +1326,15 @@ private fun PanelRow(label: String, selected: Boolean, onClick: () -> Unit) {
  * Cancel (or the X) closes without changing anything.
  */
 @Composable
-private fun TracksDialog(exo: ExoPlayer, tracks: Tracks, onClose: () -> Unit) {
+private fun TracksDialog(
+    exo: ExoPlayer,
+    tracks: Tracks,
+    hasSub: Boolean,
+    hasDub: Boolean,
+    dubNow: Boolean,
+    onPickDub: (Boolean) -> Unit,
+    onClose: () -> Unit,
+) {
     class Choice(val label: String, val group: Tracks.Group?, val index: Int, val selected: Boolean)
 
     fun build(type: Int, withOff: Boolean): List<Choice> {
@@ -1351,6 +1379,28 @@ private fun TracksDialog(exo: ExoPlayer, tracks: Tracks, onClose: () -> Unit) {
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { },
         ) {
             Column(modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp, vertical = 20.dp)) {
+                if (hasSub && hasDub) {
+                    // Sub and dub are separate streams: picking one switches to the best stream of it.
+                    Text("Language", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(10.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        listOf(false to "Japanese \u00b7 Sub", true to "English \u00b7 Dub").forEach { (dub, label) ->
+                            val on = dubNow == dub
+                            Text(
+                                label,
+                                color = if (on) Color.Black else Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(if (on) Color.White else Color(0xFF2A2A2D))
+                                    .clickable { onPickDub(dub) }
+                                    .padding(horizontal = 18.dp, vertical = 9.dp),
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                }
                 Row(modifier = Modifier.weight(1f)) {
                     TrackColumn("Audio", audio.map { it.label }, pickAudio, { pickAudio = it }, Modifier.weight(1f))
                     Spacer(Modifier.width(24.dp))
