@@ -424,7 +424,7 @@ private fun DetailContent(
                             painter = painterResource(R.drawable.award_trophy),
                             contentDescription = "Trophy",
                             contentScale = ContentScale.Fit,
-                            modifier = Modifier.height(34.dp),
+                            modifier = Modifier.height(40.dp),
                         )
                     }
                 }

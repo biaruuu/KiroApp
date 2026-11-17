@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.33.5] - 2026-11-17
+
+### Changed
+- Completed-anime trophy redrawn: realistic polished-gold cup with a lid and star finial, engraved laurel band, sculpted handles, black marble base and gold nameplate. Still static.
+
 ## [1.33.4] - 2026-11-17
 
 ### Changed
