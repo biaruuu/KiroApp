@@ -136,17 +136,22 @@ object NameStyles {
 
     fun hasGta(context: Context) = gtaFile(context).exists()
 
-    /** Copies the picked font file into the app; false if it isn't a usable font. */
-    fun importGta(context: Context, uri: android.net.Uri): Boolean = try {
+    /** Copies the picked font file into the app. Returns null on success, else the reason it failed. */
+    fun importGta(context: Context, uri: android.net.Uri): String? {
         val target = gtaFile(context)
-        context.contentResolver.openInputStream(uri)?.use { input -> target.outputStream().use { input.copyTo(it) } }
-        android.graphics.Typeface.createFromFile(target)
-        cache.remove(GTA)
-        true
-    } catch (_: Throwable) {
-        gtaFile(context).delete()
-        cache.remove(GTA)
-        false
+        return try {
+            val input = context.contentResolver.openInputStream(uri) ?: return "Couldn't open that file."
+            input.use { src -> target.outputStream().use { src.copyTo(it) } }
+            if (target.length() < 64) throw IllegalStateException("File is empty.")
+            // Fails loudly if Android can't read it as a font.
+            android.graphics.Typeface.Builder(target).build() ?: throw IllegalStateException("Not a font file.")
+            cache.remove(GTA)
+            null
+        } catch (e: Throwable) {
+            target.delete()
+            cache.remove(GTA)
+            e.message ?: e.javaClass.simpleName
+        }
     }
 
     /** "" is the normal Kiro font. */

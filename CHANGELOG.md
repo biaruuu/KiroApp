@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.29.2] - 2026-11-17
+
+### Fixed
+- Library effects are now a soft tint behind the header instead of a photo-like picture, so the header looks like the normal one.
+- Adding the GTA font: there is now an "Add GTA font file" button, and if a file can't be used the message says why.
+
 ## [1.29.1] - 2026-11-17
 
 ### Fixed

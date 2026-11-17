@@ -69,11 +69,13 @@ fun CustomizePage() {
     val fonts = NameStyles.options()
     val importFont = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            if (NameStyles.importGta(context, uri)) {
+            val error = NameStyles.importGta(context, uri)
+            if (error == null) {
                 fontsVersion++
                 ProfileRepository.save(nameFont = NameStyles.GTA)
+                android.widget.Toast.makeText(context, "GTA font added.", android.widget.Toast.LENGTH_SHORT).show()
             } else {
-                android.widget.Toast.makeText(context, "That file isn't a font Kiro can use (try .ttf or .otf).", android.widget.Toast.LENGTH_LONG).show()
+                android.widget.Toast.makeText(context, "Couldn't use that file: $error", android.widget.Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -145,6 +147,14 @@ fun CustomizePage() {
             "GTA is the Pricedown Bl font. Tap it once and pick your Pricedown Bl.otf file; it stays on this phone, so only you see it. Other people see the normal font.",
             color = Muted, fontSize = 12.sp, lineHeight = 17.sp,
         )
+        Spacer(Modifier.height(10.dp))
+        Box(
+            Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF1E1E22))
+                .clickable { importFont.launch(arrayOf("*/*")) },
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(if (NameStyles.hasGta(context)) "Replace GTA font file" else "Add GTA font file", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+        }
         Spacer(Modifier.height(24.dp))
     }
 }

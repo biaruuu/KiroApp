@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -39,11 +40,11 @@ fun LibraryHeader(profile: Profile, name: String, modifier: Modifier = Modifier)
     val decoration = remember(profile.libraryDecoration, remote) { Designs.find(profile.libraryDecoration) }
     Box(modifier = modifier.fillMaxWidth().height(48.dp)) {
         if (effect != null) {
-            AnimatedAsset(effect, Modifier.fillMaxSize(), crop = true)
-            // Keeps the name readable on top of bright colours.
-            Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0xB3000000), Color.Transparent))))
+            // Soft tint only, so the header still reads as the flat dark strip and not as a picture.
+            AnimatedAsset(effect, Modifier.fillMaxSize().alpha(0.32f), crop = true)
+            Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0x66121214), Color.Transparent))))
         }
-        if (decoration != null) AnimatedAsset(decoration, Modifier.fillMaxSize(), crop = true)
+        if (decoration != null) AnimatedAsset(decoration, Modifier.fillMaxSize().alpha(0.7f), crop = true)
         Row(
             modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
