@@ -41,16 +41,45 @@ object GoogleSignIn {
             }
         } catch (e: GetCredentialCancellationException) {
             return ""
-        } catch (e: NoCredentialException) {
-            return "No Google account found on this device."
-        } catch (e: GetCredentialException) {
-            return "Google sign-in failed. Please try again."
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
-            return "Google sign-in failed. Please try again."
+            // The in-app account picker can fail on phones or builds it isn't set up for (it
+            // reports "no account" even when there is one). Google's web sign-in works there.
+            return webSignIn(activityContext)
         }
 
         return suspendCancellableCoroutine { cont ->
             AuthRepository.signInWithGoogle(token) { err -> if (cont.isActive) cont.resume(err) }
+        }
+    }
+
+    private tailrec fun Context.activity(): android.app.Activity? = when (this) {
+        is android.app.Activity -> this
+        is android.content.ContextWrapper -> baseContext.activity()
+        else -> null
+    }
+
+    /** Google's own sign-in page, run through Firebase. Needs no account on the phone. */
+    private suspend fun webSignIn(context: Context): String? {
+        val activity = context.activity() ?: return "Google sign-in failed. Please try again."
+        return suspendCancellableCoroutine { cont ->
+            val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
+            val provider = com.google.firebase.auth.OAuthProvider.newBuilder("google.com").build()
+            val pending = auth.pendingAuthResult
+            val task = pending ?: auth.startActivityForSignInWithProvider(activity, provider)
+            task.addOnCompleteListener { t ->
+                if (!cont.isActive) return@addOnCompleteListener
+                val e = t.exception
+                cont.resume(
+                    when {
+                        t.isSuccessful -> null
+                        e is com.google.firebase.auth.FirebaseAuthWebException && e.errorCode == "ERROR_WEB_CONTEXT_CANCELED" -> ""
+                        e is com.google.firebase.auth.FirebaseAuthException -> "Google sign-in failed (${e.errorCode}). ${e.message.orEmpty().take(120)}"
+                        else -> "Google sign-in failed: ${e?.message.orEmpty().take(120)}"
+                    },
+                )
+            }
         }
     }
 }

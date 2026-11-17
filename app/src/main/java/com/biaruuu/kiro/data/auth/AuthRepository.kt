@@ -214,6 +214,8 @@ object AuthRepository {
         is FirebaseAuthWeakPasswordException -> "Password is too weak. Use at least 6 characters."
         is FirebaseNetworkException -> "No internet connection."
         is FirebaseTooManyRequestsException -> "Too many attempts. Please try again later."
+        is com.google.firebase.auth.FirebaseAuthException ->
+            "Something went wrong (${e.errorCode}). ${e.message.orEmpty().take(120)}"
         else -> "Something went wrong. Please try again."
     }
 }

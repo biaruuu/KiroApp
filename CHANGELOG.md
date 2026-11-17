@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.29.5] - 2026-11-17
+
+### Fixed
+- Continue with Google no longer stops at "No Google account found on this device." If the phone's account picker can't be used, Kiro opens Google's own sign-in page instead.
+- Login errors now say what Firebase actually reported, so a real cause can be found instead of "Something went wrong".
+
 ## [1.29.4] - 2026-11-17
 
 ### Changed
