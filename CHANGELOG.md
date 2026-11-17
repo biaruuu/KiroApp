@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.32.0] - 2026-11-17
+
+### Changed
+- Library > Download now shows a poster card per series, like My List. As soon as you download an episode, its series card appears (with an episode count and a dot while it is still downloading). Long-press a card to delete the series' downloads.
+- Tapping a series opens its own downloaded-episodes page: every episode on its own card with a thumbnail, number, title, description, size, and live progress. Tap an episode to watch it offline, or the cross to delete it.
+
 ## [1.31.2] - 2026-11-17
 
 ### Fixed

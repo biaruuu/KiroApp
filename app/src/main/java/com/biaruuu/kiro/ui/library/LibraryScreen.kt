@@ -113,6 +113,7 @@ fun LibraryScreen(
     refreshKey: Int,
     modifier: Modifier = Modifier,
     onCustomize: () -> Unit = {},
+    onOpenDownloads: (Int) -> Unit = {},
 ) {
     val context = LocalContext.current
     val pager = rememberPagerState(pageCount = { Tabs.size })
@@ -230,7 +231,11 @@ fun LibraryScreen(
                         if (downloads.isEmpty()) {
                             EmptyState(R.drawable.fluent_arrow_download_regular, "Download episodes to watch offline")
                         } else {
-                            DownloadList(downloads, onPlay = onContinue, onOpenAnime = onOpenAnime)
+                            DownloadPosterGrid(
+                                downloads = downloads,
+                                onOpen = onOpenDownloads,
+                                onRemove = { removeTarget = RemoveTarget(TAB_DOWNLOAD, it.animeId, it.title) },
+                            )
                         }
                     }
 
@@ -267,6 +272,7 @@ fun LibraryScreen(
         val (heading, body) = when (target.tab) {
             TAB_WATCHED -> "Remove from Recently Watched?" to "\"${target.title}\" will no longer appear under Continue Watching."
             TAB_COMPLETED -> "Remove from Completed?" to "\"${target.title}\" will be marked as not watched."
+            TAB_DOWNLOAD -> "Delete downloads?" to "All downloaded episodes of \"${target.title}\" will be deleted from your phone."
             TAB_LIST -> "Remove from My List?" to "\"${target.title}\" will be removed from your list."
             else -> "Remove your rating?" to "Your rating for \"${target.title}\" will be cleared."
         }
@@ -279,6 +285,7 @@ fun LibraryScreen(
                 TextButton(onClick = {
                     when (target.tab) {
                         TAB_WATCHED -> WatchHistory.remove(context, target.animeId)
+                        TAB_DOWNLOAD -> com.biaruuu.kiro.data.Downloads.removeSeries(context, target.animeId)
                         TAB_LIST -> MyListStore.remove(context, target.animeId)
                         TAB_COMPLETED -> com.biaruuu.kiro.data.WatchedStore.clear(context, target.animeId)
                         else -> {
@@ -635,108 +642,54 @@ private fun sizeLabel(bytes: Long): String =
     if (bytes >= 1_000_000_000L) String.format(java.util.Locale.US, "%.1f GB", bytes / 1e9)
     else String.format(java.util.Locale.US, "%d MB", (bytes / 1_000_000L).coerceAtLeast(if (bytes > 0) 1 else 0))
 
+/** One card per downloaded series, in the same look as My List. Tapping opens its episodes. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun DownloadList(
-    items: List<com.biaruuu.kiro.data.Downloads.Item>,
-    onPlay: (animeId: Int, episode: Int) -> Unit,
-    onOpenAnime: (Int) -> Unit,
+private fun DownloadPosterGrid(
+    downloads: List<com.biaruuu.kiro.data.Downloads.Item>,
+    onOpen: (Int) -> Unit,
+    onRemove: (com.biaruuu.kiro.data.Downloads.Item) -> Unit,
 ) {
-    val context = LocalContext.current
-    val groups = remember(items) { items.groupBy { it.animeId }.values.toList() }
-    androidx.compose.foundation.lazy.LazyColumn(
+    val groups = remember(downloads) { downloads.groupBy { it.animeId }.values.toList() }
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(104.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        listItems(groups, key = { it.first().animeId }) { episodes ->
+        items(groups, key = { it.first().animeId }) { episodes ->
             val first = episodes.first()
-            val total = episodes.sumOf { it.bytes }
-            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFF1A1A1D))) {
-                // Series header
-                Row(
-                    modifier = Modifier.fillMaxWidth().clickable { onOpenAnime(first.animeId) }.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+            val active = episodes.count { it.active }
+            Column(modifier = Modifier.combinedClickable(onClick = { onOpen(first.animeId) }, onLongClick = { onRemove(first) })) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().aspectRatio(0.707f).clip(RoundedCornerShape(4.dp)).background(Placeholder),
                 ) {
-                    Box(Modifier.width(48.dp).height(68.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFF2A2A2D))) {
-                        if (first.poster.isNotEmpty()) {
-                            AsyncImage(model = first.poster, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                        }
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(first.title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                        Spacer(Modifier.height(3.dp))
-                        Text(
-                            "${episodes.size} episode${if (episodes.size == 1) "" else "s"}" + if (total > 0) " \u00b7 ${sizeLabel(total)}" else "",
-                            color = Muted, fontSize = 12.sp,
-                        )
-                    }
-                }
-                Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF2A2A2D)))
-                episodes.forEachIndexed { index, d ->
+                    AsyncImage(
+                        model = first.poster.ifEmpty { null },
+                        contentDescription = first.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.matchParentSize(),
+                    )
+                    // Episode count (and a dot while something is still downloading).
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                when {
-                                    d.completed -> onPlay(d.animeId, d.episode)
-                                    d.failed -> com.biaruuu.kiro.data.Downloads.retry(context, d)
-                                    else -> {}
-                                }
-                            }
-                            .padding(start = 12.dp, top = 10.dp, bottom = 10.dp),
+                            .align(Alignment.BottomEnd)
+                            .padding(6.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xCC000000))
+                            .padding(horizontal = 8.dp, vertical = 3.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Box(
-                            Modifier.size(36.dp).clip(androidx.compose.foundation.shape.CircleShape)
-                                .background(if (d.completed) Color(0xFF7B6CF6) else Color(0xFF2A2A2D)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text("${d.episode}", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        if (active > 0) {
+                            Box(Modifier.size(6.dp).clip(androidx.compose.foundation.shape.CircleShape).background(KiroPurple))
+                            Spacer(Modifier.width(5.dp))
                         }
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            val name = d.episodeTitle.takeIf { it.isNotBlank() && !it.startsWith("Episode") } ?: "Episode ${d.episode}"
-                            Text(name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Spacer(Modifier.height(2.dp))
-                            val pct = d.percent.toInt().coerceIn(0, 100)
-                            val status = when {
-                                d.completed -> "Ready to watch \u00b7 ${sizeLabel(d.bytes)}"
-                                d.failed -> "Failed (${d.error.ifEmpty { "unknown" }}). Tap to retry"
-                                d.waitingForNetwork -> "Waiting for Wi-Fi"
-                                d.percent > 0f -> "Downloading $pct% \u00b7 ${sizeLabel(d.bytes)}"
-                                d.bytes > 0 -> "Downloading \u00b7 ${sizeLabel(d.bytes)}"
-                                else -> "Starting..."
-                            }
-                            Text(status, color = if (d.failed) Color(0xFFFF6B6B) else Muted, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                            if (d.active) {
-                                Spacer(Modifier.height(6.dp))
-                                Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(Color(0xFF3A3A3D))) {
-                                    if (d.percent > 0f) {
-                                        Box(Modifier.fillMaxWidth((d.percent / 100f).coerceIn(0.02f, 1f)).height(4.dp).background(Color(0xFF7B6CF6)))
-                                    } else {
-                                        androidx.compose.material3.LinearProgressIndicator(
-                                            color = Color(0xFF7B6CF6), trackColor = Color.Transparent,
-                                            modifier = Modifier.fillMaxWidth().height(4.dp),
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        if (d.active && d.percent > 0f) {
-                            Spacer(Modifier.width(8.dp))
-                            Text("${d.percent.toInt()}%", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                        }
-                        Box(
-                            modifier = Modifier.size(48.dp).clip(androidx.compose.foundation.shape.CircleShape)
-                                .clickable { com.biaruuu.kiro.data.Downloads.remove(context, d.animeId, d.episode) },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(if (d.completed) "\u00d7" else "\u25a0", color = Muted, fontSize = if (d.completed) 22.sp else 12.sp)
-                        }
+                        Text("${episodes.size} ep", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
-                    if (index < episodes.lastIndex) Box(Modifier.fillMaxWidth().padding(start = 60.dp).height(1.dp).background(Color(0xFF2A2A2D)))
                 }
+                Spacer(Modifier.height(6.dp))
+                Text(first.title, color = Color.White, fontSize = 13.sp, lineHeight = 21.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
     }

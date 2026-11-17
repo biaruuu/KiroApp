@@ -264,6 +264,7 @@ private fun KiroScaffold() {
                     onContinue = { id, ep -> backStack.add("p:$id:$ep") },
                     refreshKey = backStack.size,
                     onCustomize = { backStack.add("s:customize") },
+                    onOpenDownloads = { backStack.add("dl:$it") },
                     modifier = contentModifier,
                 )
                 TAB_ME -> MeScreen(onOpen = { backStack.add("s:$it") }, hasUnread = hasUnread, modifier = contentModifier)
@@ -287,6 +288,13 @@ private fun KiroScaffold() {
             val pop = { backStack.removeAt(backStack.lastIndex) }
             when (parts[0]) {
                 "m" -> MoreDetailScreen(animeId = id, onBack = { pop() }, modifier = overlay)
+                "dl" -> com.biaruuu.kiro.ui.library.DownloadedEpisodesScreen(
+                    animeId = id,
+                    onBack = { pop() },
+                    onPlay = { anime, ep -> backStack.add("p:$anime:$ep") },
+                    onOpenAnime = { backStack.add("d:$it") },
+                    modifier = overlay,
+                )
                 "p" -> PlayerScreen(
                     animeId = id,
                     startEpisode = parts.getOrNull(2)?.toIntOrNull() ?: 1,

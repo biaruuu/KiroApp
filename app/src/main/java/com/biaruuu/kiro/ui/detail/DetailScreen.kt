@@ -230,7 +230,7 @@ private fun DetailContent(
             }
             com.biaruuu.kiro.data.Downloads.start(
                 context, anime.id, anime.displayTitle, anime.posterUrl.orEmpty(), episode.number,
-                episode.heading, source, cap,
+                episode.heading, episode.thumbnailUrl.orEmpty(), episode.overview.orEmpty(), source, cap,
             ) { msg -> com.biaruuu.kiro.data.Downloads.toast(context, msg) }
             Toast.makeText(context, "Download started", Toast.LENGTH_SHORT).show()
         }

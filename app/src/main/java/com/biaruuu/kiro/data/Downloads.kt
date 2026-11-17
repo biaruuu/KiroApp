@@ -47,6 +47,8 @@ object Downloads {
         val title: String,
         val poster: String,
         val episodeTitle: String,
+        val thumb: String,
+        val overview: String,
         val url: String,
         val headers: Map<String, String>,
         val hls: Boolean,
@@ -245,6 +247,8 @@ object Downloads {
                                 title = m.optString("title"),
                                 poster = m.optString("poster"),
                                 episodeTitle = m.optString("epTitle"),
+                                thumb = m.optString("thumb"),
+                                overview = m.optString("overview"),
                                 url = m.optString("url"),
                                 headers = headersOf(m.optJSONObject("headers")),
                                 hls = m.optBoolean("hls"),
@@ -275,6 +279,8 @@ object Downloads {
         poster: String,
         episode: Int,
         episodeTitle: String,
+        thumbnail: String,
+        overview: String,
         source: StreamSource,
         maxHeight: Int,
         onError: (String) -> Unit,
@@ -310,6 +316,7 @@ object Downloads {
                         saveMeta(app, id, JSONObject()
                             .put("animeId", animeId).put("episode", episode)
                             .put("title", title).put("poster", poster).put("epTitle", episodeTitle)
+                            .put("thumb", thumbnail).put("overview", overview)
                             .put("url", source.url).put("hls", source.isHls)
                             .put("quality", source.qualityLabel)
                             .put("headers", headersJson(source.headers)))
@@ -360,7 +367,7 @@ object Downloads {
     /** Tries a failed download again. */
     fun retry(context: Context, item: Item) {
         val source = StreamSource("Saved", item.url, 0, item.hls, emptyList()).withHeaders(item.headers)
-        start(context, item.animeId, item.title, item.poster, item.episode, item.episodeTitle, source, 0) { toast(context, it) }
+        start(context, item.animeId, item.title, item.poster, item.episode, item.episodeTitle, item.thumb, item.overview, source, 0) { toast(context, it) }
     }
 
     fun remove(context: Context, animeId: Int, episode: Int) {
@@ -368,6 +375,11 @@ object Downloads {
         val id = idOf(animeId, episode)
         DownloadService.sendRemoveDownload(app, DownloadsService::class.java, id, false)
         dropMeta(app, id)
+    }
+
+    /** Deletes every downloaded episode of one series. */
+    fun removeSeries(context: Context, animeId: Int) {
+        _items.value.filter { it.animeId == animeId }.forEach { remove(context, it.animeId, it.episode) }
     }
 
     fun removeAll(context: Context) {
