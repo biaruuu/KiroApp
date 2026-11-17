@@ -1359,6 +1359,11 @@ private fun TracksDialog(
 
     val audio = remember(tracks) { build(C.TRACK_TYPE_AUDIO, false) }
     val subs = remember(tracks) { build(C.TRACK_TYPE_TEXT, true) }
+    // When the episode has a Japanese and an English stream, the Audio list is just those two
+    // languages (English is the dub, Japanese the original); choosing one switches stream.
+    val twoLanguages = hasSub && hasDub
+    val languages = listOf("Japanese", "English")
+    var pickLanguage by remember { mutableIntStateOf(if (dubNow) 1 else 0) }
     var pickAudio by remember(tracks) { mutableIntStateOf(audio.indexOfFirst { it.selected }.coerceAtLeast(0)) }
     var pickSub by remember(tracks) { mutableIntStateOf(subs.indexOfFirst { it.selected }.coerceAtLeast(0)) }
 
@@ -1379,30 +1384,12 @@ private fun TracksDialog(
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { },
         ) {
             Column(modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp, vertical = 20.dp)) {
-                if (hasSub && hasDub) {
-                    // Sub and dub are separate streams: picking one switches to the best stream of it.
-                    Text("Language", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(10.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        listOf(false to "Japanese \u00b7 Sub", true to "English \u00b7 Dub").forEach { (dub, label) ->
-                            val on = dubNow == dub
-                            Text(
-                                label,
-                                color = if (on) Color.Black else Color.White,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .background(if (on) Color.White else Color(0xFF2A2A2D))
-                                    .clickable { onPickDub(dub) }
-                                    .padding(horizontal = 18.dp, vertical = 9.dp),
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(16.dp))
-                }
                 Row(modifier = Modifier.weight(1f)) {
-                    TrackColumn("Audio", audio.map { it.label }, pickAudio, { pickAudio = it }, Modifier.weight(1f))
+                    if (twoLanguages) {
+                        TrackColumn("Audio", languages, pickLanguage, { pickLanguage = it }, Modifier.weight(1f))
+                    } else {
+                        TrackColumn("Audio", audio.map { it.label }, pickAudio, { pickAudio = it }, Modifier.weight(1f))
+                    }
                     Spacer(Modifier.width(24.dp))
                     TrackColumn("Subtitles", subs.map { it.label }, pickSub, { pickSub = it }, Modifier.weight(1f))
                     Spacer(Modifier.width(28.dp))
@@ -1433,8 +1420,12 @@ private fun TracksDialog(
                             .clip(RoundedCornerShape(6.dp))
                             .background(KiroPurple)
                             .clickable {
+                                if (twoLanguages && (pickLanguage == 1) != dubNow) {
+                                    onPickDub(pickLanguage == 1)
+                                    return@clickable
+                                }
                                 val params = exo.trackSelectionParameters.buildUpon()
-                                audio.getOrNull(pickAudio)?.group?.let { g ->
+                                audio.getOrNull(pickAudio)?.takeIf { !twoLanguages }?.group?.let { g ->
                                     params.setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
                                     params.setOverrideForType(TrackSelectionOverride(g.mediaTrackGroup, audio[pickAudio].index))
                                 }

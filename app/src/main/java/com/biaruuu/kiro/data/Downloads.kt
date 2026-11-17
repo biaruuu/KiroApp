@@ -171,11 +171,23 @@ object Downloads {
     private fun requirements(context: Context) =
         Requirements(if (AppSettings.downloadWifiOnly(context)) Requirements.NETWORK_UNMETERED else Requirements.NETWORK)
 
+    /** While anything is downloading, the percentage and size are re-read every second. */
+    private fun startProgressTicker(app: Context) {
+        val tick = object : Runnable {
+            override fun run() {
+                if (_items.value.any { it.active } || manager(app).currentDownloads.isNotEmpty()) refresh(app)
+                main.postDelayed(this, 1000L)
+            }
+        }
+        main.postDelayed(tick, 1000L)
+    }
+
     /** Call at app start so finished downloads are listed and unfinished ones carry on. */
     fun init(context: Context) {
         val app = context.applicationContext
         manager(app)
         refresh(app)
+        startProgressTicker(app)
         io.execute {
             try {
                 if (manager(app).currentDownloads.isNotEmpty()) {
@@ -209,9 +221,10 @@ object Downloads {
                 val metas = loadMeta(context)
                 val notMet = dm.notMetRequirements != 0
                 val list = ArrayList<Item>()
+                val live = dm.currentDownloads.associateBy { it.request.id }
                 dm.downloadIndex.getDownloads().use { cursor ->
                     while (cursor.moveToNext()) {
-                        val d = cursor.download
+                        val d = live[cursor.download.request.id] ?: cursor.download
                         val m = metas.optJSONObject(d.request.id) ?: continue
                         val subs = ArrayList<SubtitleTrack>()
                         val arr = m.optJSONArray("subs")

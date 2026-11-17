@@ -4,6 +4,15 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.31.2] - 2026-11-17
+
+### Fixed
+- Download progress now updates live: the percentage and size refresh every second in Library > Download, and the episode's download icon shows the percent inside its ring.
+
+### Changed
+- Library > Download has a new layout: each series is a card with its episodes under it, a progress bar and percentage per episode, and larger tap areas.
+- Audio & Subtitles is back to the earlier style. When an episode has both, the Audio list simply shows Japanese and English (English is the dub); pick one and press Apply.
+
 ## [1.31.1] - 2026-11-17
 
 ### Added

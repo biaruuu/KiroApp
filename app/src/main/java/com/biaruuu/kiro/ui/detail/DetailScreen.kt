@@ -719,7 +719,7 @@ private fun DownloadButton(item: com.biaruuu.kiro.data.Downloads.Item?, onStart:
                 } else {
                     androidx.compose.material3.CircularProgressIndicator(color = Color.White, strokeWidth = 2.5.dp, modifier = Modifier.size(24.dp))
                 }
-                Box(Modifier.size(8.dp).background(Color.White, RoundedCornerShape(1.dp)))
+                Text(if (p > 0f) "${(p * 100).toInt()}" else "", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
             }
             else -> Icon(painterResource(R.drawable.fluent_arrow_download_regular), contentDescription = "Download", tint = if (item?.failed == true) Color(0xFFFF6B6B) else Color.White, modifier = Modifier.size(24.dp))
         }
