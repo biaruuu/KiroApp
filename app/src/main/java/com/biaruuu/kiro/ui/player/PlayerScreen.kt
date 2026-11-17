@@ -167,7 +167,18 @@ fun PlayerScreen(
         val renderers = androidx.media3.exoplayer.DefaultRenderersFactory(context)
             .setExtensionRendererMode(androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
         // Reads downloaded episodes from the offline cache; everything else comes from the network.
+        // No resolution cap: 1080p, 1440p, 4K (2160p) and above play when the phone's decoder can handle them,
+        // and Auto starts from the best the phone supports instead of the screen size.
+        val selector = androidx.media3.exoplayer.trackselection.DefaultTrackSelector(context).apply {
+            parameters = buildUponParameters()
+                .setMaxVideoSize(Int.MAX_VALUE, Int.MAX_VALUE)
+                .setMaxVideoBitrate(Int.MAX_VALUE)
+                .clearViewportSizeConstraints()
+                .setForceHighestSupportedBitrate(true)
+                .build()
+        }
         ExoPlayer.Builder(context, renderers)
+            .setTrackSelector(selector)
             .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(com.biaruuu.kiro.data.Downloads.dataSourceFactory(context)))
             .build()
     }
@@ -932,7 +943,7 @@ private fun videoHeights(tracks: Tracks): List<Int> {
 /** 0 = Auto (adapts to the connection); otherwise the best track at or below that height. */
 private fun applyQuality(exo: ExoPlayer, height: Int) {
     val p = exo.trackSelectionParameters.buildUpon()
-    if (height == 0) p.clearVideoSizeConstraints() else p.setMaxVideoSize(Int.MAX_VALUE, height)
+    if (height == 0) p.setMaxVideoSize(Int.MAX_VALUE, Int.MAX_VALUE) else p.setMaxVideoSize(Int.MAX_VALUE, height)
     exo.trackSelectionParameters = p.build()
 }
 
@@ -1000,7 +1011,7 @@ private fun Controls(
                 painter = painterResource(R.drawable.fluent_skip_back_10_regular),
                 contentDescription = "Back 10 seconds",
                 tint = Color.White,
-                modifier = Modifier.size(46.dp).clip(CircleShape).clickable(onClick = onBack10),
+                modifier = Modifier.size(38.dp).clip(CircleShape).clickable(onClick = onBack10),
             )
             Box(
                 modifier = Modifier.size(56.dp).clip(CircleShape).clickable(onClick = onTogglePlay),
@@ -1035,7 +1046,7 @@ private fun Controls(
                 painter = painterResource(R.drawable.fluent_skip_forward_10_regular),
                 contentDescription = "Forward 10 seconds",
                 tint = Color.White,
-                modifier = Modifier.size(46.dp).clip(CircleShape).clickable(onClick = onForward10),
+                modifier = Modifier.size(38.dp).clip(CircleShape).clickable(onClick = onForward10),
             )
         }
 

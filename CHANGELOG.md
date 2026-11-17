@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.34.2] - 2026-11-18
+
+### Changed
+- Player: 4K (2160p), 1440p and higher resolutions are no longer capped. Auto starts from the best quality the phone can decode instead of the screen size, and every available quality shows in the Quality list.
+- Back to the previous loading spinner and the previous 10-second back and forward icons.
+
 ## [1.34.1] - 2026-11-18
 
 ### Changed
