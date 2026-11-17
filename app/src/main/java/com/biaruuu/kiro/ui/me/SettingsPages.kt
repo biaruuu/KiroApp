@@ -189,10 +189,16 @@ private fun DownloadPage() {
     ToggleRow("Wi-Fi only", wifi) {
         wifi = it
         AppSettings.setDownloadWifiOnly(context, it)
+        com.biaruuu.kiro.data.Downloads.applyRequirements(context)
     }
     ChevronRow("Video quality", quality) { sheet = true }
     ChevronRow("Delete all downloads") {
-        Toast.makeText(context, "You have no downloads", Toast.LENGTH_SHORT).show()
+        if (com.biaruuu.kiro.data.Downloads.items.value.isEmpty()) {
+            Toast.makeText(context, "You have no downloads", Toast.LENGTH_SHORT).show()
+        } else {
+            com.biaruuu.kiro.data.Downloads.removeAll(context)
+            Toast.makeText(context, "All downloads deleted", Toast.LENGTH_SHORT).show()
+        }
     }
 
     if (sheet) {

@@ -206,6 +206,35 @@ private fun DetailContent(
     val released = remember(episodes, nextEp, anime.status) {
         releasedEpisodes(episodes, nextEp, anime.status)
     }
+    val downloads by com.biaruuu.kiro.data.Downloads.items.collectAsState()
+    val downloadScope = rememberCoroutineScope()
+    fun startDownload(episode: EpisodeInfo) {
+        Toast.makeText(context, "Preparing download...", Toast.LENGTH_SHORT).show()
+        downloadScope.launch {
+            val request = com.biaruuu.kiro.data.stream.StreamRequest(
+                anime.id, episode.number, anime.displayTitle, anime.titleEnglish, anime.titleRomaji,
+                anime.seasonYear, detail?.malId ?: 0, anime.episodes,
+            )
+            val found = try {
+                com.biaruuu.kiro.data.stream.StreamRepository.resolve(context, request)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                emptyList()
+            }
+            val cap = com.biaruuu.kiro.data.AppSettings.downloadQuality(context).removeSuffix("p").toIntOrNull() ?: 0
+            val source = (if (cap > 0) found.firstOrNull { it.height in 1..cap } else null) ?: found.firstOrNull()
+            if (source == null) {
+                Toast.makeText(context, "This episode isn't available to download right now.", Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            com.biaruuu.kiro.data.Downloads.start(
+                context, anime.id, anime.displayTitle, anime.posterUrl.orEmpty(), episode.number,
+                episode.heading, source, cap,
+            ) { msg -> com.biaruuu.kiro.data.Downloads.toast(context, msg) }
+            Toast.makeText(context, "Download started", Toast.LENGTH_SHORT).show()
+        }
+    }
     val nowSeconds by produceState(System.currentTimeMillis() / 1000) {
         while (true) {
             delay(1_000)
@@ -511,6 +540,9 @@ private fun DetailContent(
             EpisodeRow(
                 episode,
                 fallbackImage = anime.heroUrl,
+                download = downloads.firstOrNull { it.animeId == anime.id && it.episode == episode.number },
+                onDownload = { startDownload(episode) },
+                onRemoveDownload = { com.biaruuu.kiro.data.Downloads.remove(context, anime.id, episode.number) },
                 watched = episode.number in watchedEps,
                 onClick = {
                     if (episode.number in watchedEps) rewatch = episode.number else onPlay(anime.id, episode.number)
@@ -591,7 +623,15 @@ private fun CountdownRow(number: Int, label: String, image: String?) {
 }
 
 @Composable
-private fun EpisodeRow(episode: EpisodeInfo, fallbackImage: String?, watched: Boolean, onClick: () -> Unit) {
+private fun EpisodeRow(
+    episode: EpisodeInfo,
+    fallbackImage: String?,
+    download: com.biaruuu.kiro.data.Downloads.Item?,
+    onDownload: () -> Unit,
+    onRemoveDownload: () -> Unit,
+    watched: Boolean,
+    onClick: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -646,12 +686,56 @@ private fun EpisodeRow(episode: EpisodeInfo, fallbackImage: String?, watched: Bo
                 )
             }
         }
-        Spacer(Modifier.width(8.dp))
-        Icon(
-            painter = painterResource(R.drawable.fluent_arrow_download_regular),
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(24.dp),
+        Spacer(Modifier.width(4.dp))
+        DownloadButton(download, onDownload, onRemoveDownload)
+    }
+}
+
+/** Download icon for an episode: tap to save, shows progress while saving, a tick once saved. */
+@Composable
+private fun DownloadButton(item: com.biaruuu.kiro.data.Downloads.Item?, onStart: () -> Unit, onRemove: () -> Unit) {
+    var confirm by remember { mutableStateOf(false) }
+    val done = item?.completed == true
+    val running = item != null && item.active
+    Box(
+        modifier = Modifier
+            .size(44.dp)
+            .clip(androidx.compose.foundation.shape.CircleShape)
+            .clickable {
+                when {
+                    done -> confirm = true
+                    running -> onRemove()
+                    else -> onStart()
+                }
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        when {
+            done -> Icon(painterResource(R.drawable.fluent_checkmark_regular), contentDescription = "Downloaded", tint = com.biaruuu.kiro.ui.theme.KiroPurple, modifier = Modifier.size(24.dp))
+            running -> {
+                val p = (item!!.percent / 100f).coerceIn(0f, 1f)
+                if (p > 0f) {
+                    androidx.compose.material3.CircularProgressIndicator(progress = { p }, color = Color.White, trackColor = Color(0xFF3A3A3D), strokeWidth = 2.5.dp, modifier = Modifier.size(24.dp))
+                } else {
+                    androidx.compose.material3.CircularProgressIndicator(color = Color.White, strokeWidth = 2.5.dp, modifier = Modifier.size(24.dp))
+                }
+                Box(Modifier.size(8.dp).background(Color.White, RoundedCornerShape(1.dp)))
+            }
+            else -> Icon(painterResource(R.drawable.fluent_arrow_download_regular), contentDescription = "Download", tint = if (item?.failed == true) Color(0xFFFF6B6B) else Color.White, modifier = Modifier.size(24.dp))
+        }
+    }
+    if (confirm) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { confirm = false },
+            containerColor = Color(0xFF1E1E22),
+            title = { Text("Remove download?", color = Color.White) },
+            text = { Text("This episode will be deleted from your phone.", color = MutedText) },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { confirm = false; onRemove() }) { Text("Remove", color = Color(0xFFFF6B6B)) }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { confirm = false }) { Text("Cancel", color = Color.White) }
+            },
         )
     }
 }

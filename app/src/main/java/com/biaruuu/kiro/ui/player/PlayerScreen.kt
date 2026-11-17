@@ -158,7 +158,7 @@ fun PlayerScreen(
 
     var current by rememberSaveable { mutableIntStateOf(startEpisode) }
     val episode = episodes.firstOrNull { it.number == current }
-    val title = episode?.heading ?: ui.base?.displayTitle.orEmpty()
+    val title = episode?.heading ?: ui.base?.displayTitle.orEmpty().ifEmpty { com.biaruuu.kiro.data.Downloads.item(animeId, current)?.title.orEmpty() }
     val nextEpisode = episodes.firstOrNull { it.number > current }
 
     val exo = remember {
@@ -166,7 +166,10 @@ fun PlayerScreen(
         // can't play (AC3, E-AC3, DTS, FLAC...), so a stream is never silent.
         val renderers = androidx.media3.exoplayer.DefaultRenderersFactory(context)
             .setExtensionRendererMode(androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
-        ExoPlayer.Builder(context, renderers).build()
+        // Reads downloaded episodes from the offline cache; everything else comes from the network.
+        ExoPlayer.Builder(context, renderers)
+            .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(com.biaruuu.kiro.data.Downloads.dataSourceFactory(context)))
+            .build()
     }
     // The player listener lives for the whole screen, so it must read the latest values.
     val latestEpisodes by rememberUpdatedState(episodes)
@@ -293,7 +296,9 @@ fun PlayerScreen(
             ui.detail?.malId ?: 0,
             ui.base?.episodes ?: 0,
         )
-        val found = try {
+        // A downloaded episode plays from the phone, with no lookup and no network.
+        val offline = com.biaruuu.kiro.data.Downloads.playbackSource(context, animeId, current)
+        val found = if (offline != null) listOf(offline) else try {
             StreamRepository.resolve(context, request)
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e

@@ -28,6 +28,8 @@ public class KiroApplication extends Application implements ImageLoaderFactory {
         com.biaruuu.kiro.data.stream.AnivaultProvider.warmUp();
         // Tell the user when a new version is out.
         com.biaruuu.kiro.data.UpdateWorker.schedule(this);
+        // Offline downloads: list finished ones and carry on with unfinished ones.
+        com.biaruuu.kiro.data.Downloads.INSTANCE.init(this);
     }
 
     @NonNull

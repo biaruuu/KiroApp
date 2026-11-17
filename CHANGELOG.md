@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.30.0] - 2026-11-17
+
+### Added
+- **Downloads and offline viewing.** Tap the download icon on any episode to save it to your phone. It shows progress while saving and a tick once it is saved, and downloading continues in the background with a notification.
+- The Library > Download tab lists your downloaded episodes with progress and size. Tap one to watch it with no internet; subtitles are saved with it.
+- Settings: Download quality limits the picture quality, Wi-Fi only holds downloads until you are on Wi-Fi, and Delete all downloads clears them.
+
 ## [1.29.5] - 2026-11-17
 
 ### Fixed

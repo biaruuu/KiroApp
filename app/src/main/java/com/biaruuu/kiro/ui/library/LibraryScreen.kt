@@ -46,6 +46,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items as listItems
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -223,8 +224,14 @@ fun LibraryScreen(
                     }
 
                     TAB_DOWNLOAD -> {
-                        CountBar("0 Season", null) {}
-                        EmptyState(R.drawable.fluent_arrow_download_regular, "Download episodes to watch offline")
+                        val downloads by com.biaruuu.kiro.data.Downloads.items.collectAsState()
+                        val series = downloads.map { it.animeId }.distinct().size
+                        CountBar(if (downloads.isEmpty()) "0 Series" else "$series Series \u00b7 ${downloads.size} Episodes", null) {}
+                        if (downloads.isEmpty()) {
+                            EmptyState(R.drawable.fluent_arrow_download_regular, "Download episodes to watch offline")
+                        } else {
+                            DownloadList(downloads, onPlay = onContinue, onOpenAnime = onOpenAnime)
+                        }
                     }
 
                     else -> {
@@ -619,6 +626,67 @@ private fun SortSheet(
                 Text("Cancel", color = Color.White, fontSize = 15.sp)
             }
             Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+
+private fun sizeLabel(bytes: Long): String =
+    if (bytes >= 1_000_000_000L) String.format(java.util.Locale.US, "%.1f GB", bytes / 1e9)
+    else String.format(java.util.Locale.US, "%d MB", (bytes / 1_000_000L).coerceAtLeast(if (bytes > 0) 1 else 0))
+
+@Composable
+private fun DownloadList(
+    items: List<com.biaruuu.kiro.data.Downloads.Item>,
+    onPlay: (animeId: Int, episode: Int) -> Unit,
+    onOpenAnime: (Int) -> Unit,
+) {
+    val context = LocalContext.current
+    androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.fillMaxSize()) {
+        listItems(items, key = { it.id }) { d ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { if (d.completed) onPlay(d.animeId, d.episode) else onOpenAnime(d.animeId) }
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(Modifier.width(52.dp).height(74.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFF1E1E22))) {
+                    if (d.poster.isNotEmpty()) {
+                        AsyncImage(model = d.poster, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(d.title, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        "Episode ${d.episode}" + if (d.episodeTitle.isNotBlank() && !d.episodeTitle.startsWith("Episode")) " \u00b7 ${d.episodeTitle}" else "",
+                        color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    val status = when {
+                        d.completed -> "Downloaded \u00b7 ${sizeLabel(d.bytes)}"
+                        d.failed -> "Failed. Open the anime to try again"
+                        d.waitingForNetwork -> "Waiting for Wi-Fi"
+                        d.percent > 0f -> "Downloading ${d.percent.toInt()}% \u00b7 ${sizeLabel(d.bytes)}"
+                        else -> "Starting..."
+                    }
+                    Text(status, color = if (d.failed) Color(0xFFFF6B6B) else Muted, fontSize = 12.sp)
+                    if (d.active && d.percent > 0f) {
+                        Spacer(Modifier.height(5.dp))
+                        Box(Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(Color(0xFF3A3A3D))) {
+                            Box(Modifier.fillMaxWidth((d.percent / 100f).coerceIn(0f, 1f)).height(3.dp).background(Color(0xFF7B6CF6)))
+                        }
+                    }
+                }
+                Box(
+                    modifier = Modifier.size(44.dp).clip(androidx.compose.foundation.shape.CircleShape)
+                        .clickable { com.biaruuu.kiro.data.Downloads.remove(context, d.animeId, d.episode) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(if (d.completed) "\u00d7" else "\u25a0", color = Muted, fontSize = if (d.completed) 24.sp else 12.sp)
+                }
+            }
         }
     }
 }
