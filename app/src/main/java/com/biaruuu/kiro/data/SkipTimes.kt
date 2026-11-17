@@ -36,7 +36,7 @@ object SkipTimes {
     private class Raw(val segment: Segment, val episodeLength: Double)
 
     private const val BASE = "https://api.aniskip.com/v2/skip-times"
-    private const val CUT_TOLERANCE_SEC = 3.0
+    private const val CUT_TOLERANCE_SEC = 12.0
     private val cache = HashMap<String, List<Segment>>()
 
     /**
@@ -48,7 +48,9 @@ object SkipTimes {
         if (malId <= 0 || episode <= 0 || durationSec < 60) return emptyList()
         val key = "$malId:$episode:${durationSec.roundToInt()}"
         cache[key]?.let { return it }
-        val found = pickBest(query(malId, episode, durationSec), durationSec)
+        // Ask both with this video's length and without one, so no stored cut is missed.
+        val raws = query(malId, episode, durationSec) + query(malId, episode, 0.0)
+        val found = pickBest(raws, durationSec)
         cache[key] = found
         return found
     }
@@ -56,6 +58,7 @@ object SkipTimes {
     private fun pickBest(raws: List<Raw>, durationSec: Double): List<Segment> {
         val out = ArrayList<Segment>()
         val seen = HashSet<String>()
+        // Closest cut first, so a type is taken from the cut that best matches this video.
         val verified = raws
             .filter { it.episodeLength > 0 && abs(it.episodeLength - durationSec) <= CUT_TOLERANCE_SEC }
             .sortedBy { abs(it.episodeLength - durationSec) }

@@ -74,7 +74,7 @@ fun NotificationsPage(onOpen: (String) -> Unit) {
     val expanded = remember { mutableStateListOf<String>() }
 
     LaunchedEffect(Unit) {
-        val list = UpdateChecker.recent()
+        val list = UpdateChecker.recent().take(2)
         releases = list
         list.firstOrNull()?.let { UpdateChecker.onLatest(context, it) }
         UpdateChecker.markSeen(context)

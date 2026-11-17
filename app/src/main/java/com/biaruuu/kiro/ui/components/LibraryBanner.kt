@@ -35,16 +35,7 @@ import com.biaruuu.kiro.data.Profile
 @Composable
 fun LibraryHeader(profile: Profile, name: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val remote by Designs.remote.collectAsState()
-    val effect = remember(profile.libraryEffect, remote) { Designs.find(profile.libraryEffect) }
-    val decoration = remember(profile.libraryDecoration, remote) { Designs.find(profile.libraryDecoration) }
     Box(modifier = modifier.fillMaxWidth().height(48.dp)) {
-        if (effect != null) {
-            // Soft tint only, so the header still reads as the flat dark strip and not as a picture.
-            AnimatedAsset(effect, Modifier.fillMaxSize().alpha(0.32f), crop = true)
-            Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0x66121214), Color.Transparent))))
-        }
-        if (decoration != null) AnimatedAsset(decoration, Modifier.fillMaxSize().alpha(0.7f), crop = true)
         Row(
             modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,

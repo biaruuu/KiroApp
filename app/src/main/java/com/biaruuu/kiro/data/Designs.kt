@@ -32,8 +32,6 @@ object Designs {
 
     private val builtIn = listOf(
         Design("cat_ears", DECORATION, "Cat Ears", asset = "decorations/cat_ears.png"),
-        Design("aurora_night", LIBRARY_EFFECT, "Aurora Night", asset = "library/aurora_night.png"),
-        Design("starlight_frame", LIBRARY_DECORATION, "Starlight Frame", asset = "library/starlight_frame.png"),
     )
 
     val remote = MutableStateFlow<List<Design>>(emptyList())
@@ -122,53 +120,20 @@ object Designs {
     }
 }
 
-/**
- * Fonts for the display name. "GTA" is the Pricedown font: it is not bundled with Kiro (its licence
- * covers desktop use only), so each person adds their own copy once and it is used on their phone.
- */
+/** Fonts for the display name. */
 object NameStyles {
-    const val GTA = "GTA"
-    private const val GTA_FILE = "name_font_gta.otf"
-
     private val cache = HashMap<String, androidx.compose.ui.text.font.FontFamily?>()
 
-    private fun gtaFile(context: Context) = java.io.File(context.filesDir, GTA_FILE)
-
-    fun hasGta(context: Context) = gtaFile(context).exists()
-
-    /** Copies the picked font file into the app. Returns null on success, else the reason it failed. */
-    fun importGta(context: Context, uri: android.net.Uri): String? {
-        val target = gtaFile(context)
-        return try {
-            val input = context.contentResolver.openInputStream(uri) ?: return "Couldn't open that file."
-            input.use { src -> target.outputStream().use { src.copyTo(it) } }
-            if (target.length() < 64) throw IllegalStateException("File is empty.")
-            // Fails loudly if Android can't read it as a font.
-            android.graphics.Typeface.Builder(target).build() ?: throw IllegalStateException("Not a font file.")
-            cache.remove(GTA)
-            null
-        } catch (e: Throwable) {
-            target.delete()
-            cache.remove(GTA)
-            e.message ?: e.javaClass.simpleName
-        }
-    }
-
     /** "" is the normal Kiro font. */
-    fun options(): List<String> = listOf("", "Satoshi", "Cinzel", "Roboto Mono", "Comic Neue", "Poppins", "Montserrat", GTA)
+    fun options(): List<String> = listOf("", "Satoshi", "Cinzel", "Roboto Mono", "Comic Neue", "Poppins", "Montserrat")
 
     fun label(style: String) = style.ifEmpty { "Default" }
 
     fun family(context: Context, style: String): androidx.compose.ui.text.font.FontFamily? {
         if (style.isEmpty()) return null
-        if (style == GTA && !hasGta(context)) return null
         return cache.getOrPut(style) {
             try {
-                val tf = if (style == GTA) {
-                    android.graphics.Typeface.createFromFile(gtaFile(context))
-                } else {
-                    com.biaruuu.kiro.ui.player.SubtitleOptions.typeface(context, style)
-                }
+                val tf = com.biaruuu.kiro.ui.player.SubtitleOptions.typeface(context, style)
                 androidx.compose.ui.text.font.FontFamily(tf)
             } catch (_: Exception) {
                 null

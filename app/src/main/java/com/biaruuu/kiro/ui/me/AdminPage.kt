@@ -324,8 +324,6 @@ private fun DesignsTab() {
     }
     val types = listOf(
         com.biaruuu.kiro.data.Designs.DECORATION to "Avatar Decoration",
-        com.biaruuu.kiro.data.Designs.LIBRARY_EFFECT to "Library Effect",
-        com.biaruuu.kiro.data.Designs.LIBRARY_DECORATION to "Library Decoration",
     )
 
     LazyColumn(modifier = Modifier.fillMaxSize().imePadding(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {

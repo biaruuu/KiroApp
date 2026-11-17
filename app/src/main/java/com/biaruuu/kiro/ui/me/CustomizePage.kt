@@ -65,22 +65,7 @@ fun CustomizePage() {
     }
     val name = profile.username.ifBlank { signedIn.name }
     val decorations = remember(remote) { Designs.all(Designs.DECORATION) }
-    var fontsVersion by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val fonts = NameStyles.options()
-    val importFont = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            val error = NameStyles.importGta(context, uri)
-            if (error == null) {
-                fontsVersion++
-                ProfileRepository.save(nameFont = NameStyles.GTA)
-                android.widget.Toast.makeText(context, "GTA font added.", android.widget.Toast.LENGTH_SHORT).show()
-            } else {
-                android.widget.Toast.makeText(context, "Couldn't use that file: $error", android.widget.Toast.LENGTH_LONG).show()
-            }
-        }
-    }
-    val libraryEffects = remember(remote) { Designs.all(Designs.LIBRARY_EFFECT) }
-    val libraryDecorations = remember(remote) { Designs.all(Designs.LIBRARY_DECORATION) }
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
         // The card you are building, exactly as it appears at the top of Your Library.
@@ -96,64 +81,24 @@ fun CustomizePage() {
             tile = { d -> if (d == null) NoneTile() else TileWithLabel(d.name) { DecoratedAvatar(profile.avatar, name, 46.dp, d.id) } },
         )
 
-        Section("Library Effect")
-        Grid(
-            items = listOf<Design?>(null) + libraryEffects,
-            selectedId = profile.libraryEffect,
-            onPick = { ProfileRepository.save(libraryEffect = it) },
-            tile = { d ->
-                if (d == null) NoneTile() else TileWithLabel(d.name) {
-                    Box(Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(6.dp))) { AnimatedAsset(d, Modifier.fillMaxSize(), crop = true) }
-                }
-            },
-        )
-
-        Section("Library Decoration")
-        Grid(
-            items = listOf<Design?>(null) + libraryDecorations,
-            selectedId = profile.libraryDecoration,
-            onPick = { ProfileRepository.save(libraryDecoration = it) },
-            tile = { d ->
-                if (d == null) NoneTile() else TileWithLabel(d.name) {
-                    Box(Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFF1A1A1D))) { AnimatedAsset(d, Modifier.fillMaxSize(), crop = true) }
-                }
-            },
-        )
-        Spacer(Modifier.height(8.dp))
-        Text("More library effects and decorations are coming soon.", color = Muted, fontSize = 12.sp)
-
         Section("Display Name Style")
         for (font in fonts) {
             val on = profile.nameFont == font
-            val needsFile = font == NameStyles.GTA && fontsVersion >= 0 && !NameStyles.hasGta(context)
             Row(
                 modifier = Modifier
                     .fillMaxWidth().height(52.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .clickable { if (needsFile) importFont.launch(arrayOf("*/*")) else ProfileRepository.save(nameFont = font) }
+                    .clickable { ProfileRepository.save(nameFont = font) }
                     .padding(horizontal = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(name, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = NameStyles.family(context, font), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(if (needsFile) "Tap to add" else NameStyles.label(font), color = Muted, fontSize = 12.sp)
+                Text(NameStyles.label(font), color = Muted, fontSize = 12.sp)
                 Spacer(Modifier.size(10.dp))
                 Box(Modifier.size(22.dp)) {
                     if (on) Icon(painterResource(R.drawable.fluent_checkmark_regular), null, tint = Color.White, modifier = Modifier.size(22.dp))
                 }
             }
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "GTA is the Pricedown Bl font. Tap it once and pick your Pricedown Bl.otf file; it stays on this phone, so only you see it. Other people see the normal font.",
-            color = Muted, fontSize = 12.sp, lineHeight = 17.sp,
-        )
-        Spacer(Modifier.height(10.dp))
-        Box(
-            Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF1E1E22))
-                .clickable { importFont.launch(arrayOf("*/*")) },
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(if (NameStyles.hasGta(context)) "Replace GTA font file" else "Add GTA font file", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
         }
         Spacer(Modifier.height(24.dp))
     }

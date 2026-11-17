@@ -4,6 +4,16 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.29.3] - 2026-11-17
+
+### Changed
+- Removed library effects, library decorations and the GTA font import. Avatar decorations and the built-in name fonts stay.
+- Notifications show only the latest two versions.
+- HDR & Dolby Vision is back to the earlier behaviour: "On" turns on hardware tunneling and the HDR display mode.
+
+### Fixed
+- Skip Intro / Recap / Outro: the lookup no longer restarts when the video length changes while loading, and it accepts stored cuts up to 12 seconds off the playing length, so the button appears more reliably. Episodes with no matching timestamps still show no button.
+
 ## [1.29.2] - 2026-11-17
 
 ### Fixed

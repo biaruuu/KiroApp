@@ -115,52 +115,6 @@ private val MutedText = Color(0xFF8E8E93)
 
 private const val NO_SOURCE = "This episode isn't available right now"
 
-/** "Dolby Vision", "HDR10" or "HLG" when the selected video track is HDR, else null. */
-private fun hdrLabel(tracks: Tracks): String? {
-    for (group in tracks.groups) {
-        if (group.type != androidx.media3.common.C.TRACK_TYPE_VIDEO || !group.isSelected) continue
-        for (i in 0 until group.length) {
-            if (!group.isTrackSelected(i)) continue
-            val f = group.getTrackFormat(i)
-            if (f.sampleMimeType == androidx.media3.common.MimeTypes.VIDEO_DOLBY_VISION) return "Dolby Vision"
-            val info = f.colorInfo ?: continue
-            return when (info.colorTransfer) {
-                androidx.media3.common.C.COLOR_TRANSFER_ST2084 -> "HDR10"
-                androidx.media3.common.C.COLOR_TRANSFER_HLG -> "HLG"
-                else -> null
-            }
-        }
-    }
-    return null
-}
-
-/** HDR formats this screen reports (HDR10, HLG, HDR10+, Dolby Vision); empty if it has none. */
-private fun screenHdrTypes(context: Context): List<String> {
-    if (android.os.Build.VERSION.SDK_INT < 26) return emptyList()
-    val activity = context.findActivity() ?: return emptyList()
-    val display = if (android.os.Build.VERSION.SDK_INT >= 30) activity.display else @Suppress("DEPRECATION") activity.windowManager.defaultDisplay
-    val types = HashSet<Int>()
-    if (display != null) {
-        @Suppress("DEPRECATION")
-        display.hdrCapabilities?.supportedHdrTypes?.let { for (t in it) types.add(t) }
-        if (android.os.Build.VERSION.SDK_INT >= 34) {
-            for (t in display.mode.supportedHdrTypes) types.add(t)
-            for (m in display.supportedModes) for (t in m.supportedHdrTypes) types.add(t)
-        }
-    }
-    val names = types.mapNotNull {
-        when (it) {
-            android.view.Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION -> "Dolby Vision"
-            android.view.Display.HdrCapabilities.HDR_TYPE_HDR10 -> "HDR10"
-            android.view.Display.HdrCapabilities.HDR_TYPE_HLG -> "HLG"
-            android.view.Display.HdrCapabilities.HDR_TYPE_HDR10_PLUS -> "HDR10+"
-            else -> null
-        }
-    }.sorted()
-    // Some phones only flag HDR through the screen configuration.
-    return if (names.isEmpty() && activity.resources.configuration.isScreenHdr) listOf("HDR") else names
-}
-
 private enum class Panel { Menu, Tracks, Episodes, Speed, Quality, SubStyle, Boost, Hdr, AutoSkip }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
@@ -272,10 +226,13 @@ fun PlayerScreen(
     val autoProgress = remember { androidx.compose.animation.core.Animatable(0f) }
     var skipSegments by remember { mutableStateOf<List<com.biaruuu.kiro.data.SkipTimes.Segment>>(emptyList()) }
     val skipMalId = ui.detail?.malId ?: 0
-    val durationSec = duration / 1000
-    LaunchedEffect(current, skipMalId, durationSec) {
-        skipSegments = emptyList()
-        if (duration > 0) skipSegments = com.biaruuu.kiro.data.SkipTimes.load(skipMalId, current, duration / 1000.0)
+    val hasDuration = duration > 0
+    // Looked up once per episode when the length is known; the length wobbling afterwards (streams
+    // refine it as they load) must not clear the markers or the skip button.
+    LaunchedEffect(current, skipMalId, hasDuration) {
+        if (!hasDuration) { skipSegments = emptyList(); return@LaunchedEffect }
+        val found = com.biaruuu.kiro.data.SkipTimes.load(skipMalId, current, duration / 1000.0)
+        skipSegments = found
     }
 
     var sources by remember { mutableStateOf<List<StreamSource>>(emptyList()) }
@@ -414,27 +371,15 @@ fun PlayerScreen(
         onDispose { com.biaruuu.kiro.data.Presence.watching.value = null }
     }
 
-    // True HDR: the window is put in HDR colour mode only while an HDR video (HDR10, HLG or
-    // Dolby Vision) is playing on a screen that can show it, so the panel really switches to HDR
-    // and everything else stays in normal SDR. Hardware tunneling is the separate "On" option.
-    val videoHdr = remember(tracks) { hdrLabel(tracks) }
-    val screenHdrList = remember { screenHdrTypes(context) }
-    val screenHdr = screenHdrList.isNotEmpty()
+    // HDR / Dolby Vision: hardware tunneling plus an HDR window, both left to the phone's decoder.
     DisposableEffect(hdrOn) {
         prefs.edit().putBoolean("hdr_tunneling", hdrOn).apply()
         (exo.trackSelector as? androidx.media3.exoplayer.trackselection.DefaultTrackSelector)?.let { sel ->
-            sel.parameters = sel.buildUponParameters().setTunnelingEnabled(hdrOn && screenHdr).build()
+            sel.parameters = sel.buildUponParameters().setTunnelingEnabled(hdrOn).build()
         }
-        onDispose {}
-    }
-    DisposableEffect(videoHdr, screenHdr) {
         val window = (context as? android.app.Activity)?.window
-        if (android.os.Build.VERSION.SDK_INT >= 26) {
-            window?.colorMode = if (videoHdr != null && screenHdr) {
-                android.content.pm.ActivityInfo.COLOR_MODE_HDR
-            } else {
-                android.content.pm.ActivityInfo.COLOR_MODE_DEFAULT
-            }
+        if (hdrOn && android.os.Build.VERSION.SDK_INT >= 26) {
+            window?.colorMode = android.content.pm.ActivityInfo.COLOR_MODE_HDR
         }
         onDispose {
             if (android.os.Build.VERSION.SDK_INT >= 26) {
@@ -828,7 +773,7 @@ fun PlayerScreen(
                             ) { panel = Panel.SubStyle }
                         }
                         item { MenuRow("Audio boost", if (boostDb == 0) "Off" else "+$boostDb dB") { panel = Panel.Boost } }
-                        item { MenuRow("HDR & Dolby Vision", if (videoHdr != null && screenHdr) videoHdr else if (hdrOn) "On" else "Auto") { panel = Panel.Hdr } }
+                        item { MenuRow("HDR & Dolby Vision", if (hdrOn) "On" else "Auto") { panel = Panel.Hdr } }
                         item { MenuRow("Playback speed", if (speed == 1f) "Normal" else "${speed}x") { panel = Panel.Speed } }
                     }
                     Panel.Quality -> {
@@ -895,17 +840,7 @@ fun PlayerScreen(
                         }
                         item {
                             Text(
-                                when {
-                                    videoHdr != null && screenHdr -> "Playing in true $videoHdr: your screen is switched into HDR mode for this video."
-                                    videoHdr != null -> "This video is $videoHdr, but your screen doesn't report HDR support, so it is shown in SDR."
-                                    screenHdr -> "Your screen supports ${screenHdrList.joinToString(", ")}. It switches to HDR automatically when a video is HDR; this one is SDR."
-                                    else -> "Your screen doesn't report HDR support, so videos play in SDR. Some phones only offer HDR in certain display modes, so check the display settings."
-                                },
-                                color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp),
-                            )
-                            Text(
-                                "HDR turns on by itself. \"On\" also uses hardware tunneling, which can look smoother on some phones but may not work with every video.",
+                                "HDR10 and Dolby Vision play through your phone's hardware decoder when the stream and screen support them. \"On\" also turns on hardware tunneling and an HDR display mode.",
                                 color = Color(0xFF8E8E93), fontSize = 12.sp,
                                 modifier = Modifier.padding(20.dp),
                             )
