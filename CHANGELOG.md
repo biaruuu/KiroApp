@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.29.0] - 2026-11-17
+
+### Added
+- **Aurora Night**, the first Library Effect: slow, glowing northern-lights ribbons and twinkling stars behind your library card.
+- **Starlight Frame**, the first Library Decoration: a light that travels around the card's edge, with twinkling sparkles and drifting particles.
+- Both are in Customize profile. Pick one or both to see them on the card at the top of Your Library.
+
 ## [1.28.0] - 2026-11-17
 
 ### Added

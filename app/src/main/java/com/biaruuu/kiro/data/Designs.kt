@@ -32,6 +32,8 @@ object Designs {
 
     private val builtIn = listOf(
         Design("cat_ears", DECORATION, "Cat Ears", asset = "decorations/cat_ears.png"),
+        Design("aurora_night", LIBRARY_EFFECT, "Aurora Night", asset = "library/aurora_night.png"),
+        Design("starlight_frame", LIBRARY_DECORATION, "Starlight Frame", asset = "library/starlight_frame.png"),
     )
 
     val remote = MutableStateFlow<List<Design>>(emptyList())

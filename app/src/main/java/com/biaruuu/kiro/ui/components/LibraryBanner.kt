@@ -42,7 +42,7 @@ fun LibraryBanner(profile: Profile, name: String, height: Dp = 120.dp, modifier:
     Box(modifier = modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(14.dp)).background(Color(0xFF1A1A1D))) {
         if (effect != null) AnimatedAsset(effect, Modifier.fillMaxSize(), crop = true)
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC000000)))))
-        if (decoration != null) AnimatedAsset(decoration, Modifier.fillMaxSize())
+        if (decoration != null) AnimatedAsset(decoration, Modifier.fillMaxSize(), crop = true)
         Row(
             modifier = Modifier.align(Alignment.BottomStart).padding(start = 18.dp, bottom = 12.dp, end = 18.dp),
             verticalAlignment = Alignment.CenterVertically,

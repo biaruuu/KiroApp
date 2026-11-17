@@ -111,14 +111,12 @@ fun CustomizePage() {
             onPick = { ProfileRepository.save(libraryDecoration = it) },
             tile = { d ->
                 if (d == null) NoneTile() else TileWithLabel(d.name) {
-                    Box(Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFF0E0E10))) { AnimatedAsset(d, Modifier.fillMaxSize()) }
+                    Box(Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFF1A1A1D))) { AnimatedAsset(d, Modifier.fillMaxSize(), crop = true) }
                 }
             },
         )
-        if (libraryEffects.isEmpty() && libraryDecorations.isEmpty()) {
-            Spacer(Modifier.height(8.dp))
-            Text("More library effects and decorations are coming soon.", color = Muted, fontSize = 12.sp)
-        }
+        Spacer(Modifier.height(8.dp))
+        Text("More library effects and decorations are coming soon.", color = Muted, fontSize = 12.sp)
 
         Section("Display Name Style")
         for (font in fonts) {
