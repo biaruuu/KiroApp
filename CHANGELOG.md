@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.39.2] - 2026-11-18
+
+### Changed
+- Report broken episode now only appears when an episode really is broken: when no provider has it, every source failed, or it stays stuck loading for 25 seconds. It no longer sits in the player menu.
+- The report finds the cause by itself (which provider, the error and HTTP code of each failed source, or the stall) and can be sent once per episode.
+
 ## [1.39.1] - 2026-11-18
 
 ### Changed

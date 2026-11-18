@@ -244,6 +244,10 @@ fun PlayerScreen(
     var duration by remember { mutableLongStateOf(0L) }
     var position by remember { mutableLongStateOf(0L) }
     var error by remember { mutableStateOf<String?>(null) }
+    // What went wrong on this episode, for the automatic broken-episode report.
+    var failLog by remember { mutableStateOf<List<String>>(emptyList()) }
+    var stalled by remember { mutableStateOf(false) }
+    var reported by remember { mutableStateOf<Set<String>>(emptySet()) }
     var tracks by remember { mutableStateOf(Tracks.EMPTY) }
     var speed by remember { mutableFloatStateOf(com.biaruuu.kiro.data.AppSettings.playSpeed(context)) }
 
@@ -407,6 +411,7 @@ fun PlayerScreen(
         exo.clearMediaItems()
         duration = 0
         error = null
+        failLog = emptyList()
         buffering = true
         resolving = true
         sources = emptyList()
@@ -553,6 +558,9 @@ fun PlayerScreen(
             override fun onPlayerError(e: PlaybackException) {
                 // An error from an episode we already left must not mark the new one as broken.
                 if (resolving) return
+                val http = (e.cause as? androidx.media3.datasource.HttpDataSource.InvalidResponseCodeException)?.responseCode
+                failLog = failLog + "${latestSources.getOrNull(latestIndex)?.providerName ?: "?"}: ${e.errorCodeName}" +
+                    (if (http != null) " (HTTP $http)" else "")
                 // Instant failover: try the next-best source before giving up.
                 if (latestIndex + 1 < latestSources.size) {
                     pendingSeek = exo.currentPosition
@@ -571,6 +579,15 @@ fun PlayerScreen(
             saveProgress()
             exo.removeListener(listener)
             exo.release()
+        }
+    }
+
+    // Buffering for 25 s with no error is a broken episode too.
+    LaunchedEffect(buffering, resolving, error, sourceIndex, current, retry) {
+        stalled = false
+        if (buffering && !resolving && error == null) {
+            delay(25_000)
+            stalled = true
         }
     }
 
@@ -693,6 +710,37 @@ fun PlayerScreen(
             }
         }
 
+        // A report is only offered when the episode really is broken, and it carries the cause.
+        val reportKey = "$animeId:$current"
+        fun reportBroken() {
+            val src = sources.getOrNull(sourceIndex)
+            val cause = when {
+                error == NO_SOURCE -> "No provider returned a stream"
+                stalled -> "Stuck buffering for over 25 s on ${src?.providerName ?: "?"}"
+                else -> error ?: "Playback failed"
+            }
+            reported = reported + reportKey
+            com.biaruuu.kiro.data.BrokenReport.send(
+                context,
+                com.biaruuu.kiro.data.BrokenReport.Info(
+                    animeId = animeId,
+                    title = title,
+                    episode = current,
+                    provider = src?.providerName ?: "none found",
+                    quality = if (quality == 0) "Auto" else "${quality}p",
+                    triedProviders = sources.map { it.providerName }.distinct(),
+                    problem = cause + if (failLog.isNotEmpty()) ". Errors: " + failLog.joinToString("; ") else "",
+                ),
+            ) { sent ->
+                Toast.makeText(
+                    context,
+                    if (sent) "Thanks! Report sent." else "Opening your email app to send the report",
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
+        val alreadyReported = reportKey in reported
+
         error?.let { message ->
             Column(
                 modifier = Modifier.align(Alignment.Center),
@@ -700,18 +748,46 @@ fun PlayerScreen(
             ) {
                 Text(message, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(12.dp))
-                Text(
-                    "Retry",
-                    color = Color.White,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(KiroPurple)
-                        .clickable { retry++ }
-                        .padding(horizontal = 24.dp, vertical = 8.dp),
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        "Retry",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(KiroPurple)
+                            .clickable { retry++ }
+                            .padding(horizontal = 24.dp, vertical = 8.dp),
+                    )
+                    Text(
+                        if (alreadyReported) "Reported" else "Report",
+                        color = if (alreadyReported) Color(0xFF9A9A9F) else Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Color(0xFF3A3A3E))
+                            .clickable(enabled = !alreadyReported) { reportBroken() }
+                            .padding(horizontal = 24.dp, vertical = 8.dp),
+                    )
+                }
             }
+        }
+        if (stalled && error == null) {
+            Text(
+                if (alreadyReported) "Reported" else "Stuck loading? Report this episode",
+                color = Color.White,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 96.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xCC1E1E22))
+                    .clickable(enabled = !alreadyReported) { reportBroken() }
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            )
         }
 
         // ---- Skip Intro / Outro / Recap while inside one of the segments ----
@@ -975,30 +1051,6 @@ fun PlayerScreen(
                         item { MenuRow("Playback speed", if (speed == 1f) "Normal" else "${speed}x") { panel = Panel.Speed } }
                         item {
                             MenuRow("Watch party", party?.code ?: "") { panel = Panel.Party }
-                        }
-                        item {
-                            MenuRow("Report broken episode", "") {
-                                val src = sources.getOrNull(sourceIndex)
-                                com.biaruuu.kiro.data.BrokenReport.send(
-                                    context,
-                                    com.biaruuu.kiro.data.BrokenReport.Info(
-                                        animeId = animeId,
-                                        title = title,
-                                        episode = current,
-                                        provider = src?.providerName ?: "none found",
-                                        quality = if (quality == 0) "Auto" else "${quality}p",
-                                        triedProviders = sources.map { it.providerName }.distinct(),
-                                        problem = error ?: "Does not play or looks wrong",
-                                    ),
-                                ) { sent ->
-                                    Toast.makeText(
-                                        context,
-                                        if (sent) "Thanks! Report sent." else "Opening your email app to send the report",
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                                }
-                                panel = null
-                            }
                         }
                     }
                     Panel.Quality -> {
