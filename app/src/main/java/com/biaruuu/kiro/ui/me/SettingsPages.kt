@@ -320,7 +320,17 @@ private fun LanguagePage() {
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            androidx.compose.material3.Text(label, color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
+            androidx.compose.material3.Text(label, color = Color.White, fontSize = 14.sp)
+            if (code == com.biaruuu.kiro.ui.i18n.I18n.FIL) {
+                Spacer(Modifier.width(8.dp))
+                Box(
+                    modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(KiroPurple.copy(alpha = 0.25f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                ) {
+                    androidx.compose.material3.Text("BETA", color = KiroPurple, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            Spacer(Modifier.weight(1f))
             if (current == code) Icon(
                 painter = painterResource(R.drawable.fluent_checkmark_regular),
                 contentDescription = null,
@@ -329,6 +339,8 @@ private fun LanguagePage() {
             )
         }
     }
+    Text("Filipino is in beta: some text may still show in English.", color = Muted, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 16.dp))
+    Spacer(Modifier.height(6.dp))
     Text("More languages are coming later.", color = Muted, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 16.dp))
 }
 

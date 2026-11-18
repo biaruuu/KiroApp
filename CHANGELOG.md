@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.40.1] - 2026-11-19
+
+### Changed
+- Filipino now carries a BETA badge in Me > Language, with a note that some text may still show in English.
+
 ## [1.40.0] - 2026-11-19
 
 ### Added

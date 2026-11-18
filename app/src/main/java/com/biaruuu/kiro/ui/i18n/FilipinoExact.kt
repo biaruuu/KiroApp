@@ -3,6 +3,7 @@ package com.biaruuu.kiro.ui.i18n
 /** Filipino (Tagalog) for every fixed sentence and label in the app. */
 internal val FIL_EXACT: Map<String, String> = mapOf(
     // Navigation and common
+    "Filipino is in beta: some text may still show in English." to "Beta pa ang Filipino: may ilang text na maaaring English pa rin.",
     "Home" to "Home", "Search" to "Hanapin", "Schedule" to "Iskedyul", "Library" to "Library", "Me" to "Ako",
     "Your Library" to "Iyong Library", "My List" to "Aking Listahan", "Browse" to "Mag-browse",
     "Continue Watching" to "Ituloy ang Panonood", "Recently Watched" to "Kamakailang Pinanood",
