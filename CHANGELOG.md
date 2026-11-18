@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.39.1] - 2026-11-18
+
+### Changed
+- Notification control redesigned: white small switches, grouped cards, quiet-hours time chips and a layout that fits every phone width.
+
+### Removed
+- Home layout (Me > Home layout) is removed; Home is back to its fixed order.
+
 ## [1.39.0] - 2026-11-18
 
 ### Added

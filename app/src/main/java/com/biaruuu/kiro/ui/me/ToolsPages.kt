@@ -40,7 +40,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.biaruuu.kiro.data.Downloads
-import com.biaruuu.kiro.data.HomeLayout
 import com.biaruuu.kiro.data.StorageInfo
 import com.biaruuu.kiro.ui.theme.KiroPurple
 import kotlinx.coroutines.Dispatchers
@@ -169,63 +168,5 @@ private fun Action(label: String, value: String, enabled: Boolean, onClick: () -
     ) {
         Text(label, color = if (enabled) Color.White else Color(0xFF5E5E63), fontSize = 14.sp, modifier = Modifier.weight(1f))
         Text(value, color = Muted, fontSize = 13.sp)
-    }
-}
-
-/** Me > Home layout: reorder or hide the Home rows. */
-@Composable
-fun HomeLayoutPage() {
-    val context = LocalContext.current
-    val version by HomeLayout.version.collectAsState()
-    val known = remember(version) { HomeLayout.known(context) }
-    val keys = remember(version) { HomeLayout.arrange(context, known, includeHidden = true) }
-    val hidden = remember(version) { HomeLayout.hidden(context) }
-
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-        Text(
-            "Move rows up or down, or switch one off. The banner at the top always stays.",
-            color = Muted, fontSize = 12.sp,
-        )
-        Spacer(Modifier.height(12.dp))
-        if (keys.isEmpty()) {
-            Text("Open the Home tab once so Kiro can list its rows here.", color = Muted, fontSize = 13.sp, modifier = Modifier.padding(vertical = 16.dp))
-        }
-        keys.forEachIndexed { i, key ->
-            Row(
-                Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(10.dp)).background(CardBg).padding(start = 14.dp, end = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    HomeLayout.label(key),
-                    color = if (key in hidden) Color(0xFF5E5E63) else Color.White,
-                    fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f).padding(vertical = 14.dp),
-                )
-                Text(
-                    "Up", color = if (i > 0) Color.White else Color(0xFF3A3A3E), fontSize = 13.sp, fontWeight = FontWeight.Medium,
-                    modifier = Modifier.clickable(enabled = i > 0) { HomeLayout.move(context, known, key, -1) }.padding(10.dp),
-                )
-                Text(
-                    "Down", color = if (i < keys.lastIndex) Color.White else Color(0xFF3A3A3E), fontSize = 13.sp, fontWeight = FontWeight.Medium,
-                    modifier = Modifier.clickable(enabled = i < keys.lastIndex) { HomeLayout.move(context, known, key, 1) }.padding(10.dp),
-                )
-                Switch(
-                    modifier = Modifier.scale(0.85f),
-                    checked = key !in hidden,
-                    onCheckedChange = { HomeLayout.setHidden(context, key, !it) },
-                    colors = SwitchDefaults.colors(
-                        checkedTrackColor = KiroPurple, checkedThumbColor = Color.White, checkedBorderColor = KiroPurple,
-                        uncheckedTrackColor = Color(0xFF3A3A3E), uncheckedThumbColor = Color(0xFFB4B4BA), uncheckedBorderColor = Color(0xFF3A3A3E),
-                    ),
-                )
-            }
-        }
-        if (keys.isNotEmpty()) {
-            Spacer(Modifier.height(14.dp))
-            Text(
-                "Reset to default", color = Color(0xFFFF6B6B), fontSize = 13.sp, fontWeight = FontWeight.Medium,
-                modifier = Modifier.clickable { HomeLayout.reset(context) }.padding(8.dp),
-            )
-        }
     }
 }

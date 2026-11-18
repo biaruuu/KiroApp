@@ -2,7 +2,6 @@ package com.biaruuu.kiro.ui.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -79,17 +78,6 @@ fun HomeScreen(
         )
 
         is HomeUiState.Success -> Box(modifier = modifier.fillMaxSize()) {
-        val layoutVersion by com.biaruuu.kiro.data.HomeLayout.version.collectAsState()
-        val defaultKeys = buildList {
-            if (history.isNotEmpty()) add(com.biaruuu.kiro.data.HomeLayout.CONTINUE)
-            current.content.sections.forEachIndexed { index, section ->
-                add(section.title)
-                if (index == 0 && because.isNotEmpty()) add(com.biaruuu.kiro.data.HomeLayout.BECAUSE)
-            }
-            if (current.content.sections.isEmpty() && because.isNotEmpty()) add(com.biaruuu.kiro.data.HomeLayout.BECAUSE)
-        }
-        LaunchedEffect(defaultKeys) { com.biaruuu.kiro.data.HomeLayout.remember(appContext, defaultKeys) }
-        val rows = remember(defaultKeys, layoutVersion) { com.biaruuu.kiro.data.HomeLayout.arrange(appContext, defaultKeys) }
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
@@ -106,22 +94,23 @@ fun HomeScreen(
                     )
                 }
             }
-            // Rows in the order chosen in Me > Home layout (hidden ones left out).
-            items(rows, key = { it }, contentType = { if (it == "continue" || it == "because") it else "row" }) { key ->
-                when (key) {
-                    com.biaruuu.kiro.data.HomeLayout.CONTINUE ->
-                        ContinueWatchingRow(items = history, onContinue = onContinue)
-                    com.biaruuu.kiro.data.HomeLayout.BECAUSE -> Column(verticalArrangement = Arrangement.spacedBy(dims.rowSpacing)) {
-                        because.forEach { row ->
-                            AnimeRow(title = row.title, items = row.items, onAnimeClick = onAnimeClick)
-                        }
+            if (history.isNotEmpty()) {
+                item(key = "continue", contentType = "continue") {
+                    ContinueWatchingRow(items = history, onContinue = onContinue)
+                }
+            }
+            current.content.sections.forEachIndexed { index, section ->
+                item(key = section.title, contentType = if (section.isRanked) "ranked" else "row") {
+                    if (section.isRanked) {
+                        RankedRow(title = section.title, items = section.items, onAnimeClick = onAnimeClick)
+                    } else {
+                        AnimeRow(title = section.title, items = section.items, onAnimeClick = onAnimeClick)
                     }
-                    else -> current.content.sections.firstOrNull { it.title == key }?.let { section ->
-                        if (section.isRanked) {
-                            RankedRow(title = section.title, items = section.items, onAnimeClick = onAnimeClick)
-                        } else {
-                            AnimeRow(title = section.title, items = section.items, onAnimeClick = onAnimeClick)
-                        }
+                }
+                // Right under Trending Now.
+                if (index == 0) {
+                    items(because, key = { "by:" + it.title }, contentType = { "row" }) { row ->
+                        AnimeRow(title = row.title, items = row.items, onAnimeClick = onAnimeClick)
                     }
                 }
             }
