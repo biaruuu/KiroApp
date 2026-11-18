@@ -29,7 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
+import com.biaruuu.kiro.ui.i18n.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -211,10 +211,10 @@ private fun DownloadPage() {
     )
     ChevronRow("Delete all downloads") {
         if (com.biaruuu.kiro.data.Downloads.items.value.isEmpty()) {
-            Toast.makeText(context, "You have no downloads", Toast.LENGTH_SHORT).show()
+            com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "You have no downloads", Toast.LENGTH_SHORT).show()
         } else {
             com.biaruuu.kiro.data.Downloads.removeAll(context)
-            Toast.makeText(context, "All downloads deleted", Toast.LENGTH_SHORT).show()
+            com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "All downloads deleted", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -308,17 +308,26 @@ internal fun formatBytes(b: Long): String = when {
 
 @Composable
 private fun LanguagePage() {
-    Row(
-        modifier = Modifier.fillMaxWidth().height(45.dp).padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text("English", color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
-        Icon(
-            painter = painterResource(R.drawable.fluent_checkmark_regular),
-            contentDescription = null,
-            tint = KiroPurple,
-            modifier = Modifier.size(26.dp),
-        )
+    val context = LocalContext.current
+    val current = com.biaruuu.kiro.ui.i18n.I18n.lang
+    listOf(
+        com.biaruuu.kiro.ui.i18n.I18n.EN to "English",
+        com.biaruuu.kiro.ui.i18n.I18n.FIL to "Filipino",
+    ).forEach { (code, label) ->
+        Row(
+            modifier = Modifier.fillMaxWidth().height(45.dp)
+                .clickable { com.biaruuu.kiro.ui.i18n.I18n.set(context, code) }
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            androidx.compose.material3.Text(label, color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
+            if (current == code) Icon(
+                painter = painterResource(R.drawable.fluent_checkmark_regular),
+                contentDescription = null,
+                tint = KiroPurple,
+                modifier = Modifier.size(26.dp),
+            )
+        }
     }
     Text("More languages are coming later.", color = Muted, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 16.dp))
 }

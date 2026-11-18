@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.40.0] - 2026-11-19
+
+### Added
+- Filipino (Tagalog) interface: pick it in Me > Language. Menus, buttons, messages, toasts and notifications are translated; anything not translated yet stays in English.
+- Share card: the Share button on a show now makes a neat image with the poster, score and your rating, ready for social apps.
+- App icon shortcuts: long-press the Kiro icon for Continue watching, Schedule and Downloads.
+
 ## [1.39.2] - 2026-11-18
 
 ### Changed

@@ -20,7 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import com.biaruuu.kiro.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -81,7 +81,7 @@ fun AdminPage() {
                     "decoration" to profile.decoration, "nameFont" to profile.nameFont,
                 ),
             ).addOnFailureListener {
-                Toast.makeText(context, "Couldn't save your developer card: ${it.message}", Toast.LENGTH_LONG).show()
+                com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Couldn't save your developer card: ${it.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -313,14 +313,14 @@ private fun AnnounceTab() {
                 onClick = {
                     val col = FirebaseFirestore.getInstance().collection("announcements")
                     val id = editing
-                    val fail = { e: Exception -> Toast.makeText(context, "Couldn't save: ${e.message}", Toast.LENGTH_LONG).show() }
+                    val fail = { e: Exception -> com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Couldn't save: ${e.message}", Toast.LENGTH_LONG).show() }
                     if (id == null) {
                         col.add(hashMapOf("title" to title.trim(), "body" to body.trim(), "createdAt" to System.currentTimeMillis()))
-                            .addOnSuccessListener { Toast.makeText(context, "Announcement sent.", Toast.LENGTH_SHORT).show() }
+                            .addOnSuccessListener { com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Announcement sent.", Toast.LENGTH_SHORT).show() }
                             .addOnFailureListener(fail)
                     } else {
                         col.document(id).update(mapOf("title" to title.trim(), "body" to body.trim()))
-                            .addOnSuccessListener { Toast.makeText(context, "Announcement updated.", Toast.LENGTH_SHORT).show() }
+                            .addOnSuccessListener { com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Announcement updated.", Toast.LENGTH_SHORT).show() }
                             .addOnFailureListener(fail)
                     }
                     title = ""; body = ""; editing = null
@@ -365,9 +365,9 @@ private fun DesignsTab() {
         if (uri != null) {
             val bytes = try { context.contentResolver.openInputStream(uri)?.use { it.readBytes() } } catch (_: Exception) { null }
             when {
-                bytes == null -> Toast.makeText(context, "Couldn't read that file.", Toast.LENGTH_SHORT).show()
+                bytes == null -> com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Couldn't read that file.", Toast.LENGTH_SHORT).show()
                 bytes.size > com.biaruuu.kiro.data.Designs.MAX_BYTES ->
-                    Toast.makeText(context, "Too large (%.1f MB). The limit is 5 MB.".format(bytes.size / 1048576.0), Toast.LENGTH_LONG).show()
+                    com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Too large (%.1f MB). The limit is 5 MB.".format(bytes.size / 1048576.0), Toast.LENGTH_LONG).show()
                 else -> picked = bytes
             }
         }
@@ -426,9 +426,9 @@ private fun DesignsTab() {
                         publishing = false
                         if (error == null) {
                             picked = null; name = ""
-                            Toast.makeText(context, "Published.", Toast.LENGTH_SHORT).show()
+                            com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Published.", Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(context, "Couldn't publish: $error", Toast.LENGTH_LONG).show()
+                            com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Couldn't publish: $error", Toast.LENGTH_LONG).show()
                         }
                     }
                 },

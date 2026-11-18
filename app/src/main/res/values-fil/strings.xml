@@ -1,0 +1,8 @@
+<resources>
+    <string name="shortcut_continue">Ituloy</string>
+    <string name="shortcut_continue_long">Ituloy ang panonood</string>
+    <string name="shortcut_schedule">Iskedyul</string>
+    <string name="shortcut_schedule_long">Iskedyul ng pagpapalabas</string>
+    <string name="shortcut_downloads">Downloads</string>
+    <string name="shortcut_downloads_long">Mga download mo</string>
+</resources>

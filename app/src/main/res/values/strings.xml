@@ -1,4 +1,10 @@
 <resources>
     <string name="app_name">Kiro</string>
     <string name="download_channel">Downloads</string>
+    <string name="shortcut_continue">Continue</string>
+    <string name="shortcut_continue_long">Continue watching</string>
+    <string name="shortcut_schedule">Schedule</string>
+    <string name="shortcut_schedule_long">Airing schedule</string>
+    <string name="shortcut_downloads">Downloads</string>
+    <string name="shortcut_downloads_long">Your downloads</string>
 </resources>

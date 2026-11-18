@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="continue" android:enabled="true" android:icon="@drawable/shortcut_continue" android:shortcutShortLabel="@string/shortcut_continue" android:shortcutLongLabel="@string/shortcut_continue_long">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.biaruuu.kiro" android:targetClass="com.biaruuu.kiro.MainActivity">
+            <extra android:name="kiro_shortcut" android:value="continue" />
+        </intent>
+    </shortcut>
+    <shortcut android:shortcutId="schedule" android:enabled="true" android:icon="@drawable/shortcut_schedule" android:shortcutShortLabel="@string/shortcut_schedule" android:shortcutLongLabel="@string/shortcut_schedule_long">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.biaruuu.kiro" android:targetClass="com.biaruuu.kiro.MainActivity">
+            <extra android:name="kiro_shortcut" android:value="schedule" />
+        </intent>
+    </shortcut>
+    <shortcut android:shortcutId="downloads" android:enabled="true" android:icon="@drawable/shortcut_downloads" android:shortcutShortLabel="@string/shortcut_downloads" android:shortcutLongLabel="@string/shortcut_downloads_long">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.biaruuu.kiro" android:targetClass="com.biaruuu.kiro.MainActivity">
+            <extra android:name="kiro_shortcut" android:value="downloads" />
+        </intent>
+    </shortcut>
+</shortcuts>

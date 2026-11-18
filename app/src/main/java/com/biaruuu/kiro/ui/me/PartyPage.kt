@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Text
+import com.biaruuu.kiro.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -78,7 +78,7 @@ fun PartyPage() {
                     WatchParty.lookup(code) { r, err ->
                         busy = false
                         if (r == null) {
-                            Toast.makeText(context, err ?: "Couldn't join", Toast.LENGTH_LONG).show()
+                            com.biaruuu.kiro.ui.i18n.I18nToast.make(context, err ?: "Couldn't join", Toast.LENGTH_LONG).show()
                         } else {
                             // The player opens on the host's episode and starts following.
                             DeepLink.request.value = "p:${r.animeId}:${r.episode}:$code"

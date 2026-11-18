@@ -23,7 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.biaruuu.kiro.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -143,7 +143,7 @@ private fun openUrl(context: android.content.Context, url: String) {
     try {
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     } catch (_: Exception) {
-        Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+        com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "No app can open this link", Toast.LENGTH_SHORT).show()
     }
 }
 

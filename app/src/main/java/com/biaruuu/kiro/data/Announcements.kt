@@ -111,7 +111,7 @@ object Announcements {
         val pending = PendingIntent.getActivity(ctx, 2, open, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val n = NotificationCompat.Builder(ctx, CHANNEL)
             .setSmallIcon(R.drawable.fluent_alert_regular)
-            .setContentTitle(a.title.ifBlank { "Message from the Kiro developer" })
+            .setContentTitle(a.title.ifBlank { com.biaruuu.kiro.ui.i18n.I18n.tr("Message from the Kiro developer") })
             .setContentText(a.body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(a.body))
             .setContentIntent(pending)

@@ -35,7 +35,7 @@ import com.biaruuu.kiro.ui.components.EpisodeSkeletonRow
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Text
+import com.biaruuu.kiro.ui.i18n.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.drawscope.clipRect
@@ -211,7 +211,7 @@ private fun DetailContent(
     val downloads by com.biaruuu.kiro.data.Downloads.items.collectAsState()
     val downloadScope = rememberCoroutineScope()
     fun startDownload(episode: EpisodeInfo) {
-        Toast.makeText(context, "Preparing download...", Toast.LENGTH_SHORT).show()
+        com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Preparing download...", Toast.LENGTH_SHORT).show()
         downloadScope.launch {
             val request = com.biaruuu.kiro.data.stream.StreamRequest(
                 anime.id, episode.number, anime.displayTitle, anime.titleEnglish, anime.titleRomaji,
@@ -227,14 +227,14 @@ private fun DetailContent(
             val cap = com.biaruuu.kiro.data.AppSettings.downloadQuality(context).removeSuffix("p").toIntOrNull() ?: 0
             val source = (if (cap > 0) found.firstOrNull { it.height in 1..cap } else null) ?: found.firstOrNull()
             if (source == null) {
-                Toast.makeText(context, "This episode isn't available to download right now.", Toast.LENGTH_LONG).show()
+                com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "This episode isn't available to download right now.", Toast.LENGTH_LONG).show()
                 return@launch
             }
             com.biaruuu.kiro.data.Downloads.start(
                 context, anime.id, anime.displayTitle, anime.posterUrl.orEmpty(), episode.number,
                 episode.heading, episode.thumbnailUrl.orEmpty(), episode.overview.orEmpty(), source, cap,
             ) { msg -> com.biaruuu.kiro.data.Downloads.toast(context, msg) }
-            Toast.makeText(context, "Download started", Toast.LENGTH_SHORT).show()
+            com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Download started", Toast.LENGTH_SHORT).show()
         }
     }
     val nowSeconds by produceState(System.currentTimeMillis() / 1000) {
@@ -362,7 +362,7 @@ private fun DetailContent(
                             if (first != null) {
                                 if (first.number in watchedEps) rewatch = first.number else onPlay(anime.id, first.number)
                             }
-                            else Toast.makeText(context, "Not released yet", Toast.LENGTH_SHORT).show()
+                            else com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Not released yet", Toast.LENGTH_SHORT).show()
                         },
                     contentAlignment = Alignment.Center,
                 ) {
@@ -389,7 +389,7 @@ private fun DetailContent(
                             return@ActionButton
                         }
                         inList = MyListStore.toggle(context, anime)
-                        Toast.makeText(
+                        com.biaruuu.kiro.ui.i18n.I18nToast.make(
                             context,
                             if (inList) "Added to My List" else "Removed from My List",
                             Toast.LENGTH_SHORT,
@@ -401,11 +401,26 @@ private fun DetailContent(
                         tint = Color.White,
                     ) { showRating = true }
                     ActionButton(label = "Share", icon = R.drawable.fluent_open_regular, tint = Color.White) {
-                        val send = Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, shareText(anime))
+                        // A picture card (poster, score, your rating) plus the text, for social apps.
+                        com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Making your share card...", Toast.LENGTH_SHORT).show()
+                        downloadScope.launch {
+                            val file = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                ShareCard.create(context, anime, rating)
+                            }
+                            val send = Intent(Intent.ACTION_SEND).apply {
+                                putExtra(Intent.EXTRA_TEXT, shareText(anime))
+                                if (file != null) {
+                                    val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                                    type = "image/png"
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    clipData = android.content.ClipData.newRawUri("", uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                } else {
+                                    type = "text/plain"
+                                }
+                            }
+                            context.startActivity(Intent.createChooser(send, null))
                         }
-                        context.startActivity(Intent.createChooser(send, null))
                     }
                     // Not a button: finishing an anime earns this shimmering medal automatically.
                     if (completedByMe) {

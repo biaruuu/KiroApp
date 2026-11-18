@@ -445,6 +445,6 @@ object Downloads {
     }
 
     fun toast(context: Context, message: String) {
-        main.post { Toast.makeText(context.applicationContext, message, Toast.LENGTH_LONG).show() }
+        main.post { com.biaruuu.kiro.ui.i18n.I18nToast.make(context.applicationContext, message, Toast.LENGTH_LONG).show() }
     }
 }

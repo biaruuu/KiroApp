@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit
 class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
+        com.biaruuu.kiro.ui.i18n.I18n.ensure(applicationContext)
         val release = UpdateChecker.latest() ?: return Result.success()
         UpdateChecker.onLatest(applicationContext, release)
         notifyIfNew(applicationContext, release)
@@ -63,8 +64,8 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
             )
             val notification = NotificationCompat.Builder(ctx, CHANNEL)
                 .setSmallIcon(R.drawable.fluent_arrow_download_regular)
-                .setContentTitle("Kiro ${release.version} is available")
-                .setContentText("Tap to see what's new and update.")
+                .setContentTitle(com.biaruuu.kiro.ui.i18n.I18n.tr("Kiro ${release.version} is available"))
+                .setContentText(com.biaruuu.kiro.ui.i18n.I18n.tr("Tap to see what's new and update."))
                 .setContentIntent(pending)
                 .setAutoCancel(true)
                 .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)

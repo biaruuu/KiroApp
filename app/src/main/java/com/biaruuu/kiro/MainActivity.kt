@@ -16,6 +16,7 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
         )
+        com.biaruuu.kiro.ui.i18n.I18n.init(this)
         handleIntent(intent)
         setContent {
             KiroTheme {
@@ -38,10 +39,21 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        com.biaruuu.kiro.ui.i18n.I18n.init(this)
         handleIntent(intent)
     }
 
     private fun handleIntent(intent: android.content.Intent?) {
+        // App icon shortcuts (long-press the Kiro icon).
+        when (intent?.getStringExtra("kiro_shortcut")) {
+            "continue" -> {
+                val last = com.biaruuu.kiro.data.WatchHistory.all(this).maxByOrNull { it.updatedAt }
+                com.biaruuu.kiro.data.DeepLink.request.value = if (last != null) "p:${last.animeId}:${last.episode}" else "t:library"
+            }
+            "schedule" -> com.biaruuu.kiro.data.DeepLink.request.value = "t:schedule"
+            "downloads" -> com.biaruuu.kiro.data.DeepLink.request.value = "t:downloads"
+        }
+        intent?.removeExtra("kiro_shortcut")
         if (intent?.getStringExtra(com.biaruuu.kiro.data.UpdateWorker.EXTRA_OPEN) == "update") {
             com.biaruuu.kiro.data.UpdateChecker.request.value = "latest"
             intent.removeExtra(com.biaruuu.kiro.data.UpdateWorker.EXTRA_OPEN)

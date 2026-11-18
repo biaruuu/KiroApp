@@ -18,7 +18,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import com.biaruuu.kiro.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.ui.graphics.graphicsLayer
@@ -131,6 +131,7 @@ private fun KiroScaffold() {
     var offlineJumped by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         com.biaruuu.kiro.data.Connectivity.start(context)
+        com.biaruuu.kiro.ui.i18n.I18n.init(context)
         if (!offlineJumped) {
             offlineJumped = true
             if (!com.biaruuu.kiro.data.Connectivity.isOnline(context)) {
@@ -185,7 +186,7 @@ private fun KiroScaffold() {
                     com.biaruuu.kiro.data.Achievements.checkNew(context)
                 }
                 if (fresh.isNotEmpty()) {
-                    Toast.makeText(
+                    com.biaruuu.kiro.ui.i18n.I18nToast.make(
                         context,
                         if (fresh.size == 1) "Achievement unlocked: ${fresh[0].title}" else "${fresh.size} achievements unlocked",
                         Toast.LENGTH_LONG,
@@ -237,7 +238,17 @@ private fun KiroScaffold() {
     val deepLink by com.biaruuu.kiro.data.DeepLink.request.collectAsState()
     LaunchedEffect(deepLink) {
         deepLink?.let {
-            backStack.add(it)
+            if (it.startsWith("t:")) {
+                // App icon shortcuts open a tab.
+                backStack.clear()
+                when (it) {
+                    "t:schedule" -> tab = TAB_SCHEDULE
+                    "t:downloads" -> { tab = TAB_LIBRARY; openDownloadsKey++ }
+                    else -> tab = TAB_LIBRARY
+                }
+            } else {
+                backStack.add(it)
+            }
             com.biaruuu.kiro.data.DeepLink.request.value = null
         }
     }

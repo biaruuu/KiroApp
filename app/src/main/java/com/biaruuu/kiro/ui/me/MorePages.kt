@@ -18,7 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
+import com.biaruuu.kiro.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
@@ -323,7 +323,7 @@ fun ContactPage(onDone: () -> Unit) {
                         if (!sending) return@addOnCompleteListener
                         sending = false
                         if (t.isSuccessful) sent = true
-                        else Toast.makeText(context, "Couldn't send. Check your connection and try again.", Toast.LENGTH_LONG).show()
+                        else com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Couldn't send. Check your connection and try again.", Toast.LENGTH_LONG).show()
                     }
                     // Offline, the message is kept and sent later; don't leave the person waiting.
                     scope.launch {

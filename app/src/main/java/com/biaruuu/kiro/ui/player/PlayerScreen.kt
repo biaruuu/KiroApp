@@ -50,7 +50,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.biaruuu.kiro.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.draw.scale
@@ -314,7 +314,7 @@ fun PlayerScreen(
     val partyMessage by com.biaruuu.kiro.data.WatchParty.message.collectAsState()
     val isGuest = party?.host == false
     fun guestBlocked(): Boolean {
-        if (isGuest) Toast.makeText(context, "Only the host controls the watch party", Toast.LENGTH_SHORT).show()
+        if (isGuest) com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Only the host controls the watch party", Toast.LENGTH_SHORT).show()
         return isGuest
     }
     LaunchedEffect(partyCode) {
@@ -323,7 +323,7 @@ fun PlayerScreen(
     DisposableEffect(Unit) { onDispose { com.biaruuu.kiro.data.WatchParty.leave() } }
     LaunchedEffect(partyMessage) {
         partyMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            com.biaruuu.kiro.ui.i18n.I18nToast.make(context, it, Toast.LENGTH_LONG).show()
             com.biaruuu.kiro.data.WatchParty.message.value = null
         }
     }
@@ -732,7 +732,7 @@ fun PlayerScreen(
                     problem = cause + if (failLog.isNotEmpty()) ". Errors: " + failLog.joinToString("; ") else "",
                 ),
             ) { sent ->
-                Toast.makeText(
+                com.biaruuu.kiro.ui.i18n.I18nToast.make(
                     context,
                     if (sent) "Thanks! Report sent." else "Opening your email app to send the report",
                     Toast.LENGTH_SHORT,
@@ -988,7 +988,7 @@ fun PlayerScreen(
                         val next = nextEpisode
                         if (guestBlocked()) Unit
                         else if (next != null) playEpisode(next.number)
-                        else Toast.makeText(context, "No more episodes", Toast.LENGTH_SHORT).show()
+                        else com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "No more episodes", Toast.LENGTH_SHORT).show()
                     },
                     onLock = {
                         locked = true
@@ -1132,7 +1132,7 @@ fun PlayerScreen(
                             PartyButton("Start a watch party", true) {
                                 com.biaruuu.kiro.data.WatchParty.host(context, animeId, current, ui.base?.displayTitle.orEmpty()) { code, err ->
                                     if (code != null) shareCode(code)
-                                    else Toast.makeText(context, err ?: "Couldn't start the party", Toast.LENGTH_LONG).show()
+                                    else com.biaruuu.kiro.ui.i18n.I18nToast.make(context, err ?: "Couldn't start the party", Toast.LENGTH_LONG).show()
                                 }
                             }
                         } else {
@@ -1878,7 +1878,7 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
                 customName = SubtitleOptions.customName(context)
                 onChange(style.copy(font = SubtitleOptions.CUSTOM))
             } else {
-                Toast.makeText(context, "That file isn't a usable font", Toast.LENGTH_SHORT).show()
+                com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "That file isn't a usable font", Toast.LENGTH_SHORT).show()
             }
         }
     }

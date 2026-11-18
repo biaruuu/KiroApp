@@ -71,7 +71,7 @@ object CloudSync {
     /** Tells a logged-out user why nothing was saved and opens the login page. */
     @JvmStatic
     fun requireLogin(context: Context) {
-        android.widget.Toast.makeText(context, "Log in to save to your library", android.widget.Toast.LENGTH_SHORT).show()
+        com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Log in to save to your library", android.widget.Toast.LENGTH_SHORT).show()
         com.biaruuu.kiro.data.auth.AuthRepository.requestLogin()
     }
 

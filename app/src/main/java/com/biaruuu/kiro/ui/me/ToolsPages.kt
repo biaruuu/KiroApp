@@ -19,7 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
+import com.biaruuu.kiro.ui.i18n.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -88,21 +88,21 @@ fun StoragePage() {
         Action("Clear cache", formatBytes(cache), enabled = cache > 0) {
             confirm = Confirm("Clear cache?", "Images and saved pages are downloaded again when needed. Your downloads, list and progress are kept.") {
                 val freed = StorageInfo.clearCache(context)
-                Toast.makeText(context, "Freed ${formatBytes(freed)}", Toast.LENGTH_SHORT).show()
+                com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Freed ${formatBytes(freed)}", Toast.LENGTH_SHORT).show()
                 refresh++
             }
         }
         Action("Delete watched episodes", if (watched.isEmpty()) "None" else "${watched.size} · ${formatBytes(watchedBytes)}", enabled = watched.isNotEmpty()) {
             confirm = Confirm("Delete watched downloads?", "Removes ${watched.size} downloaded episode${if (watched.size == 1) "" else "s"} you have already watched.") {
                 val n = StorageInfo.removeWatchedDownloads(context)
-                Toast.makeText(context, "Deleted $n episode${if (n == 1) "" else "s"}", Toast.LENGTH_SHORT).show()
+                com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Deleted $n episode${if (n == 1) "" else "s"}", Toast.LENGTH_SHORT).show()
                 refresh++
             }
         }
         Action("Delete all downloads", formatBytes(dlBytes), enabled = downloads.isNotEmpty()) {
             confirm = Confirm("Delete all downloads?", "Every downloaded episode is removed from this phone.") {
                 Downloads.removeAll(context)
-                Toast.makeText(context, "All downloads deleted", Toast.LENGTH_SHORT).show()
+                com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "All downloads deleted", Toast.LENGTH_SHORT).show()
                 refresh++
             }
         }

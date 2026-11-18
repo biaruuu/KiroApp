@@ -18,7 +18,7 @@ object ApkInstaller {
     fun start(context: Context, url: String, version: String) {
         val app = context.applicationContext
         if (url.isEmpty()) {
-            Toast.makeText(app, "Update isn't available right now", Toast.LENGTH_SHORT).show()
+            com.biaruuu.kiro.ui.i18n.I18nToast.make(app, "Update isn't available right now", Toast.LENGTH_SHORT).show()
             return
         }
         val name = "Kiro-$version.apk"
@@ -33,7 +33,7 @@ object ApkInstaller {
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setDestinationInExternalFilesDir(app, Environment.DIRECTORY_DOWNLOADS, name),
         )
-        Toast.makeText(app, "Downloading update...", Toast.LENGTH_SHORT).show()
+        com.biaruuu.kiro.ui.i18n.I18nToast.make(app, "Downloading update...", Toast.LENGTH_SHORT).show()
 
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(c: Context, intent: Intent) {
@@ -41,7 +41,7 @@ object ApkInstaller {
                 app.unregisterReceiver(this)
                 val file = File(dir, name)
                 if (!file.exists() || file.length() == 0L) {
-                    Toast.makeText(app, "Download failed. Please try again.", Toast.LENGTH_LONG).show()
+                    com.biaruuu.kiro.ui.i18n.I18nToast.make(app, "Download failed. Please try again.", Toast.LENGTH_LONG).show()
                     return
                 }
                 val uri = FileProvider.getUriForFile(app, app.packageName + ".fileprovider", file)

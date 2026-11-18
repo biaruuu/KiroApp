@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit
 class EpisodeAlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
+        com.biaruuu.kiro.ui.i18n.I18n.ensure(applicationContext)
         val c = applicationContext
         if (!AppSettings.episodeAlerts(c)) return Result.success()
         // Quiet hours: wait. "last" stays put, so what aired meanwhile is announced afterwards.
@@ -71,8 +72,8 @@ class EpisodeAlertWorker(context: Context, params: WorkerParameters) : Coroutine
             val pending = PendingIntent.getActivity(c, a.anime.id, open, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
             val n = NotificationCompat.Builder(c, CHANNEL)
                 .setSmallIcon(R.drawable.fluent_alert_regular)
-                .setContentTitle(a.anime.displayTitle)
-                .setContentText("Episode ${a.episode} is out now")
+                .setContentTitle(com.biaruuu.kiro.ui.i18n.I18n.tr(a.anime.displayTitle))
+                .setContentText(com.biaruuu.kiro.ui.i18n.I18n.tr("Episode ${a.episode} is out now"))
                 .setContentIntent(pending)
                 .setAutoCancel(true)
                 .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
