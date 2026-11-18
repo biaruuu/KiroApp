@@ -4,6 +4,17 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.37.2] - 2026-11-18
+
+### Fixed
+- Watch party now stays in sync in real time: a guest no longer starts playing while the host is paused, and the host's play, pause, seek and buffering reach everyone immediately. Guests check the host every 0.4 s and correct any drift over 1.5 s (0.5 s while paused); the host also sends its position every 2 s while playing.
+
+### Added
+- A chip at the top of the player in a watch party shows the avatars (with their decorations) of everyone in the party. Tap it to see everybody, each with their username in their chosen font, and who the host is.
+
+### Removed
+- The Picture in picture row in the three dots menu. Picture in picture still opens automatically when you press Home while a video plays.
+
 ## [1.37.1] - 2026-11-18
 
 ### Changed

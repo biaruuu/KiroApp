@@ -116,7 +116,7 @@ private val MutedText = Color(0xFF8E8E93)
 
 private const val NO_SOURCE = "This episode isn't available right now"
 
-private enum class Panel { Menu, Tracks, Episodes, Speed, Quality, SubStyle, Boost, Hdr, AutoSkip, Party }
+private enum class Panel { Menu, Tracks, Episodes, Speed, Quality, SubStyle, Boost, Hdr, AutoSkip, Party, Members }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -322,29 +322,62 @@ fun PlayerScreen(
             com.biaruuu.kiro.data.WatchParty.message.value = null
         }
     }
-    // Host: share where we are now, and every few seconds while playing.
-    LaunchedEffect(party?.code, party?.host, isPlaying, current) {
-        val p = party ?: return@LaunchedEffect
-        if (!p.host) return@LaunchedEffect
-        com.biaruuu.kiro.data.WatchParty.push(animeId, current, exo.currentPosition, exo.isPlaying)
-        while (isPlaying) {
-            delay(4000)
-            com.biaruuu.kiro.data.WatchParty.push(animeId, current, exo.currentPosition, exo.isPlaying)
+    // The host's player reports every change at once (play, pause, seek, buffering) ...
+    val partyHost = party?.host == true
+    DisposableEffect(exo, partyHost) {
+        fun pushNow() {
+            if (!partyHost) return
+            com.biaruuu.kiro.data.WatchParty.push(
+                animeId, latestCurrent, exo.currentPosition,
+                exo.playWhenReady && exo.playbackState == Player.STATE_READY,
+            )
+        }
+        val l = object : Player.Listener {
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) = pushNow()
+            override fun onPlaybackStateChanged(playbackState: Int) = pushNow()
+            override fun onPositionDiscontinuity(
+                oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo, reason: Int,
+            ) {
+                if (reason == Player.DISCONTINUITY_REASON_SEEK) pushNow()
+            }
+        }
+        exo.addListener(l)
+        onDispose { exo.removeListener(l) }
+    }
+    // ... and sends its position every 2 seconds while playing, so nobody drifts.
+    LaunchedEffect(party?.code, partyHost, current) {
+        if (!partyHost) return@LaunchedEffect
+        com.biaruuu.kiro.data.WatchParty.push(animeId, current, exo.currentPosition, exo.playWhenReady && exo.playbackState == Player.STATE_READY)
+        while (true) {
+            delay(2000)
+            if (exo.isPlaying) com.biaruuu.kiro.data.WatchParty.push(animeId, latestCurrent, exo.currentPosition, true)
         }
     }
-    // Guest: follow the host's episode, position and play / pause.
-    LaunchedEffect(partyRemote, hasDuration, party?.code) {
-        val p = party ?: return@LaunchedEffect
-        val r = partyRemote ?: return@LaunchedEffect
-        if (p.host) return@LaunchedEffect
-        if (r.episode != current) {
-            playEpisode(r.episode)
-            return@LaunchedEffect
+    // Guest: every 0.4 s match the host's episode, play / pause and position (with the host's own
+    // progress since the last update added), so a pause or a skip shows up almost at once.
+    val latestParty by rememberUpdatedState(party)
+    val latestRemote by rememberUpdatedState(partyRemote)
+    LaunchedEffect(Unit) {
+        var lastSeek = 0L
+        while (true) {
+            delay(400)
+            val p = latestParty ?: continue
+            val r = latestRemote ?: continue
+            if (p.host) continue
+            if (r.episode != latestCurrent) {
+                playEpisode(r.episode)
+                continue
+            }
+            if (exo.playWhenReady != r.playing) exo.playWhenReady = r.playing
+            if (exo.playbackState == Player.STATE_IDLE || exo.duration <= 0L) continue
+            val now = android.os.SystemClock.elapsedRealtime()
+            val target = r.positionMs + if (r.playing) now - r.receivedAt else 0L
+            val allowed = if (r.playing) 1500L else 500L
+            if (kotlin.math.abs(exo.currentPosition - target) > allowed && now - lastSeek > 1500L) {
+                lastSeek = now
+                exo.seekTo(target.coerceIn(0L, exo.duration))
+            }
         }
-        if (!hasDuration) return@LaunchedEffect
-        val target = r.positionMs + if (r.playing) android.os.SystemClock.elapsedRealtime() - r.receivedAt else 0L
-        if (kotlin.math.abs(exo.currentPosition - target) > 3000L) exo.seekTo(target.coerceAtLeast(0L))
-        if (r.playing && !exo.isPlaying) exo.play() else if (!r.playing && exo.isPlaying) exo.pause()
     }
 
     // Sub and dub come as separate streams; this jumps to the best one of the other kind.
@@ -432,7 +465,9 @@ fun PlayerScreen(
         pendingSeek = 0
         mediaEpisode = current
         exo.prepare()
-        exo.playWhenReady = true
+        // A guest waits for the host: it only plays while the host is playing.
+        val guestNow = party?.host == false || (partyCode != null && party == null)
+        exo.playWhenReady = if (guestNow) partyRemote?.playing == true else true
     }
 
     // Audio booster: Android's LoudnessEnhancer on the player's audio session (+10 / +20 dB).
@@ -784,7 +819,7 @@ fun PlayerScreen(
                             .drawBehind {
                                 drawRect(KiroPurple.copy(alpha = 0.35f), size = androidx.compose.ui.geometry.Size(size.width * fill, size.height))
                             }
-                            .clickable { if (next != null) playEpisode(next.number) },
+                            .clickable { if (next != null && !guestBlocked()) playEpisode(next.number) },
                         contentAlignment = Alignment.CenterStart,
                     ) {
                         Row(modifier = Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -871,6 +906,14 @@ fun PlayerScreen(
             }
         }
 
+        // A chip with the avatars of everyone in the watch party; tap it to see who they are.
+        if (party != null && partyMembers.isNotEmpty() && !inPip && panel == null) {
+            PartyChip(
+                partyMembers,
+                Modifier.align(Alignment.TopEnd).padding(top = 64.dp, end = 20.dp),
+            ) { panel = Panel.Members }
+        }
+
         // ---- Side panels ----
         panel?.let { open ->
             if (open == Panel.Tracks) TracksDialog(
@@ -891,6 +934,7 @@ fun PlayerScreen(
                     Panel.Episodes -> "Episodes"
                     Panel.Speed -> "Playback speed"
                     Panel.Party -> "Watch party"
+                    Panel.Members -> "In this party"
                 },
                 onClose = { panel = null },
                 wide = open == Panel.Episodes,
@@ -914,16 +958,6 @@ fun PlayerScreen(
                         item { MenuRow("Playback speed", if (speed == 1f) "Normal" else "${speed}x") { panel = Panel.Speed } }
                         item {
                             MenuRow("Watch party", party?.code ?: "") { panel = Panel.Party }
-                        }
-                        if (PipState.supported(context.findActivity())) {
-                            item {
-                                MenuRow("Picture in picture", "") {
-                                    panel = null
-                                    if (!PipState.enter(context.findActivity())) {
-                                        Toast.makeText(context, "Picture in picture isn't available", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                            }
                         }
                     }
                     Panel.Quality -> {
@@ -952,6 +986,33 @@ fun PlayerScreen(
                         SubtitleStyleStore.save(context, new)
                     }
                     Panel.Tracks -> Unit
+                    Panel.Members -> androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxWidth()) {
+                        items(partyMembers, key = { it.uid }) { m ->
+                            Row(
+                                Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                com.biaruuu.kiro.ui.components.DecoratedAvatar(m.avatar, m.name, 40.dp, m.decoration)
+                                Spacer(Modifier.width(14.dp))
+                                Text(
+                                    m.name,
+                                    color = Color.White,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = com.biaruuu.kiro.data.NameStyles.family(context, m.nameFont),
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                if (m.host) {
+                                    Text(
+                                        "Host", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(KiroPurple).padding(horizontal = 8.dp, vertical = 3.dp),
+                                    )
+                                }
+                            }
+                        }
+                    }
                     Panel.Party -> Column(
                         Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -987,8 +1048,8 @@ fun PlayerScreen(
                             Text(p.code, color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = 5.sp)
                             Spacer(Modifier.height(10.dp))
                             Text(
-                                if (partyMembers.isEmpty()) "Waiting for friends to join..."
-                                else "Watching: " + partyMembers.joinToString(", "),
+                                if (partyMembers.size <= 1) "Waiting for friends to join..."
+                                else "${partyMembers.size} watching. Tap the avatars at the top to see who.",
                                 color = Color(0xFFD0D0D4), fontSize = 12.sp, textAlign = TextAlign.Center,
                             )
                             if (!p.host) {
@@ -1884,4 +1945,27 @@ private fun PartyButton(label: String, filled: Boolean, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .padding(vertical = 12.dp),
     )
+}
+
+@Composable
+private fun PartyChip(members: List<com.biaruuu.kiro.data.WatchParty.Member>, modifier: Modifier, onClick: () -> Unit) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(Color.Black.copy(alpha = 0.6f))
+            .clickable(onClick = onClick)
+            .padding(start = 6.dp, end = 12.dp, top = 5.dp, bottom = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy((-9).dp)) {
+            members.take(3).forEach { m ->
+                com.biaruuu.kiro.ui.components.DecoratedAvatar(m.avatar, m.name, 26.dp, m.decoration)
+            }
+        }
+        Spacer(Modifier.width(10.dp))
+        Text(
+            if (members.size > 3) "+${members.size - 3}" else "${members.size}",
+            color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+        )
+    }
 }

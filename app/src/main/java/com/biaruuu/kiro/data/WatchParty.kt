@@ -24,7 +24,10 @@ object WatchParty {
 
     val session = MutableStateFlow<Session?>(null)
     val remote = MutableStateFlow<Remote?>(null)
-    val members = MutableStateFlow<List<String>>(emptyList())
+    /** Everyone in the party, host first, with the profile look each one chose. */
+    class Member(val uid: String, val name: String, val avatar: String, val decoration: String, val nameFont: String, val host: Boolean)
+
+    val members = MutableStateFlow<List<Member>>(emptyList())
 
     /** One-shot message for the player to show (for example "The host ended the party"). */
     val message = MutableStateFlow<String?>(null)
@@ -35,6 +38,16 @@ object WatchParty {
     private fun db() = FirebaseFirestore.getInstance()
     private fun uid() = (AuthRepository.state.value as? AuthState.SignedIn)?.uid
     private fun myName() = ProfileRepository.profile.value.username.ifBlank { "Guest" }
+
+    private fun writeMember(code: String, me: String, host: Boolean) {
+        val p = ProfileRepository.profile.value
+        db().collection("parties").document(code).collection("members").document(me).set(
+            mapOf(
+                "name" to myName(), "avatar" to p.avatar, "decoration" to p.decoration, "nameFont" to p.nameFont,
+                "host" to host, "at" to System.currentTimeMillis(),
+            ),
+        )
+    }
 
     private fun friendly(e: Exception): String =
         if (e is FirebaseFirestoreException && e.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
@@ -59,6 +72,7 @@ object WatchParty {
         db().collection("parties").document(code).set(data)
             .addOnSuccessListener {
                 session.value = Session(code, true)
+                writeMember(code, me, true)
                 Achievements.bump(c, "hosted")
                 listenMembers(code)
                 onDone(code, null)
@@ -99,8 +113,7 @@ object WatchParty {
         session.value = Session(code, false)
         remote.value = null
         Achievements.bump(c, "joined")
-        db().collection("parties").document(code).collection("members").document(me)
-            .set(mapOf("name" to myName(), "at" to System.currentTimeMillis()))
+        writeMember(code, me, false)
         partyReg = db().collection("parties").document(code).addSnapshotListener { snap, err ->
             if (err != null || snap == null) return@addSnapshotListener
             if (!snap.exists()) {
@@ -120,11 +133,16 @@ object WatchParty {
         membersReg?.remove()
         membersReg = db().collection("parties").document(code).collection("members")
             .addSnapshotListener { snap, _ ->
-                members.value = snap?.documents?.mapNotNull { it.getString("name") } ?: emptyList()
+                members.value = snap?.documents?.mapNotNull { d ->
+                    Member(
+                        d.id, d.getString("name") ?: return@mapNotNull null, d.getString("avatar").orEmpty(),
+                        d.getString("decoration").orEmpty(), d.getString("nameFont").orEmpty(), d.getBoolean("host") ?: false,
+                    )
+                }?.sortedWith(compareByDescending<Member> { it.host }.thenBy { it.name.lowercase() }) ?: emptyList()
             }
     }
 
-    /** The host shares where they are; guests catch up to it. */
+    /** The host shares where they are; guests catch up to it. [playing] means actually running, not buffering. */
     fun push(animeId: Int, episode: Int, positionMs: Long, playing: Boolean) {
         val s = session.value ?: return
         if (!s.host) return
@@ -149,8 +167,8 @@ object WatchParty {
         session.value = null
         remote.value = null
         try {
+            if (me != null) db().collection("parties").document(s.code).collection("members").document(me).delete()
             if (s.host) db().collection("parties").document(s.code).delete()
-            else if (me != null) db().collection("parties").document(s.code).collection("members").document(me).delete()
         } catch (_: Exception) {
         }
     }
