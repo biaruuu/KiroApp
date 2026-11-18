@@ -47,6 +47,12 @@ service cloud.firestore {
       }
     }
 
+    // "Report broken episode": signed-in users send one, only the developer reads and clears them.
+    match /reports/{id} {
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow read, delete: if isAdmin();
+    }
+
     // Who is online and what they watch: each user writes their own, only the developer can read.
     match /presence/{uid} {
       allow write: if request.auth != null && request.auth.uid == uid;

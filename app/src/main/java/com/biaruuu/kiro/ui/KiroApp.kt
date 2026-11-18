@@ -4,7 +4,11 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -114,6 +118,26 @@ private fun KiroScaffold() {
     val dims = LocalDimens.current
     val useRail = dims.windowClass != WindowClass.Compact
     var tab by rememberSaveable { mutableIntStateOf(TAB_HOME) }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val selectTab: (Int) -> Unit = { picked ->
+        if (picked != tab) haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+        tab = picked
+    }
+
+    // Offline: say so, and start on the downloads when the app opens without internet.
+    val online by com.biaruuu.kiro.data.Connectivity.online.collectAsState()
+    var openDownloadsKey by rememberSaveable { mutableIntStateOf(0) }
+    var offlineJumped by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        com.biaruuu.kiro.data.Connectivity.start(context)
+        if (!offlineJumped) {
+            offlineJumped = true
+            if (!com.biaruuu.kiro.data.Connectivity.isOnline(context)) {
+                tab = TAB_LIBRARY
+                openDownloadsKey++
+            }
+        }
+    }
 
     // Hoisted so scroll position survives switching tabs.
     val homeListState: LazyListState = rememberLazyListState()
@@ -247,7 +271,7 @@ private fun KiroScaffold() {
                 KiroBottomBar(
                     destinations = Destinations,
                     selectedIndex = tab,
-                    onSelect = { tab = it },
+                    onSelect = selectTab,
                 )
             }
         },
@@ -257,20 +281,29 @@ private fun KiroScaffold() {
                 KiroSideRail(
                     destinations = Destinations,
                     selectedIndex = tab,
-                    onSelect = { tab = it },
+                    onSelect = selectTab,
                     width = dims.navRailWidth,
                 )
             }
 
             // Only the bottom inset is applied here; each screen handles the status bar itself
             // so the Home hero can extend behind it.
-            val contentModifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .background(KiroBackground)
-                .padding(bottom = innerPadding.calculateBottomPadding())
+            val contentModifier = Modifier.fillMaxSize()
 
-            when (tab) {
+            androidx.compose.animation.AnimatedContent(
+                targetState = tab,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .background(KiroBackground)
+                    .padding(bottom = innerPadding.calculateBottomPadding()),
+                transitionSpec = {
+                    androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(220)) togetherWith
+                        androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(120))
+                },
+                label = "tabs",
+            ) { shownTab ->
+            when (shownTab) {
                 TAB_HOME -> HomeScreen(
                     listState = homeListState,
                     onAnimeClick = onAnimeClick,
@@ -298,14 +331,24 @@ private fun KiroScaffold() {
                     refreshKey = backStack.size,
                     onCustomize = { backStack.add("s:customize") },
                     onOpenDownloads = { backStack.add("dl:$it") },
+                    openDownloadsKey = openDownloadsKey,
                     modifier = contentModifier,
                 )
                 TAB_ME -> MeScreen(onOpen = { backStack.add("s:$it") }, hasUnread = hasUnread, modifier = contentModifier)
             }
+            }
         }
     }
 
-    val top = backStack.lastOrNull()
+    androidx.compose.animation.AnimatedContent(
+        targetState = backStack.lastOrNull(),
+        transitionSpec = {
+            (androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(220)) +
+                androidx.compose.animation.slideInHorizontally(androidx.compose.animation.core.tween(260)) { it / 10 }) togetherWith
+                androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(140))
+        },
+        label = "pages",
+    ) { top ->
     if (top != null) {
         val parts = top.split(":")
         val id = parts.getOrNull(1)?.toIntOrNull()
@@ -342,6 +385,38 @@ private fun KiroScaffold() {
                     onMore = { backStack.add("m:$it") },
                     onPlay = { anime, episode -> backStack.add("p:$anime:$episode") },
                     modifier = overlay,
+                )
+            }
+        }
+    }
+    }
+    // Offline banner.
+    androidx.compose.animation.AnimatedVisibility(
+        visible = !online,
+        modifier = Modifier.align(Alignment.TopCenter),
+        enter = androidx.compose.animation.slideInVertically { -it } + androidx.compose.animation.fadeIn(),
+        exit = androidx.compose.animation.slideOutVertically { -it } + androidx.compose.animation.fadeOut(),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF3A2A12))
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "You're offline. Downloaded episodes still play.",
+                color = Color.White, fontSize = 12.sp, modifier = Modifier.weight(1f),
+            )
+            if (tab != TAB_LIBRARY || backStack.isNotEmpty()) {
+                Text(
+                    "Downloads", color = Color(0xFFFFC857), fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable {
+                        backStack.clear()
+                        tab = TAB_LIBRARY
+                        openDownloadsKey++
+                    }.padding(start = 12.dp),
                 )
             }
         }

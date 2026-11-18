@@ -147,6 +147,7 @@ fun PlayerScreen(
     partyCode: String? = null,
 ) {
     val context = LocalContext.current
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
     // Same view model the details page uses, so the episode list is already loaded.
@@ -880,13 +881,20 @@ fun PlayerScreen(
                     onClose = onClose,
                     onMore = { panel = Panel.Menu },
                     onTogglePlay = {
+                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
                         if (!guestBlocked()) {
                             if (exo.isPlaying) exo.pause() else exo.play()
                             interaction++
                         }
                     },
-                    onBack10 = { seekBy(-10_000L) },
-                    onForward10 = { seekBy(10_000L) },
+                    onBack10 = {
+                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                        seekBy(-10_000L)
+                    },
+                    onForward10 = {
+                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                        seekBy(10_000L)
+                    },
                     onSeekStart = { seeking = true },
                     onSeekPreview = { position = it },
                     onSeekEnd = {
@@ -967,6 +975,30 @@ fun PlayerScreen(
                         item { MenuRow("Playback speed", if (speed == 1f) "Normal" else "${speed}x") { panel = Panel.Speed } }
                         item {
                             MenuRow("Watch party", party?.code ?: "") { panel = Panel.Party }
+                        }
+                        item {
+                            MenuRow("Report broken episode", "") {
+                                val src = sources.getOrNull(sourceIndex)
+                                com.biaruuu.kiro.data.BrokenReport.send(
+                                    context,
+                                    com.biaruuu.kiro.data.BrokenReport.Info(
+                                        animeId = animeId,
+                                        title = title,
+                                        episode = current,
+                                        provider = src?.providerName ?: "none found",
+                                        quality = if (quality == 0) "Auto" else "${quality}p",
+                                        triedProviders = sources.map { it.providerName }.distinct(),
+                                        problem = error ?: "Does not play or looks wrong",
+                                    ),
+                                ) { sent ->
+                                    Toast.makeText(
+                                        context,
+                                        if (sent) "Thanks! Report sent." else "Opening your email app to send the report",
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
+                                panel = null
+                            }
                         }
                     }
                     Panel.Quality -> {

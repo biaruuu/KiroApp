@@ -44,4 +44,27 @@ object AppSettings {
     /** Notify when an anime in My List or Continue Watching airs a new episode. */
     fun episodeAlerts(c: Context): Boolean = prefs(c).getBoolean("episode_alerts", true)
     fun setEpisodeAlerts(c: Context, on: Boolean) = prefs(c).edit().putBoolean("episode_alerts", on).apply()
+
+    // ---- Notification control ----
+
+    /** Anime (by id) whose new-episode alerts are switched off. */
+    fun mutedShows(c: Context): Set<Int> =
+        prefs(c).getStringSet("alerts_muted", emptySet()).orEmpty().mapNotNull { it.toIntOrNull() }.toSet()
+    fun setShowMuted(c: Context, id: Int, muted: Boolean) {
+        val set = prefs(c).getStringSet("alerts_muted", emptySet()).orEmpty().toMutableSet()
+        if (muted) set.add(id.toString()) else set.remove(id.toString())
+        prefs(c).edit().putStringSet("alerts_muted", set).apply()
+    }
+    fun quietHours(c: Context): Boolean = prefs(c).getBoolean("quiet_on", false)
+    fun setQuietHours(c: Context, on: Boolean) = prefs(c).edit().putBoolean("quiet_on", on).apply()
+    /** Minutes after midnight. */
+    fun quietStart(c: Context): Int = prefs(c).getInt("quiet_start", 23 * 60)
+    fun quietEnd(c: Context): Int = prefs(c).getInt("quiet_end", 7 * 60)
+    fun setQuietRange(c: Context, start: Int, end: Int) = prefs(c).edit().putInt("quiet_start", start).putInt("quiet_end", end).apply()
+    /** True while quiet hours are on and the clock is inside them (the range may wrap past midnight). */
+    fun inQuietHours(c: Context, nowMinutes: Int = java.util.Calendar.getInstance().let { it.get(java.util.Calendar.HOUR_OF_DAY) * 60 + it.get(java.util.Calendar.MINUTE) }): Boolean {
+        if (!quietHours(c)) return false
+        val a = quietStart(c); val b = quietEnd(c)
+        return if (a == b) false else if (a < b) nowMinutes in a until b else nowMinutes >= a || nowMinutes < b
+    }
 }

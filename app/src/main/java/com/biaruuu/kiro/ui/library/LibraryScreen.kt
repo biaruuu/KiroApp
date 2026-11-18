@@ -114,9 +114,12 @@ fun LibraryScreen(
     modifier: Modifier = Modifier,
     onCustomize: () -> Unit = {},
     onOpenDownloads: (Int) -> Unit = {},
+    openDownloadsKey: Int = 0,
 ) {
     val context = LocalContext.current
     val pager = rememberPagerState(pageCount = { Tabs.size })
+    // The offline banner (and starting offline) lands here on the Download tab.
+    LaunchedEffect(openDownloadsKey) { if (openDownloadsKey > 0) pager.scrollToPage(TAB_DOWNLOAD) }
     val scope = rememberCoroutineScope()
     val tab = pager.currentPage
     var listSort by rememberSaveable { mutableIntStateOf(0) }

@@ -102,7 +102,9 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
         "admin" -> "Admin panel"
         "customize" -> "Customize profile"
         "achievements" -> "Achievements"
-        "alerts" -> "Episode alerts"
+        "alerts" -> "Notification control"
+        "storage" -> "Storage"
+        "homelayout" -> "Home layout"
         "party" -> "Watch party"
         else -> if (page.startsWith("release-")) "What's new" else "Version"
     }
@@ -125,6 +127,8 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
                 "customize" -> CustomizePage()
                 "achievements" -> AchievementsPage()
                 "alerts" -> AlertsPage()
+                "storage" -> StoragePage()
+                "homelayout" -> HomeLayoutPage()
                 "party" -> PartyPage()
                 else -> if (page.startsWith("release-")) WhatsNewPage(latest = false, onBack = onBack, version = page.removePrefix("release-")) else VersionPage()
             }
@@ -133,7 +137,7 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
 }
 
 @Composable
-private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+internal fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -156,7 +160,7 @@ private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
 }
 
 @Composable
-private fun ChevronRow(label: String, value: String? = null, onClick: () -> Unit) {
+internal fun ChevronRow(label: String, value: String? = null, onClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().height(45.dp).clickable(onClick = onClick).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,

@@ -4,6 +4,19 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.39.0] - 2026-11-18
+
+### Added
+- **Storage** (Me > Storage): a bar and list of what takes space (downloads, cache, app data), downloads by show, and one-tap Clear cache, Delete watched episodes and Delete all downloads.
+- **Notification control** (Me > Notification control, was Episode alerts): switch alerts off per show, and set quiet hours; episodes that air meanwhile are announced when quiet hours end.
+- **Home layout** (Me > Home layout): move Home rows up or down, hide any of them, or reset.
+- **Offline banner**: a banner says when you have no internet and jumps to Downloads; opening Kiro offline starts on the Download tab.
+- **Report broken episode** (player menu): one tap sends the show, episode, provider and quality to the developer's admin panel (or opens email when signed out). New Reports tab in the admin panel.
+- Haptic taps on tab switches and the player's play, pause and 10 s buttons; smoother fades between tabs and a slide-in for pages.
+
+### Note
+- Publish the updated firestore.rules so broken-episode reports can be saved.
+
 ## [1.38.2] - 2026-11-18
 
 ### Removed

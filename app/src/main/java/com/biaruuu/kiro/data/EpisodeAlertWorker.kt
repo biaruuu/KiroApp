@@ -30,6 +30,8 @@ class EpisodeAlertWorker(context: Context, params: WorkerParameters) : Coroutine
     override suspend fun doWork(): Result {
         val c = applicationContext
         if (!AppSettings.episodeAlerts(c)) return Result.success()
+        // Quiet hours: wait. "last" stays put, so what aired meanwhile is announced afterwards.
+        if (AppSettings.inQuietHours(c)) return Result.success()
         val prefs = c.getSharedPreferences("kiro_alerts", Context.MODE_PRIVATE)
         val now = System.currentTimeMillis() / 1000
         val last = prefs.getLong("last", 0L)
@@ -37,7 +39,8 @@ class EpisodeAlertWorker(context: Context, params: WorkerParameters) : Coroutine
             prefs.edit().putLong("last", now).apply()
             return Result.success()
         }
-        val ids = (MyListStore.all(c).map { it.id } + WatchHistory.all(c).map { it.animeId }).distinct()
+        val muted = AppSettings.mutedShows(c)
+        val ids = (MyListStore.all(c).map { it.id } + WatchHistory.all(c).map { it.animeId }).distinct().filter { it !in muted }
         if (ids.isEmpty()) {
             prefs.edit().putLong("last", now).apply()
             return Result.success()

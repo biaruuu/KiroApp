@@ -96,7 +96,7 @@ fun AdminPage() {
             )
         }
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-            listOf("Online", "Letters", "Announce", "Designs").forEachIndexed { i, label ->
+            listOf("Online", "Letters", "Reports", "Announce", "Designs").forEachIndexed { i, label ->
                 Column(
                     modifier = Modifier.weight(1f).clickable { tab = i }.padding(top = 10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -110,7 +110,8 @@ fun AdminPage() {
         when (tab) {
             0 -> OnlineTab()
             1 -> LettersTab()
-            2 -> AnnounceTab()
+            2 -> ReportsTab()
+            3 -> AnnounceTab()
             else -> DesignsTab()
         }
     }
@@ -223,6 +224,55 @@ private fun LettersTab() {
                 Text(
                     "Delete", color = Color(0xFFFF6B6B), fontSize = 12.sp, fontWeight = FontWeight.Medium,
                     modifier = Modifier.clickable { FirebaseFirestore.getInstance().collection("feedback").document(l.id).delete() },
+                )
+            }
+        }
+    }
+}
+
+private class Report(val id: String, val title: String, val episode: Int, val provider: String, val tried: String, val quality: String, val problem: String, val device: String, val version: String, val createdAt: Long)
+
+@Composable
+private fun ReportsTab() {
+    var reports by remember { mutableStateOf<List<Report>>(emptyList()) }
+    DisposableEffect(Unit) {
+        val reg = FirebaseFirestore.getInstance().collection("reports")
+            .orderBy("createdAt", Query.Direction.DESCENDING).limit(100)
+            .addSnapshotListener { snap, _ ->
+                if (snap == null) return@addSnapshotListener
+                reports = snap.documents.map { d ->
+                    Report(
+                        d.id, d.getString("title").orEmpty(), (d.getLong("episode") ?: 0L).toInt(),
+                        d.getString("provider").orEmpty(), d.getString("tried").orEmpty(), d.getString("quality").orEmpty(),
+                        d.getString("problem").orEmpty(), d.getString("device").orEmpty(), d.getString("version").orEmpty(),
+                        d.getLong("createdAt") ?: 0L,
+                    )
+                }
+            }
+        onDispose { reg.remove() }
+    }
+    if (reports.isEmpty()) {
+        Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+            Text("No broken episode reports.", color = Muted, fontSize = 14.sp)
+        }
+        return
+    }
+    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        items(reports, key = { it.id }) { r ->
+            Column(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Card).padding(14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("${r.title} · Ep ${r.episode}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Text(ago(r.createdAt), color = Muted, fontSize = 11.sp)
+                }
+                Spacer(Modifier.height(6.dp))
+                Text("Provider: ${r.provider} (${r.quality})", color = Color(0xFFD0D0D4), fontSize = 13.sp)
+                if (r.tried.isNotEmpty()) Text("Tried: ${r.tried}", color = Muted, fontSize = 12.sp)
+                Text(r.problem, color = Color(0xFFD0D0D4), fontSize = 12.sp)
+                Text("v${r.version} · ${r.device}", color = Muted, fontSize = 11.sp)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Done", color = Color(0xFFFF6B6B), fontSize = 12.sp, fontWeight = FontWeight.Medium,
+                    modifier = Modifier.clickable { FirebaseFirestore.getInstance().collection("reports").document(r.id).delete() },
                 )
             }
         }
