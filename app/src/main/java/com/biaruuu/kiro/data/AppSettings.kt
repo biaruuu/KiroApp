@@ -44,4 +44,10 @@ object AppSettings {
     /** Notify when an anime in My List or Continue Watching airs a new episode. */
     fun episodeAlerts(c: Context): Boolean = prefs(c).getBoolean("episode_alerts", true)
     fun setEpisodeAlerts(c: Context, on: Boolean) = prefs(c).edit().putBoolean("episode_alerts", on).apply()
+
+    /** Anime4K GPU effects in the player. */
+    fun animeSharpen(c: Context): Boolean = prefs(c).getBoolean("anime_sharpen", false)
+    fun setAnimeSharpen(c: Context, on: Boolean) = prefs(c).edit().putBoolean("anime_sharpen", on).apply()
+    fun anime4k(c: Context): Boolean = prefs(c).getBoolean("anime_4k", false)
+    fun setAnime4k(c: Context, on: Boolean) = prefs(c).edit().putBoolean("anime_4k", on).apply()
 }

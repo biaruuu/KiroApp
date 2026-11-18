@@ -116,7 +116,7 @@ private val MutedText = Color(0xFF8E8E93)
 
 private const val NO_SOURCE = "This episode isn't available right now"
 
-private enum class Panel { Menu, Tracks, Episodes, Speed, Quality, SubStyle, Boost, Hdr, AutoSkip, Party, Members }
+private enum class Panel { Menu, Tracks, Episodes, Speed, Quality, SubStyle, Boost, Hdr, Enhance, AutoSkip, Party, Members }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -275,6 +275,9 @@ fun PlayerScreen(
     val prefs = remember { context.getSharedPreferences("kiro_user_data", android.content.Context.MODE_PRIVATE) }
     var boostDb by remember { mutableIntStateOf(prefs.getInt("audio_boost_db", 0)) }
     var hdrOn by remember { mutableStateOf(prefs.getBoolean("hdr_tunneling", false)) }
+    var sharpenOn by remember { mutableStateOf(com.biaruuu.kiro.data.AppSettings.animeSharpen(context)) }
+    var upscaleOn by remember { mutableStateOf(com.biaruuu.kiro.data.AppSettings.anime4k(context)) }
+    val enhanceStatus by Anime4K.status.collectAsState()
     var subStyle by remember { mutableStateOf(SubtitleStyleStore.load(context)) }
     var playerView by remember { mutableStateOf<PlayerView?>(null) }
     var quality by remember { mutableIntStateOf(0) } // 0 = Auto, otherwise a video height
@@ -527,6 +530,15 @@ fun PlayerScreen(
                 window?.colorMode = android.content.pm.ActivityInfo.COLOR_MODE_DEFAULT
             }
         }
+    }
+
+    // Anime4K line sharpener / 4K upscaler: GPU video effects, SDR only (HDR tunneling bypasses them).
+    LaunchedEffect(exo, sharpenOn, upscaleOn, hdrOn) {
+        com.biaruuu.kiro.data.AppSettings.setAnimeSharpen(context, sharpenOn)
+        com.biaruuu.kiro.data.AppSettings.setAnime4k(context, upscaleOn)
+        val list = if (hdrOn) emptyList() else Anime4K.effects(context, sharpenOn, upscaleOn)
+        try { exo.setVideoEffects(list) } catch (e: Exception) { android.util.Log.w("Anime4K", "effects rejected", e) }
+        if (list.isEmpty()) Anime4K.status.value = null
     }
 
     // Keep the caption look in sync with the saved style.
@@ -938,6 +950,7 @@ fun PlayerScreen(
                     Panel.SubStyle -> "Subtitle style"
                     Panel.Boost -> "Audio boost"
                     Panel.Hdr -> "HDR & Dolby Vision"
+                    Panel.Enhance -> "Anime enhancer"
                     Panel.AutoSkip -> "Auto Skip Intro/Outro"
                     Panel.Tracks -> "Audio & Subtitles"
                     Panel.Episodes -> "Episodes"
@@ -964,6 +977,16 @@ fun PlayerScreen(
                         }
                         item { MenuRow("Audio boost", if (boostDb == 0) "Off" else "+$boostDb dB") { panel = Panel.Boost } }
                         item { MenuRow("HDR & Dolby Vision", if (hdrOn) "On" else "Auto") { panel = Panel.Hdr } }
+                        item {
+                            MenuRow(
+                                "Anime enhancer",
+                                when {
+                                    !sharpenOn && !upscaleOn -> "Off"
+                                    enhanceStatus != null -> "On"
+                                    else -> "Starting"
+                                },
+                            ) { panel = Panel.Enhance }
+                        }
                         item { MenuRow("Playback speed", if (speed == 1f) "Normal" else "${speed}x") { panel = Panel.Speed } }
                         item {
                             MenuRow("Watch party", party?.code ?: "") { panel = Panel.Party }
@@ -1100,6 +1123,22 @@ fun PlayerScreen(
                         item {
                             Text(
                                 "When on, Kiro skips the intro, outro and recap for you after a short countdown. Only parts that are confirmed for this exact episode are skipped; nothing is guessed.",
+                                color = Color(0xFF8E8E93), fontSize = 12.sp,
+                                modifier = Modifier.padding(20.dp),
+                            )
+                        }
+                    }
+                    Panel.Enhance -> LazyColumn {
+                        item {
+                            PanelRow(label = "Line sharpener", selected = sharpenOn) { sharpenOn = !sharpenOn }
+                        }
+                        item {
+                            PanelRow(label = "4K upscale", selected = upscaleOn) { upscaleOn = !upscaleOn }
+                        }
+                        item {
+                            Text(
+                                (enhanceStatus?.let { "Running: $it. " } ?: "") +
+                                    "Anime4K redraws every frame on your GPU: the line sharpener cleans and sharpens line art, 4K upscale doubles 1080p or smaller video. It is heavy, so turn it off if playback stutters or your phone heats up. It does not run with HDR & Dolby Vision on, or on phones without OpenGL ES 3.",
                                 color = Color(0xFF8E8E93), fontSize = 12.sp,
                                 modifier = Modifier.padding(20.dp),
                             )

@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.38.0] - 2026-11-18
+
+### Added
+- Anime enhancer in the player menu: a **Line sharpener** and a **4K upscale**, both powered by Anime4K (MIT, bloc97) and run on the GPU as video effects, the approach used by NuvioMobile-Enhanced. The sharpener restores and sharpens line art; 4K upscale doubles 1080p-or-smaller video (e.g. 720p to 1440p). Choices are remembered.
+- Safe fallback: the effects are skipped (video plays normally) on phones without OpenGL ES 3 or when HDR & Dolby Vision is on. The menu shows what is running.
+- Anime4K shaders and licence are bundled in the app assets.
+
 ## [1.37.3] - 2026-11-18
 
 ### Changed
