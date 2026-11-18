@@ -65,9 +65,6 @@ object I18n {
                 "Panoorin ang ${it.groupValues[1]} kasama ako sa Kiro! Buksan ang Ako > Watch party at ilagay ang code ${it.groupValues[2]}"
             },
             p("^(\\d+) episodes?$") { "${it.groupValues[1]} episode" },
-            p("^In release order · (\\d+) entries$") { "Ayon sa petsa ng labas · ${it.groupValues[1]} entry" },
-            p("^(\\d+) watched$") { "${it.groupValues[1]} napanood" },
-            p("^(.+) · (\\d+) episodes?$") { "${I18n.tr(it.groupValues[1])} · ${it.groupValues[2]} episode" },
             p("^(\\d+) shows?$") { "${it.groupValues[1]} palabas" },
             p("^(\\d+)m ago$") { "${it.groupValues[1]}m ang nakalipas" },
             p("^(\\d+)h ago$") { "${it.groupValues[1]}h ang nakalipas" },
@@ -83,7 +80,6 @@ object I18n {
     fun tr(s: String): String {
         if (lang != FIL || s.isEmpty()) return s
         FIL_EXACT[s]?.let { return it }
-        FIL_ORDER[s]?.let { return it }
         for ((re, f) in patterns) {
             val m = re.matchEntire(s) ?: continue
             return f(m)

@@ -29,7 +29,6 @@ data class DetailUiState(
     val trailers: List<String> = emptyList(),
     val episodes: List<EpisodeInfo> = emptyList(),
     val seasons: List<SeasonEntry> = emptyList(),
-    val order: List<com.biaruuu.kiro.data.OrderEntry> = emptyList(),
     val loading: Boolean = true,
     val error: String? = null,
 )
@@ -44,7 +43,6 @@ class DetailViewModel(private val animeId: Int) : ViewModel() {
             loading = cachedDetail == null,
             episodes = cachedDetail?.episodes.orEmpty(),
             seasons = AniListRepository.cachedSeasons(animeId).orEmpty(),
-            order = com.biaruuu.kiro.data.WatchOrder.cached(animeId).orEmpty(),
         ),
     )
     val state: StateFlow<DetailUiState> = _state.asStateFlow()
@@ -133,19 +131,6 @@ class DetailViewModel(private val animeId: Int) : ViewModel() {
         }
     }
 
-    private fun loadOrder() {
-        viewModelScope.launch {
-            try {
-                val list = com.biaruuu.kiro.data.WatchOrder.load(animeId)
-                _state.update { it.copy(order = list) }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: Exception) {
-                // The watch order button just stays hidden.
-            }
-        }
-    }
-
     private fun loadSeasons() {
         viewModelScope.launch {
             try {
@@ -166,7 +151,6 @@ class DetailViewModel(private val animeId: Int) : ViewModel() {
         _state.value.base?.let { baseReady.complete(it) }
 
         loadSeasons()
-        loadOrder()
         cachedDetail?.let {
             loadEpisodeNames(it)
             loadTmdbEpisodes(it)

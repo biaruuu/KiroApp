@@ -118,7 +118,6 @@ fun DetailScreen(
                 onPlay = onPlay,
                 episodesFromState = state.episodes,
                 seasonsFromState = state.seasons,
-                orderFromState = state.order,
             )
         }
         BackButton(onBack)
@@ -158,7 +157,6 @@ private fun DetailContent(
     onPlay: (Int, Int) -> Unit,
     episodesFromState: List<EpisodeInfo>,
     seasonsFromState: List<SeasonEntry>,
-    orderFromState: List<com.biaruuu.kiro.data.OrderEntry>,
 ) {
     val context = LocalContext.current
     val config = LocalConfiguration.current
@@ -180,7 +178,6 @@ private fun DetailContent(
     var trailerPlaying by remember(trailerIds, trailerIndex) { mutableStateOf(false) }
     var showRating by remember { mutableStateOf(false) }
     var showSeasons by remember { mutableStateOf(false) }
-    var showOrder by remember { mutableStateOf(false) }
     var newestFirst by rememberSaveable { mutableStateOf(false) }
     var expanded by rememberSaveable { mutableStateOf(false) }
     val watchedVersion by com.biaruuu.kiro.data.WatchedStore.version.collectAsState()
@@ -505,13 +502,6 @@ private fun DetailContent(
             }
         }
 
-        // ---- Franchise watch order ----
-        if (orderFromState.size > 1) {
-            item(key = "watch-order") {
-                WatchOrderButton(orderFromState.size) { showOrder = true }
-            }
-        }
-
         // ---- Episodes header + coming soon banner ----
         item(key = "episodes-header") {
             Row(
@@ -606,14 +596,6 @@ private fun DetailContent(
                 MyListStore.setRating(context, anime, it)
             },
             onDismiss = { showRating = false },
-        )
-    }
-    if (showOrder && orderFromState.size > 1) {
-        WatchOrderSheet(
-            currentId = anime.id,
-            entries = orderFromState,
-            onSelect = { id -> if (id != anime.id) onOpenAnime(id) },
-            onDismiss = { showOrder = false },
         )
     }
     if (showSeasons && seasonsFromState.isNotEmpty()) {

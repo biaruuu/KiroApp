@@ -4,11 +4,10 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
-## [1.41.0] - 2026-11-19
+## [1.41.1] - 2026-11-19
 
-### Added
-- Franchise watch order: every show with related seasons, movies, OVAs and side stories now has a "Franchise watch order" button on its page. It lists the whole franchise in release order, with posters, type, year, episode count and your progress (Watched, 3/12), marks where you are and what is NEXT UP, and opens any entry with a tap.
-- "Main story" shows only TV seasons, ONAs and movies on the story line; "Everything" adds OVAs, specials, side stories and spin-offs.
+### Removed
+- Franchise watch order (added in 1.41.0) is removed again; the app behaves as in 1.40.1.
 
 ## [1.40.1] - 2026-11-19
 
