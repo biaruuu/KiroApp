@@ -20,6 +20,8 @@ object WatchParty {
     class Remote(
         val animeId: Int, val episode: Int, val title: String, val hostName: String,
         val positionMs: Long, val playing: Boolean, val receivedAt: Long,
+        /** The host phone's clock when it sent this (used to cancel out the network delay). */
+        val sentAt: Long = 0L,
     )
 
     val session = MutableStateFlow<Session?>(null)
@@ -68,6 +70,7 @@ object WatchParty {
         val data = hashMapOf<String, Any>(
             "hostUid" to me, "hostName" to myName(), "animeId" to animeId, "episode" to episode,
             "title" to title, "positionMs" to 0L, "playing" to false, "createdAt" to System.currentTimeMillis(),
+            "sentAt" to System.currentTimeMillis(),
         )
         db().collection("parties").document(code).set(data)
             .addOnSuccessListener {
@@ -101,6 +104,7 @@ object WatchParty {
             (d["positionMs"] as? Number)?.toLong() ?: 0L,
             d["playing"] as? Boolean ?: false,
             SystemClock.elapsedRealtime(),
+            (d["sentAt"] as? Number)?.toLong() ?: 0L,
         )
     }
 
@@ -147,7 +151,10 @@ object WatchParty {
         val s = session.value ?: return
         if (!s.host) return
         db().collection("parties").document(s.code).update(
-            mapOf("animeId" to animeId, "episode" to episode, "positionMs" to positionMs, "playing" to playing),
+            mapOf(
+                "animeId" to animeId, "episode" to episode, "positionMs" to positionMs, "playing" to playing,
+                "sentAt" to System.currentTimeMillis(),
+            ),
         )
     }
 

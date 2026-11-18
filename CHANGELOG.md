@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.37.3] - 2026-11-18
+
+### Changed
+- Watch party is tighter again: a guest reacts the instant the host's update arrives (and rechecks every 0.25 s) instead of waiting for the next check, the time the update spent travelling is added to the host's position, drift is corrected from 0.7 s (0.25 s while paused), and the host sends its position every 1.5 s.
+
 ## [1.37.2] - 2026-11-18
 
 ### Fixed

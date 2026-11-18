@@ -344,39 +344,48 @@ fun PlayerScreen(
         exo.addListener(l)
         onDispose { exo.removeListener(l) }
     }
-    // ... and sends its position every 2 seconds while playing, so nobody drifts.
+    // ... and sends its position every 1.5 seconds while playing, so nobody drifts.
     LaunchedEffect(party?.code, partyHost, current) {
         if (!partyHost) return@LaunchedEffect
         com.biaruuu.kiro.data.WatchParty.push(animeId, current, exo.currentPosition, exo.playWhenReady && exo.playbackState == Player.STATE_READY)
         while (true) {
-            delay(2000)
+            delay(1500)
             if (exo.isPlaying) com.biaruuu.kiro.data.WatchParty.push(animeId, latestCurrent, exo.currentPosition, true)
         }
     }
-    // Guest: every 0.4 s match the host's episode, play / pause and position (with the host's own
-    // progress since the last update added), so a pause or a skip shows up almost at once.
+    // Guest: match the host's episode, play / pause and position. This runs the instant an update
+    // arrives and again every 0.25 s; the time the update spent travelling is added to the host's
+    // position, so a pause or a skip lands within a fraction of a second.
     val latestParty by rememberUpdatedState(party)
     val latestRemote by rememberUpdatedState(partyRemote)
+    val lastSeek = remember { longArrayOf(0L) }
+    fun syncGuest() {
+        val p = latestParty ?: return
+        val r = latestRemote ?: return
+        if (p.host) return
+        if (r.episode != latestCurrent) {
+            playEpisode(r.episode)
+            return
+        }
+        if (exo.playWhenReady != r.playing) exo.playWhenReady = r.playing
+        if (exo.playbackState == Player.STATE_IDLE || exo.duration <= 0L) return
+        val travelled = System.currentTimeMillis() - r.sentAt
+        // Phone clocks can differ; only trust the host's timestamp when it is plausible.
+        val elapsed = if (r.sentAt > 0L && travelled in 0L..6000L) travelled
+        else android.os.SystemClock.elapsedRealtime() - r.receivedAt
+        val target = r.positionMs + if (r.playing) elapsed else 0L
+        val now = android.os.SystemClock.elapsedRealtime()
+        val allowed = if (r.playing) 700L else 250L
+        if (kotlin.math.abs(exo.currentPosition - target) > allowed && now - lastSeek[0] > 800L) {
+            lastSeek[0] = now
+            exo.seekTo(target.coerceIn(0L, exo.duration))
+        }
+    }
+    LaunchedEffect(partyRemote, hasDuration) { syncGuest() }
     LaunchedEffect(Unit) {
-        var lastSeek = 0L
         while (true) {
-            delay(400)
-            val p = latestParty ?: continue
-            val r = latestRemote ?: continue
-            if (p.host) continue
-            if (r.episode != latestCurrent) {
-                playEpisode(r.episode)
-                continue
-            }
-            if (exo.playWhenReady != r.playing) exo.playWhenReady = r.playing
-            if (exo.playbackState == Player.STATE_IDLE || exo.duration <= 0L) continue
-            val now = android.os.SystemClock.elapsedRealtime()
-            val target = r.positionMs + if (r.playing) now - r.receivedAt else 0L
-            val allowed = if (r.playing) 1500L else 500L
-            if (kotlin.math.abs(exo.currentPosition - target) > allowed && now - lastSeek > 1500L) {
-                lastSeek = now
-                exo.seekTo(target.coerceIn(0L, exo.duration))
-            }
+            delay(250)
+            syncGuest()
         }
     }
 
