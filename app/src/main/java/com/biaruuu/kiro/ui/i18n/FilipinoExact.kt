@@ -201,3 +201,11 @@ internal val FIL_EXACT: Map<String, String> = mapOf(
     "Up to 5 MB. Shows up for every user right away. Animated PNG, GIF and WebP all play." to "Hanggang 5 MB. Lalabas agad sa lahat ng user. Gumagana ang animated PNG, GIF at WebP.",
     "Autoplay previews" to "Auto-play na preview", "Open the anime, tap Rate" to "Buksan ang anime, i-tap ang I-rate",
 )
+
+internal val FIL_ORDER: Map<String, String> = mapOf(
+    "Franchise watch order" to "Pagkakasunod-sunod ng panonood",
+    "Sorted by release date, oldest first." to "Ayos ayon sa petsa ng labas, pinakaluma muna.",
+    "Main story" to "Pangunahing kuwento", "Everything" to "Lahat",
+    "YOU ARE HERE" to "NANDITO KA", "NEXT UP" to "SUSUNOD", "View" to "Tingnan",
+    "1 episode" to "1 episode",
+)
