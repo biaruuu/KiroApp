@@ -278,6 +278,11 @@ fun PlayerScreen(
     var sharpenOn by remember { mutableStateOf(com.biaruuu.kiro.data.AppSettings.animeSharpen(context)) }
     var upscaleOn by remember { mutableStateOf(com.biaruuu.kiro.data.AppSettings.anime4k(context)) }
     val enhanceStatus by Anime4K.status.collectAsState()
+    fun applyEnhancer() {
+        val list = if (hdrOn) emptyList() else Anime4K.effects(context, sharpenOn, upscaleOn)
+        try { exo.setVideoEffects(list) } catch (e: Exception) { android.util.Log.w("Anime4K", "effects rejected", e) }
+        if (list.isEmpty()) Anime4K.status.value = null
+    }
     var subStyle by remember { mutableStateOf(SubtitleStyleStore.load(context)) }
     var playerView by remember { mutableStateOf<PlayerView?>(null) }
     var quality by remember { mutableIntStateOf(0) } // 0 = Auto, otherwise a video height
@@ -462,6 +467,7 @@ fun PlayerScreen(
         com.biaruuu.kiro.data.stream.StreamHeaders.activate(com.biaruuu.kiro.data.stream.StreamHeaders.Slot.Playback, source.url, source.headers)
         error = null
         buffering = true
+        applyEnhancer()
         // The quality picked last time (the best one at or below it when this stream has no such size).
         quality = com.biaruuu.kiro.data.AppSettings.qualityPref(context)
         applyQuality(exo, quality)
@@ -533,12 +539,21 @@ fun PlayerScreen(
     }
 
     // Anime4K line sharpener / 4K upscaler: GPU video effects, SDR only (HDR tunneling bypasses them).
+    var enhancerSeen by remember { mutableStateOf(false) }
     LaunchedEffect(exo, sharpenOn, upscaleOn, hdrOn) {
         com.biaruuu.kiro.data.AppSettings.setAnimeSharpen(context, sharpenOn)
         com.biaruuu.kiro.data.AppSettings.setAnime4k(context, upscaleOn)
-        val list = if (hdrOn) emptyList() else Anime4K.effects(context, sharpenOn, upscaleOn)
-        try { exo.setVideoEffects(list) } catch (e: Exception) { android.util.Log.w("Anime4K", "effects rejected", e) }
-        if (list.isEmpty()) Anime4K.status.value = null
+        applyEnhancer()
+        // Video effects only start with a fresh pipeline, so a change reloads the episode right where it is.
+        val item = exo.currentMediaItem
+        if (enhancerSeen && item != null) {
+            val pos = exo.currentPosition
+            val play = exo.playWhenReady
+            exo.setMediaItem(item, pos)
+            exo.prepare()
+            exo.playWhenReady = play
+        }
+        enhancerSeen = true
     }
 
     // Keep the caption look in sync with the saved style.
@@ -982,8 +997,8 @@ fun PlayerScreen(
                                 "Anime enhancer",
                                 when {
                                     !sharpenOn && !upscaleOn -> "Off"
-                                    enhanceStatus != null -> "On"
-                                    else -> "Starting"
+                                    enhanceStatus?.startsWith("!") == true -> "Unavailable"
+                                    else -> "On"
                                 },
                             ) { panel = Panel.Enhance }
                         }
@@ -1137,7 +1152,7 @@ fun PlayerScreen(
                         }
                         item {
                             Text(
-                                (enhanceStatus?.let { "Running: $it. " } ?: "") +
+                                (enhanceStatus?.let { if (it.startsWith("!")) "Not running: ${it.drop(1)}. " else "Running: $it. " } ?: "") +
                                     "Anime4K redraws every frame on your GPU: the line sharpener cleans and sharpens line art, 4K upscale doubles 1080p or smaller video. It is heavy, so turn it off if playback stutters or your phone heats up. It does not run with HDR & Dolby Vision on, or on phones without OpenGL ES 3.",
                                 color = Color(0xFF8E8E93), fontSize = 12.sp,
                                 modifier = Modifier.padding(20.dp),

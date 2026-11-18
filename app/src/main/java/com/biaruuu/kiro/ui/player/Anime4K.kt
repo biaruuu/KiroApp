@@ -157,13 +157,15 @@ private class Anime4KProgram(
     private var outW = 0
     private var outH = 0
     private var broken = false
+    private var glReady = true
 
     override fun configure(inputWidth: Int, inputHeight: Int): Size {
         releaseTargets()
         inW = inputWidth; inH = inputHeight; outW = inputWidth; outH = inputHeight
         plan = emptyList()
         var label: String? = null
-        if (!broken && !useHdr && glOk()) {
+        glReady = glOk()
+        if (!broken && !useHdr && glReady) {
             try {
                 val chain = mutableListOf<ShaderPass>()
                 chain += restore
@@ -203,7 +205,12 @@ private class Anime4KProgram(
                 plan = emptyList(); outW = inputWidth; outH = inputHeight; label = null
             }
         }
-        Anime4K.status.value = label
+        Anime4K.status.value = label ?: when {
+            useHdr -> "!HDR video"
+            broken -> "!shader error"
+            !glReady -> "!needs OpenGL ES 3"
+            else -> null
+        }
         if (copy == null) {
             copy = try {
                 build(COPY_VS, COPY_FS, listOf("MAIN"))

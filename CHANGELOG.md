@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.38.1] - 2026-11-18
+
+### Fixed
+- Anime enhancer no longer sits on "Starting": the Anime4K effects are now attached before each episode loads (as NuvioMobile-Enhanced does), and switching the line sharpener or 4K upscale reloads the episode at the same spot so it takes effect at once.
+- The menu now says "On" when running and "Unavailable" (with the reason, e.g. needs OpenGL ES 3) instead of staying on a vague status.
+
 ## [1.38.0] - 2026-11-18
 
 ### Added
