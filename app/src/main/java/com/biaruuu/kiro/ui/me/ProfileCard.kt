@@ -70,8 +70,9 @@ fun ProfileCard(
     val shape = RoundedCornerShape(16.dp)
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        val badgeSize = (maxWidth * 0.19f).coerceIn(52.dp, 72.dp)
-        val nameSize = if (maxWidth < 330.dp) 16.sp else 20.sp
+        // Everything scales with the card width (a 328dp card is 1.0), so it keeps its proportions on any phone.
+        val k = (maxWidth.value / 328f).coerceIn(0.8f, 1.25f)
+        val badgeSize = (maxWidth * 0.17f).coerceIn(48.dp, 68.dp)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -80,38 +81,38 @@ fun ProfileCard(
                 .border(1.5.dp, Brush.linearGradient(listOf(KiroPurple, Color(0xFFB7A9FF), KiroPurple)), shape),
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 14.dp, top = 12.dp, end = 10.dp),
+                modifier = Modifier.fillMaxWidth().padding(start = (14 * k).dp, top = (10 * k).dp, end = (8 * k).dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                DecoratedAvatar(profile.avatar, name.ifBlank { "K" }, 44.dp, profile.decoration)
-                Spacer(Modifier.width(12.dp))
+                DecoratedAvatar(profile.avatar, name.ifBlank { "K" }, (38 * k).dp, profile.decoration)
+                Spacer(Modifier.width((12 * k).dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             name.uppercase(),
                             color = Color.White,
-                            fontSize = nameSize,
+                            fontSize = (19 * k).sp,
                             fontWeight = FontWeight.Black,
-                            letterSpacing = 0.5.sp,
+                            letterSpacing = 0.4.sp,
                             fontFamily = NameStyles.family(context, profile.nameFont),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false),
                         )
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width((6 * k).dp))
                         Row(
-                            modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(Color.White.copy(alpha = 0.10f)).padding(horizontal = 6.dp, vertical = 2.dp),
+                            modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(Color.White.copy(alpha = 0.10f)).padding(horizontal = (6 * k).dp, vertical = (2 * k).dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Icon(painterResource(R.drawable.fluent_star_filled), null, tint = Gold, modifier = Modifier.size(12.dp))
+                            Icon(painterResource(R.drawable.fluent_star_filled), null, tint = Gold, modifier = Modifier.size((12 * k).dp))
                             Spacer(Modifier.width(3.dp))
-                            Text("Lv ${level.level}", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                            Text("Lv ${level.level}", color = Color.White, fontSize = (11 * k).sp, fontWeight = FontWeight.Bold, maxLines = 1)
                         }
                     }
                     Spacer(Modifier.height(3.dp))
                     val frac by animateFloatAsState((level.xpIntoLevel.toFloat() / level.xpForNext).coerceIn(0f, 1f), label = "xp")
-                    Text("${level.xpIntoLevel} / ${level.xpForNext} XP", color = Dim, fontSize = 11.sp, maxLines = 1)
-                    Spacer(Modifier.height(4.dp))
+                    Text("${level.xpIntoLevel} / ${level.xpForNext} XP", color = Dim, fontSize = (11 * k).sp, maxLines = 1)
+                    Spacer(Modifier.height(3.dp))
                     Box(Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(Color.White.copy(alpha = 0.12f))) {
                         Box(Modifier.fillMaxWidth(frac).height(3.dp).background(Brush.horizontalGradient(listOf(KiroPurple, Color(0xFFB7A9FF)))))
                     }
@@ -123,11 +124,11 @@ fun ProfileCard(
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = (14 * k).dp, vertical = (8 * k).dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                PillButton(R.drawable.fluent_edit_regular, "Edit Profile", onEdit)
-                PillButton(R.drawable.fluent_open_regular, "Share") {
+                PillButton(R.drawable.fluent_edit_regular, "Edit Profile", k, onEdit)
+                PillButton(R.drawable.fluent_open_regular, "Share", k) {
                     val text = "$name on Kiro · Level ${level.level} · ${streak.count}-day streak · ${WatchedStore.totalEpisodes(context)} episodes watched"
                     val send = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
@@ -138,25 +139,25 @@ fun ProfileCard(
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth().background(Color.Black.copy(alpha = 0.28f)).padding(horizontal = 14.dp, vertical = 7.dp),
+                modifier = Modifier.fillMaxWidth().background(Color.Black.copy(alpha = 0.28f)).padding(horizontal = (14 * k).dp, vertical = (6 * k).dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     if (streak.count > 0) "${streak.count}-day streak · ${tier.name}" else "No streak yet",
-                    color = Dim, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    color = Dim, fontSize = (11 * k).sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f).clickable(onClick = onStats),
                 )
                 Spacer(Modifier.width(8.dp))
-                Text("$badges", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                Text(" Badges", color = Dim, fontSize = 12.sp)
+                Text("$badges", color = Color.White, fontSize = (12 * k).sp, fontWeight = FontWeight.Bold)
+                Text(" Badges", color = Dim, fontSize = (12 * k).sp)
                 Spacer(Modifier.width(8.dp))
                 Row(
-                    modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color.White.copy(alpha = 0.10f)).clickable(onClick = onBadges)
-                        .padding(start = 11.dp, end = 5.dp, top = 5.dp, bottom = 5.dp),
+                    modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Color.White.copy(alpha = 0.10f)).clickable(onClick = onBadges)
+                        .padding(start = (10 * k).dp, end = (4 * k).dp, top = (4 * k).dp, bottom = (4 * k).dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("View All", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    Icon(painterResource(R.drawable.fluent_chevron_right_regular), null, tint = Color.White, modifier = Modifier.size(16.dp))
+                    Text("View All", color = Color.White, fontSize = (11 * k).sp, fontWeight = FontWeight.Bold)
+                    Icon(painterResource(R.drawable.fluent_chevron_right_regular), null, tint = Color.White, modifier = Modifier.size((15 * k).dp))
                 }
             }
         }
@@ -164,18 +165,18 @@ fun ProfileCard(
 }
 
 @Composable
-private fun PillButton(icon: Int, label: String, onClick: () -> Unit) {
+private fun PillButton(icon: Int, label: String, k: Float, onClick: () -> Unit) {
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(Color.White.copy(alpha = 0.10f))
-            .border(1.dp, Color.White.copy(alpha = 0.14f), RoundedCornerShape(18.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.14f), RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 7.dp),
+            .padding(horizontal = (10 * k).dp, vertical = (4.5f * k).dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(painterResource(icon), null, tint = Color.White, modifier = Modifier.size(15.dp))
-        Spacer(Modifier.width(6.dp))
-        Text(label, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        Icon(painterResource(icon), null, tint = Color.White, modifier = Modifier.size((14 * k).dp))
+        Spacer(Modifier.width((5 * k).dp))
+        Text(label, color = Color.White, fontSize = (11.5f * k).sp, fontWeight = FontWeight.Bold, maxLines = 1)
     }
 }

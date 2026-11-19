@@ -4,6 +4,10 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import coil.compose.AsyncImage
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -88,7 +92,7 @@ fun WatchStatsPage() {
     val allSeconds = days.values.sumOf { it.seconds }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-        StreakCard(streak, weekStart, today)
+        StreakCard(streak, today)
         Spacer(Modifier.height(14.dp))
         LevelCard(level)
         Spacer(Modifier.height(14.dp))
@@ -110,8 +114,22 @@ fun WatchStatsPage() {
         GenresCard(genres)
 
         Spacer(Modifier.height(14.dp))
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Card).padding(16.dp)) {
-            Text("How you earn XP", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        val events = remember(wv, sv, cv) {
+            val out = ArrayList<Event>()
+            com.biaruuu.kiro.data.WatchHistory.all(context).forEach { out.add(Event("watched", it.title, it.image.orEmpty(), it.updatedAt, "Episode ${it.episode}", it.animeId)) }
+            WatchedStore.completed(context).forEach { out.add(Event("completed", it.title, it.poster, it.at, "", it.id)) }
+            com.biaruuu.kiro.data.MyListStore.all(context).forEach { out.add(Event("added", it.title, it.posterUrl.orEmpty(), it.addedAt, "", it.id)) }
+            com.biaruuu.kiro.data.MyListStore.allRated(context).forEach {
+                out.add(Event("rated", it.title, it.posterUrl.orEmpty(), it.addedAt, if (it.rating % 2 == 0) "${it.rating / 2}/5" else "${it.rating / 2}.5/5", it.id))
+            }
+            out.sortedByDescending { it.at }
+        }
+        RecentActivityCard(events)
+        Spacer(Modifier.height(14.dp))
+        LibraryCard()
+        Spacer(Modifier.height(14.dp))
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Card).padding(16.dp)) {
+            SectionTitle("How you earn XP")
             Spacer(Modifier.height(8.dp))
             listOf(
                 "Every minute watched: 1 XP (up to 240 a day)",
@@ -129,36 +147,68 @@ fun WatchStatsPage() {
 }
 
 @Composable
-private fun StreakCard(streak: WatchStats.Streak, weekStart: LocalDate, today: LocalDate) {
+private fun StreakCard(streak: WatchStats.Streak, today: LocalDate) {
     val tier = StreakTier.of(streak.count)
     val next = StreakTier.next(streak.count)
     BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val badge = (maxWidth * 0.40f).coerceIn(96.dp, 150.dp)
+        val badge = (maxWidth * 0.34f).coerceIn(84.dp, 130.dp)
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))
-                .background(Brush.verticalGradient(listOf(tier.bottom.copy(alpha = 0.30f), Card)))
-                .border(1.dp, tier.top.copy(alpha = 0.45f), RoundedCornerShape(20.dp))
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                .background(Brush.verticalGradient(listOf(tier.bottom.copy(alpha = 0.28f), Card)))
+                .border(1.dp, tier.top.copy(alpha = 0.40f), RoundedCornerShape(16.dp))
                 .padding(16.dp),
         ) {
+            SectionTitle("Activity streak")
+            Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 StreakBadge(streak.count, streak.doneToday, badge)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(tier.name.uppercase(), color = tier.top, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                    Text(tier.name.uppercase(), color = tier.top, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
                     Text(
-                        if (streak.count == 1) "1 day streak" else "${streak.count} day streak",
-                        color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black,
+                        if (streak.count == 1) "1 DAY" else "${streak.count} DAYS",
+                        color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Black,
                     )
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
+                        androidx.compose.material3.Icon(
+                            painterResource(com.biaruuu.kiro.R.drawable.fluent_trophy_regular), null, tint = tier.top, modifier = Modifier.size(14.dp),
+                        )
+                        Spacer(Modifier.width(5.dp))
+                        Text("Best: ${streak.best} days", color = tier.top, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    }
                     Text(
                         when {
                             streak.count == 0 -> "Watch for a minute today to start a streak."
                             streak.doneToday -> "You're on fire. See you tomorrow!"
                             else -> "Watch today to keep your streak alive."
                         },
-                        color = Dim, fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 2.dp),
+                        color = Dim, fontSize = 12.sp, lineHeight = 17.sp, modifier = Modifier.padding(top = 6.dp),
                     )
-                    Text("Best: ${streak.best} days", color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
                 }
+            }
+            Spacer(Modifier.height(14.dp))
+            // The last 28 days, one block each; today is the pink one at the end.
+            Row(Modifier.fillMaxWidth().height(16.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                for (i in 27 downTo 0) {
+                    val d = today.minusDays(i.toLong())
+                    val active = d.toEpochDay() in streak.activeDays
+                    val isToday = i == 0
+                    Box(
+                        Modifier.weight(1f).fillMaxSize().clip(RoundedCornerShape(3.dp))
+                            .background(
+                                when {
+                                    active -> Brush.verticalGradient(listOf(tier.top, tier.bottom))
+                                    isToday -> Brush.verticalGradient(listOf(Color(0xFFFF4DA6), Color(0xFFFF4DA6)))
+                                    else -> Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.09f), Color.White.copy(alpha = 0.09f)))
+                                },
+                            ),
+                    )
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            Row(Modifier.fillMaxWidth()) {
+                Text("28 days ago", color = Dim, fontSize = 10.sp, modifier = Modifier.weight(1f))
+                Text("Today", color = Dim, fontSize = 10.sp)
             }
             if (next != null) {
                 Spacer(Modifier.height(12.dp))
@@ -174,26 +224,167 @@ private fun StreakCard(streak: WatchStats.Streak, weekStart: LocalDate, today: L
                     Box(Modifier.fillMaxWidth(frac).height(6.dp).background(Brush.horizontalGradient(listOf(tier.top, tier.bottom))))
                 }
             }
-            Spacer(Modifier.height(14.dp))
-            // This week, Monday to Sunday.
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                for (i in 0 until 7) {
-                    val d = weekStart.plusDays(i.toLong())
-                    val active = d.toEpochDay() in streak.activeDays
-                    val isToday = d == today
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(d.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.getDefault()), color = Dim, fontSize = 11.sp)
-                        Spacer(Modifier.height(5.dp))
-                        Box(
-                            Modifier.size(28.dp).clip(CircleShape)
-                                .background(if (active) Brush.verticalGradient(listOf(tier.top, tier.bottom)) else Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.08f), Color.White.copy(alpha = 0.08f))))
-                                .then(if (isToday) Modifier.border(2.dp, Color.White.copy(alpha = 0.85f), CircleShape) else Modifier),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            if (active) Text("✓", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Black)
-                        }
-                    }
+        }
+    }
+}
+
+/** Heavy uppercase section heading, with an optional "View all" link on the right. */
+@Composable
+private fun SectionTitle(text: String, modifier: Modifier = Modifier, action: String? = null, onAction: () -> Unit = {}) {
+    Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            com.biaruuu.kiro.ui.i18n.I18n.tr(text).uppercase(),
+            color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Black, letterSpacing = 0.2.sp,
+            modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
+        if (action != null) {
+            Row(Modifier.clip(RoundedCornerShape(6.dp)).clickable(onClick = onAction).padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(action, color = Dim, fontSize = 12.sp)
+                androidx.compose.material3.Icon(painterResource(com.biaruuu.kiro.R.drawable.fluent_chevron_right_regular), null, tint = Dim, modifier = Modifier.size(16.dp))
+            }
+        }
+    }
+}
+
+private class Event(val kind: String, val title: String, val poster: String, val at: Long, val detail: String, val id: Int)
+
+private fun ago(ms: Long): String {
+    val d = ((System.currentTimeMillis() - ms) / 1000).coerceAtLeast(0)
+    return when {
+        d < 60 -> "just now"
+        d < 3600 -> "${d / 60}m ago"
+        d < 86400 -> "${d / 3600}h ago"
+        else -> "${d / 86400}d ago"
+    }
+}
+
+@Composable
+private fun RecentActivityCard(events: List<Event>) {
+    var filter by remember { mutableStateOf("all") }
+    val shown = events.filter { filter == "all" || it.kind == filter }.take(6)
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Card).padding(16.dp)) {
+        SectionTitle("Recent activity", action = "View all") { com.biaruuu.kiro.data.DeepLink.request.value = "t:library" }
+        Spacer(Modifier.height(10.dp))
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("all" to "All", "watched" to "Watched", "completed" to "Finished", "added" to "Added", "rated" to "Rated").forEach { (key, label) ->
+                val on = filter == key
+                Text(
+                    label, color = if (on) Color.Black else Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium,
+                    modifier = Modifier.clip(RoundedCornerShape(16.dp))
+                        .background(if (on) Color.White else Color.Transparent)
+                        .border(1.dp, if (on) Color.White else Color(0xFF3A3A3F), RoundedCornerShape(16.dp))
+                        .clickable { filter = key }.padding(horizontal = 12.dp, vertical = 5.dp),
+                )
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        if (shown.isEmpty()) {
+            Text("Nothing here yet. Watch, rate or add a show.", color = Dim, fontSize = 13.sp, modifier = Modifier.padding(vertical = 8.dp))
+        }
+        shown.forEach { e ->
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(RoundedCornerShape(10.dp)).background(Color.White.copy(alpha = 0.05f))
+                    .clickable { com.biaruuu.kiro.data.DeepLink.request.value = "d:${e.id}" }.padding(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                AsyncImage(
+                    model = e.poster, contentDescription = null, contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(34.dp).clip(CircleShape).background(Color(0xFF2A2A2E)),
+                )
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(e.title, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        when (e.kind) {
+                            "watched" -> "Watched"
+                            "completed" -> "Finished"
+                            "added" -> "Added to My List"
+                            else -> "Rated"
+                        } + if (e.detail.isNotEmpty()) " · ${e.detail}" else "",
+                        color = Dim, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
                 }
+                Spacer(Modifier.width(8.dp))
+                Text(ago(e.at), color = Dim, fontSize = 12.sp, maxLines = 1)
+            }
+        }
+    }
+}
+
+private class LibData(
+    val list: List<com.biaruuu.kiro.data.MyListStore.Entry>,
+    val done: List<WatchedStore.Done>,
+    val rated: Int,
+    val statuses: List<Int>,
+)
+
+@Composable
+private fun LibraryCard() {
+    val context = LocalContext.current
+    val wv by WatchedStore.version.collectAsState()
+    val cv by CloudSync.version.collectAsState()
+    val data = remember(wv, cv) {
+        LibData(
+            com.biaruuu.kiro.data.MyListStore.all(context),
+            WatchedStore.completed(context),
+            com.biaruuu.kiro.data.MyListStore.allRated(context).size,
+            com.biaruuu.kiro.data.ShowStatus.ALL.map { com.biaruuu.kiro.data.ShowStatus.entries(context, it).size },
+        )
+    }
+    val downloads by com.biaruuu.kiro.data.Downloads.items.collectAsState()
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Card).padding(16.dp)) {
+        SectionTitle("Your library", action = "View all") { com.biaruuu.kiro.data.DeepLink.request.value = "t:library" }
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Count("My List", data.list.size, Modifier.weight(1f))
+            Count("Completed", data.done.size, Modifier.weight(1f))
+            Count("Rated", data.rated, Modifier.weight(1f))
+            Count("Downloads", downloads.count { it.completed }, Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("Watching", "Plan", "On hold", "Dropped").forEachIndexed { i, label ->
+                Count(label, data.statuses[i], Modifier.weight(1f))
+            }
+        }
+        if (data.done.isNotEmpty()) {
+            Spacer(Modifier.height(16.dp))
+            Text("Completed", color = Dim, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            Spacer(Modifier.height(8.dp))
+            PosterStrip(data.done.take(14).map { it.id to it.poster })
+        }
+        if (data.list.isNotEmpty()) {
+            Spacer(Modifier.height(16.dp))
+            Text("My List", color = Dim, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            Spacer(Modifier.height(8.dp))
+            PosterStrip(data.list.take(14).map { it.id to it.posterUrl })
+        }
+        if (data.done.isEmpty() && data.list.isEmpty()) {
+            Spacer(Modifier.height(12.dp))
+            Text("Add shows to My List or finish a series and they show up here.", color = Dim, fontSize = 13.sp)
+        }
+    }
+}
+
+@Composable
+private fun Count(label: String, n: Int, modifier: Modifier) {
+    Column(modifier.clip(RoundedCornerShape(10.dp)).background(Color.White.copy(alpha = 0.05f)).padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("$n", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Black, maxLines = 1)
+        Text(label, color = Dim, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+@Composable
+private fun PosterStrip(items: List<Pair<Int, String?>>) {
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val w = (maxWidth * 0.26f).coerceIn(76.dp, 104.dp)
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items.forEach { (id, poster) ->
+                AsyncImage(
+                    model = poster, contentDescription = null, contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(width = w, height = w * 1.45f).clip(RoundedCornerShape(10.dp)).background(Color(0xFF2A2A2E))
+                        .clickable { com.biaruuu.kiro.data.DeepLink.request.value = "d:$id" },
+                )
             }
         }
     }
@@ -205,9 +396,9 @@ private fun LevelCard(level: WatchStats.Level) {
     val nextDeco = remember(level.level) {
         Designs.all(Designs.DECORATION).map { Designs.requiredLevel(it) }.filter { it > level.level }.minOrNull()
     }
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Card).padding(16.dp)) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Card).padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Level ${level.level}", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+            Text("LEVEL ${level.level}", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
             Text("${level.totalXp} XP", color = Dim, fontSize = 13.sp)
         }
         Spacer(Modifier.height(10.dp))
@@ -225,7 +416,7 @@ private fun LevelCard(level: WatchStats.Level) {
 
 @Composable
 private fun Tile(label: String, value: String, modifier: Modifier) {
-    Column(modifier.clip(RoundedCornerShape(14.dp)).background(Card).padding(14.dp)) {
+    Column(modifier.clip(RoundedCornerShape(16.dp)).background(Card).padding(14.dp)) {
         Text(label, color = Dim, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(4.dp))
         Text(value, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1)
@@ -251,9 +442,9 @@ private fun ChartCard(
     val shownIdx = if (picked >= 0) picked else dates.indexOf(today).coerceAtLeast(0)
     val shown = dates[shownIdx]
 
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Card).padding(16.dp)) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Card).padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Daily watch time", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            SectionTitle("Daily watch time", Modifier.weight(1f))
             Seg("Week", !month) { month = false }
             Spacer(Modifier.width(6.dp))
             Seg("Month", month) { month = true }
@@ -320,8 +511,8 @@ private val GENRE_COLORS = listOf(Color(0xFF7B6CF6), Color(0xFFFF6FB0), Color(0x
 
 @Composable
 private fun GenresCard(genres: List<Pair<String, Int>>) {
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Card).padding(16.dp)) {
-        Text("Most-watched genres", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Card).padding(16.dp)) {
+        SectionTitle("Most-watched genres")
         Spacer(Modifier.height(10.dp))
         if (genres.isEmpty()) {
             Text("Genres appear here as you watch.", color = Dim, fontSize = 13.sp)

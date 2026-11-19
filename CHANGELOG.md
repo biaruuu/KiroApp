@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.43.3] - 2026-11-19
+
+### Changed
+- Profile card: Edit Profile and Share are now small pill buttons, and the whole card (avatar, name, buttons, badge strip, flame) scales with the screen width so it keeps its proportions on any phone.
+- Watch stats redesigned in a diary style: heavy uppercase headings, an Activity Streak block with a 28-day block bar and best streak, Recent Activity (filter by Watched, Finished, Added, Rated; tap to open the show) and Your Library (counts, statuses, and poster strips of Completed and My List, with View all).
+
 ## [1.43.2] - 2026-11-19
 
 ### Changed

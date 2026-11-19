@@ -70,6 +70,7 @@ object I18n {
             p("^Queued · #(\\d+)$") { "Naka-pila · #${it.groupValues[1]}" },
             p("^Paused · (\\d+)%$") { "Naka-pause · ${it.groupValues[1]}%" },
             p("^(\\d+) failed$") { "${it.groupValues[1]} nabigo" },
+            p("^(\\d+) DAYS$") { "${it.groupValues[1]} ARAW" },
             p("^Level (\\d+)$") { "Level ${it.groupValues[1]}" },
             p("^(\\d+) XP to level (\\d+)$") { "${it.groupValues[1]} XP bago ang level ${it.groupValues[2]}" },
             p("^Next avatar decoration unlocks at level (\\d+)$") { "Ang susunod na dekorasyon ng avatar ay mabubuksan sa level ${it.groupValues[1]}" },
@@ -97,6 +98,7 @@ object I18n {
         FIL_STATUS[s]?.let { return it }
         FIL_QUEUE[s]?.let { return it }
         FIL_STATS[s]?.let { return it }
+        FIL_DIARY[s]?.let { return it }
         FIL_SORT[s]?.let { return it }
         FIL_BACKUP[s]?.let { return it }
         for ((re, f) in patterns) {

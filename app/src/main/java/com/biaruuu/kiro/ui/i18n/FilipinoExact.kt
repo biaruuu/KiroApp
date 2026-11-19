@@ -244,3 +244,11 @@ internal val FIL_STATS: Map<String, String> = mapOf(
     "Ratings +5 XP, My List +2 XP each" to "Rating +5 XP, Aking Listahan +2 XP bawat isa", "Streak milestones and badges give bonus XP" to "May bonus XP ang mga milestone ng streak at mga badge",
     " Badges" to " Badge",
 )
+
+internal val FIL_DIARY: Map<String, String> = mapOf(
+    "Activity streak" to "Streak ng aktibidad", "1 DAY" to "1 ARAW", "Recent activity" to "Kamakailang aktibidad", "Your library" to "Iyong library",
+    "View all" to "Tingnan lahat", "Watched" to "Napanood", "Finished" to "Natapos", "Added" to "Naidagdag", "Rated" to "Na-rate",
+    "Nothing here yet. Watch, rate or add a show." to "Wala pa rito. Manood, mag-rate o magdagdag ng palabas.",
+    "Added to My List" to "Naidagdag sa Aking Listahan", "28 days ago" to "28 araw ang nakalipas", "Plan" to "Balak",
+    "Add shows to My List or finish a series and they show up here." to "Magdagdag ng palabas sa Aking Listahan o tapusin ang isang serye at lalabas ito rito.",
+)
