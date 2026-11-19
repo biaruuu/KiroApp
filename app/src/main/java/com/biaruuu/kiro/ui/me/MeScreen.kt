@@ -67,7 +67,7 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
         ) {
-            Spacer(Modifier.height(52.dp))
+            Spacer(Modifier.height(if (signedIn != null) 27.dp else 52.dp))
 
             if (signedIn != null) {
                 ProfileCard(

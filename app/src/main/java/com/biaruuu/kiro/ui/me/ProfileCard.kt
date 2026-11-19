@@ -42,7 +42,6 @@ import com.biaruuu.kiro.data.WatchStats
 import com.biaruuu.kiro.data.WatchedStore
 import com.biaruuu.kiro.ui.components.DecoratedAvatar
 import com.biaruuu.kiro.ui.components.StreakBadge
-import com.biaruuu.kiro.ui.components.StreakTier
 import com.biaruuu.kiro.ui.i18n.Text
 import com.biaruuu.kiro.ui.theme.KiroPurple
 
@@ -66,7 +65,6 @@ fun ProfileCard(
     val streak = remember(wv, sv, cv) { WatchStats.streak(context) }
     val level = remember(wv, sv, cv, streak) { WatchStats.level(context, streak) }
     val badges = remember(wv, sv, cv) { Achievements.ALL.count { Achievements.isUnlocked(context, it.id) } }
-    val tier = StreakTier.of(streak.count)
     val shape = RoundedCornerShape(16.dp)
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
@@ -77,8 +75,8 @@ fun ProfileCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(shape)
-                .background(Brush.verticalGradient(listOf(Color(0xFF1F1A3D), Color(0xFF141318))))
-                .border(1.5.dp, Brush.linearGradient(listOf(KiroPurple, Color(0xFFB7A9FF), KiroPurple)), shape),
+                .background(Color(0xFF17171B))
+                .border(1.dp, Color.White.copy(alpha = 0.09f), shape),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(start = (14 * k).dp, top = (10 * k).dp, end = (8 * k).dp),
@@ -100,10 +98,7 @@ fun ProfileCard(
                             modifier = Modifier.weight(1f, fill = false),
                         )
                         Spacer(Modifier.width((6 * k).dp))
-                        Row(
-                            modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(Color.White.copy(alpha = 0.10f)).padding(horizontal = (6 * k).dp, vertical = (2 * k).dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(painterResource(R.drawable.fluent_star_filled), null, tint = Gold, modifier = Modifier.size((12 * k).dp))
                             Spacer(Modifier.width(3.dp))
                             Text("Lv ${level.level}", color = Color.White, fontSize = (11 * k).sp, fontWeight = FontWeight.Bold, maxLines = 1)
@@ -113,8 +108,8 @@ fun ProfileCard(
                     val frac by animateFloatAsState((level.xpIntoLevel.toFloat() / level.xpForNext).coerceIn(0f, 1f), label = "xp")
                     Text("${level.xpIntoLevel} / ${level.xpForNext} XP", color = Dim, fontSize = (11 * k).sp, maxLines = 1)
                     Spacer(Modifier.height(3.dp))
-                    Box(Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(Color.White.copy(alpha = 0.12f))) {
-                        Box(Modifier.fillMaxWidth(frac).height(3.dp).background(Brush.horizontalGradient(listOf(KiroPurple, Color(0xFFB7A9FF)))))
+                    Box(Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(Color.White.copy(alpha = 0.10f))) {
+                        Box(Modifier.fillMaxWidth(frac).height(3.dp).background(Brush.horizontalGradient(listOf(KiroPurple, KiroPurple))))
                     }
                 }
                 Spacer(Modifier.width(4.dp))
@@ -138,21 +133,17 @@ fun ProfileCard(
                 }
             }
 
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Color.White.copy(alpha = 0.07f)))
             Row(
-                modifier = Modifier.fillMaxWidth().background(Color.Black.copy(alpha = 0.28f)).padding(horizontal = (14 * k).dp, vertical = (6 * k).dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = (14 * k).dp, vertical = (6 * k).dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    if (streak.count > 0) "${streak.count}-day streak · ${tier.name}" else "No streak yet",
-                    color = Dim, fontSize = (11 * k).sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f).clickable(onClick = onStats),
-                )
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.weight(1f))
                 Text("$badges", color = Color.White, fontSize = (12 * k).sp, fontWeight = FontWeight.Bold)
                 Text(" Badges", color = Dim, fontSize = (12 * k).sp)
                 Spacer(Modifier.width(8.dp))
                 Row(
-                    modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Color.White.copy(alpha = 0.10f)).clickable(onClick = onBadges)
+                    modifier = Modifier.clip(RoundedCornerShape(14.dp)).clickable(onClick = onBadges)
                         .padding(start = (10 * k).dp, end = (4 * k).dp, top = (4 * k).dp, bottom = (4 * k).dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -169,8 +160,7 @@ private fun PillButton(icon: Int, label: String, k: Float, onClick: () -> Unit) 
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(Color.White.copy(alpha = 0.10f))
-            .border(1.dp, Color.White.copy(alpha = 0.14f), RoundedCornerShape(16.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = (10 * k).dp, vertical = (4.5f * k).dp),
         verticalAlignment = Alignment.CenterVertically,

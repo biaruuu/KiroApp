@@ -57,7 +57,7 @@ import java.time.format.TextStyle
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
-private val Card = Color(0xFF1A1A1D)
+private val Card = Color(0xFF17171B)
 private val Dim = Color(0xFF9A9AA2)
 
 internal fun durText(seconds: Int): String {
@@ -154,8 +154,7 @@ private fun StreakCard(streak: WatchStats.Streak, today: LocalDate) {
         val badge = (maxWidth * 0.34f).coerceIn(84.dp, 130.dp)
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-                .background(Brush.verticalGradient(listOf(tier.bottom.copy(alpha = 0.28f), Card)))
-                .border(1.dp, tier.top.copy(alpha = 0.40f), RoundedCornerShape(16.dp))
+                .background(Card)
                 .padding(16.dp),
         ) {
             SectionTitle("Activity streak")

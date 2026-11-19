@@ -140,7 +140,7 @@ fun StreakBadge(streak: Int, litToday: Boolean, size: Dp, modifier: Modifier = M
             val top = h * 0.14f
 
             // Halo behind the flame.
-            if (tier.index >= 1 && streak > 0) {
+            if (tier.index >= 3 && streak > 0) {
                 val a = (if (lit) glow else 0.18f) * (if (tier.index >= 4) 0.85f else 0.55f)
                 // Kept inside the canvas so it fades out instead of showing a square edge.
                 drawCircle(

@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.43.5] - 2026-11-19
+
+### Changed
+- Minimalist profile card: flat dark card with a thin border, outlined buttons, plain level label, and a quiet badge strip. The card sits higher on Me, and the streak text in the strip is gone.
+- Watch stats cards are flat and calmer too (no tinted gradient or coloured border).
+
 ## [1.43.4] - 2026-11-19
 
 ### Fixed
