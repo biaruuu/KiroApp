@@ -43,7 +43,7 @@ fun PartyPage() {
     var busy by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(12.dp))
-        Text("Join a watch party", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text("Join a watch party", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium)
         Spacer(Modifier.height(8.dp))
         Text(
             "Type the code your friend shares. Their episode opens and follows the host: play, pause, seeking and next episodes.",
@@ -58,11 +58,11 @@ fun PartyPage() {
                 value = code,
                 onValueChange = { code = it.filter { ch -> ch.isLetterOrDigit() }.uppercase().take(6) },
                 singleLine = true,
-                textStyle = TextStyle(color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = 6.sp, textAlign = TextAlign.Center),
+                textStyle = TextStyle(color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Medium, letterSpacing = 6.sp, textAlign = TextAlign.Center),
                 cursorBrush = SolidColor(KiroPurple),
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
                 decorationBox = { inner ->
-                    if (code.isEmpty()) Text("ABC123", color = Color(0xFF4A4A50), fontSize = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = 6.sp)
+                    if (code.isEmpty()) Text("ABC123", color = Color(0xFF4A4A50), fontSize = 28.sp, fontWeight = FontWeight.Medium, letterSpacing = 6.sp)
                     inner()
                 },
             )
@@ -70,7 +70,7 @@ fun PartyPage() {
         Spacer(Modifier.height(18.dp))
         Text(
             if (busy) "Joining..." else "Join party",
-            color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+            color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
                 .background(if (code.length == 6) KiroPurple else Color(0xFF2E2E30))
                 .clickable(enabled = code.length == 6 && !busy) {

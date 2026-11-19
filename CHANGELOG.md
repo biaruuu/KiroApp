@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.51.0]
+
+### Changed
+- Minimalist Me: lighter type across Me, Settings, Alerts, Achievements, Watch stats and the other
+  Me pages, consistent 8dp corners, quieter hairlines and the shared card colour.
+
 ## [1.50.0]
 
 ### Changed

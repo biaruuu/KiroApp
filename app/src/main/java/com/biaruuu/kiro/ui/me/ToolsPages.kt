@@ -70,9 +70,9 @@ fun StoragePage() {
     var confirm by remember { mutableStateOf<Confirm?>(null) }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-        Text("Kiro is using ${formatBytes(total)}", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text("Kiro is using ${formatBytes(total)}", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium)
         Spacer(Modifier.height(12.dp))
-        Row(Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(Color(0xFF2B2B2F))) {
+        Row(Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(Color(0xFF222226))) {
             if (dlBytes > 0) Box(Modifier.weight(dlBytes.toFloat()).fillMaxSize().background(KiroPurple))
             if (cache > 0) Box(Modifier.weight(cache.toFloat()).fillMaxSize().background(Color(0xFFE5A93B)))
             if (data > 0) Box(Modifier.weight(data.toFloat()).fillMaxSize().background(Color(0xFF5BA8E8)))
@@ -120,7 +120,7 @@ fun StoragePage() {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text(title, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(title, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text("${list.size} episode${if (list.size == 1) "" else "s"} · ${formatBytes(list.sumOf { it.bytes })}", color = Muted, fontSize = 12.sp)
                     }
                     Text(

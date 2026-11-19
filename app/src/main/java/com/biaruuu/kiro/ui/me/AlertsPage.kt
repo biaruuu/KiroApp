@@ -54,7 +54,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private val CardBg = Color(0xFF18181B)
-private val Line = Color(0xFF2B2B2F)
+private val Line = Color(0xFF222226)
 private val Muted = Color(0xFF9A9A9F)
 
 private class AlertShow(val id: Int, val title: String)
@@ -106,11 +106,11 @@ private fun SectionTitle(text: String) {
 @Composable
 private fun TimeChip(label: String, value: String, modifier: Modifier, onClick: () -> Unit) {
     Column(
-        modifier.clip(RoundedCornerShape(10.dp)).background(Color(0xFF26262B)).clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 10.dp),
+        modifier.clip(RoundedCornerShape(10.dp)).background(Color(0xFF18181B)).clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 10.dp),
     ) {
         Text(label, color = Muted, fontSize = 11.sp)
         Spacer(Modifier.height(2.dp))
-        Text(value, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Text(value, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -223,7 +223,7 @@ fun AlertsPage() {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text(a.anime.displayTitle, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Text(a.anime.displayTitle, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         Spacer(Modifier.height(2.dp))
                         Text("Episode ${a.episode}", color = Muted, fontSize = 12.sp)
                     }

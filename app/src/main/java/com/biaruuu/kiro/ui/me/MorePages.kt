@@ -79,7 +79,7 @@ fun WhatsNewPage(latest: Boolean, onBack: () -> Unit, version: String? = null) {
                     CircularProgressIndicator(color = KiroPurple, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
                 }
             } else if (rel == null) {
-                Text("Version $current", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text("Version $current", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(12.dp))
                 Text("We couldn't load the details right now. Please check your connection.", color = Body, fontSize = 14.sp, lineHeight = 21.sp)
             } else {
@@ -88,12 +88,12 @@ fun WhatsNewPage(latest: Boolean, onBack: () -> Unit, version: String? = null) {
                         "NEW VERSION",
                         color = Color.White,
                         fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Medium,
                         modifier = Modifier.background(KiroPurple, androidx.compose.foundation.shape.RoundedCornerShape(3.dp)).padding(horizontal = 7.dp, vertical = 3.dp),
                     )
                     Spacer(Modifier.height(10.dp))
                 }
-                Text("Kiro ${rel.version}", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text("Kiro ${rel.version}", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Medium)
                 if (!newer && latest) {
                     Spacer(Modifier.height(6.dp))
                     Text("You're up to date.", color = Muted, fontSize = 13.sp)
@@ -127,7 +127,7 @@ private fun ReleaseNotes(notes: String) {
             line.isEmpty() || line.startsWith("## ") || line.startsWith("# ") -> Unit
             line.startsWith("###") -> {
                 Spacer(Modifier.height(20.dp))
-                Text(clean(line.trimStart('#')), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(clean(line.trimStart('#')), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             }
             line.startsWith("- ") || line.startsWith("* ") -> {
                 Spacer(Modifier.height(10.dp))
@@ -160,7 +160,7 @@ fun VersionPage() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement_Center,
     ) {
-        Text("Kiro Android", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text("Kiro Android", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium)
         Spacer(Modifier.height(14.dp))
         Text("Latest Version ${rel?.version ?: current}", color = Body, fontSize = 14.sp)
         Spacer(Modifier.height(8.dp))
@@ -192,7 +192,7 @@ fun HelpPage() {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
         for ((q, a) in Faq) {
             Spacer(Modifier.height(22.dp))
-            Text(q, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(q, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.height(6.dp))
             Text(a, color = Body, fontSize = 13.sp, lineHeight = 20.sp)
         }
@@ -229,7 +229,7 @@ fun ContactPage(onDone: () -> Unit) {
                 )
             }
             Spacer(Modifier.height(18.dp))
-            Text("Message sent", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("Message sent", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.height(8.dp))
             Text("Thanks! The developer reads every message.", color = Body, fontSize = 14.sp)
             Spacer(Modifier.height(28.dp))
@@ -243,7 +243,7 @@ fun ContactPage(onDone: () -> Unit) {
             if (signedIn == null) {
                 Text("Log in to send the developer a message.", color = Body, fontSize = 14.sp)
             } else {
-                Text("What's it about?", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text("What's it about?", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(10.dp))
                 val hints = listOf("Something isn't working", "An idea to make Kiro better", "Ask the developer anything", "Anything else")
                 Column(
@@ -256,7 +256,7 @@ fun ContactPage(onDone: () -> Unit) {
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Column(Modifier.weight(1f)) {
-                                Text(label, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                                Text(label, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                                 Text(hints[i], color = Muted, fontSize = 12.sp)
                             }
                             Box(
@@ -272,7 +272,7 @@ fun ContactPage(onDone: () -> Unit) {
                     }
                 }
                 Spacer(Modifier.height(20.dp))
-                Text("Your message", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text("Your message", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(10.dp))
                 Box(
                     Modifier

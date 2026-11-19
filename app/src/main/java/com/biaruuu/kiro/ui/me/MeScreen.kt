@@ -47,7 +47,7 @@ import com.biaruuu.kiro.data.auth.AuthState
 import com.biaruuu.kiro.ui.theme.KiroPurple
 
 private val Muted = Color(0xFF8E8E93)
-private val Hairline = Color(0xFF2B2B2F)
+private val Hairline = Color(0xFF222226)
 
 /** The Me tab: account header and the settings list. [onOpen] pushes a settings page. */
 @Composable
@@ -98,7 +98,7 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
                         fontFamily = com.biaruuu.kiro.data.NameStyles.family(context, profile.nameFont),
                         color = Color.White,
                         fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Medium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -175,7 +175,7 @@ private fun SettingsRow(@DrawableRes icon: Int, label: String, value: String? = 
         modifier = Modifier
             .fillMaxWidth()
             .height(48.dp)
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,

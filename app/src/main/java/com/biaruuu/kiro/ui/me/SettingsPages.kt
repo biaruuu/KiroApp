@@ -79,7 +79,7 @@ import okhttp3.Request
 import org.json.JSONObject
 
 private val Muted = Color(0xFF9A9A9F)
-private val Hairline = Color(0xFF2B2B2F)
+private val Hairline = Color(0xFF222226)
 private val DisabledGray = Color(0xFF2E2E30)
 private val DisabledText = Color(0xFF5E5E63)
 
@@ -328,10 +328,10 @@ private fun LanguagePage() {
             if (code == com.biaruuu.kiro.ui.i18n.I18n.FIL) {
                 Spacer(Modifier.width(8.dp))
                 Box(
-                    modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(KiroPurple.copy(alpha = 0.25f))
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(KiroPurple.copy(alpha = 0.25f))
                         .padding(horizontal = 6.dp, vertical = 2.dp),
                 ) {
-                    androidx.compose.material3.Text("BETA", color = KiroPurple, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    androidx.compose.material3.Text("BETA", color = KiroPurple, fontSize = 10.sp, fontWeight = FontWeight.Medium)
                 }
             }
             Spacer(Modifier.weight(1f))
@@ -392,7 +392,7 @@ private fun AccountPage(onBack: () -> Unit, sub: String?, openSub: (String?) -> 
                 Text("Email", color = Muted, fontSize = 12.sp)
             }
             Spacer(Modifier.height(6.dp))
-            Text(s?.email.orEmpty(), color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Text(s?.email.orEmpty(), color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.height(22.dp))
             Box(Modifier.fillMaxWidth().height(1.dp).background(Hairline))
             Spacer(Modifier.height(12.dp))
@@ -448,7 +448,7 @@ private fun ValueRow(label: String, value: String, placeholder: Boolean = false,
         modifier = Modifier.fillMaxWidth().height(45.dp).clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
         Spacer(Modifier.size(16.dp))
         Text(
             value,
@@ -545,7 +545,7 @@ private fun ChevronRowPadless(label: String, onClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth().height(45.dp).clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+        Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
         Icon(
             painter = painterResource(R.drawable.fluent_chevron_right_regular),
             contentDescription = null,
@@ -563,18 +563,18 @@ private fun ConfirmDialog(text: String, confirm: String, onDismiss: () -> Unit, 
                 .padding(horizontal = 24.dp)
                 .widthIn(max = 420.dp)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(6.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(Color(0xFF18181B))
                 .padding(24.dp),
         ) {
-            Text(text, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, lineHeight = 22.sp)
+            Text(text, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, lineHeight = 22.sp)
             Spacer(Modifier.height(24.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "Cancel",
                     color = Color.White,
                     fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Medium,
                     modifier = Modifier.clickable(onClick = onDismiss).padding(horizontal = 20.dp, vertical = 14.dp),
                 )
                 Spacer(Modifier.size(6.dp))
@@ -582,9 +582,9 @@ private fun ConfirmDialog(text: String, confirm: String, onDismiss: () -> Unit, 
                     confirm,
                     color = Color.White,
                     fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Medium,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
+                        .clip(RoundedCornerShape(8.dp))
                         .background(KiroPurple)
                         .clickable(onClick = onConfirm)
                         .padding(horizontal = 20.dp, vertical = 14.dp),

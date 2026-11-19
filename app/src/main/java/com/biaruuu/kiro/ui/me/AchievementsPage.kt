@@ -82,7 +82,7 @@ fun AchievementsPage() {
                     Icon(painterResource(R.drawable.fluent_trophy_regular), null, tint = Color(0xFFFFC83D), modifier = Modifier.size(30.dp))
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("$done of ${rows.size} unlocked", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("$done of ${rows.size} unlocked", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                         Text("Keep watching to earn them all", color = Muted, fontSize = 12.sp)
                     }
                 }
@@ -107,7 +107,7 @@ fun AchievementsPage() {
                 }
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(a.title, color = if (unlocked) Color.White else Color(0xFFB4B4BA), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(a.title, color = if (unlocked) Color.White else Color(0xFFB4B4BA), fontSize = 14.sp, fontWeight = FontWeight.Medium)
                     Text(a.desc, color = Muted, fontSize = 12.sp)
                     if (!unlocked) {
                         Spacer(Modifier.height(8.dp))

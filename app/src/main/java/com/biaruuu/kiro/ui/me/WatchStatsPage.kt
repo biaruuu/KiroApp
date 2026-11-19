@@ -237,7 +237,7 @@ private fun SectionTitle(text: String, modifier: Modifier = Modifier, action: St
             modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
         if (action != null) {
-            Row(Modifier.clip(RoundedCornerShape(6.dp)).clickable(onClick = onAction).padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onAction).padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(action, color = Dim, fontSize = 12.sp)
                 androidx.compose.material3.Icon(painterResource(com.biaruuu.kiro.R.drawable.fluent_chevron_right_regular), null, tint = Dim, modifier = Modifier.size(16.dp))
             }
@@ -292,7 +292,7 @@ private fun RecentActivityCard(events: List<Event>) {
                 )
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(e.title, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(e.title, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
                         when (e.kind) {
                             "watched" -> "Watched"
@@ -402,7 +402,7 @@ private fun LevelCard(level: WatchStats.Level) {
         }
         Spacer(Modifier.height(10.dp))
         val frac by animateFloatAsState((level.xpIntoLevel.toFloat() / level.xpForNext).coerceIn(0f, 1f), label = "lvl")
-        Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(Color.White.copy(alpha = 0.10f))) {
+        Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.10f))) {
             Box(Modifier.fillMaxWidth(frac).height(8.dp).background(Brush.horizontalGradient(listOf(KiroPurple, Color(0xFFB7A9FF)))))
         }
         Spacer(Modifier.height(8.dp))

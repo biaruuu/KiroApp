@@ -144,7 +144,7 @@ fun BackupPage() {
 private fun Stat(label: String, n: Int) {
     Row(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
         Text(label, color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
-        Text(n.toString(), color = Dim, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text(n.toString(), color = Dim, fontSize = 14.sp, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -154,7 +154,7 @@ private fun BigAction(title: String, sub: String, onClick: () -> Unit) {
         Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(10.dp)).background(Card)
             .clickable(onClick = onClick).padding(14.dp),
     ) {
-        Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
         Text(sub, color = Dim, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
     }
 }

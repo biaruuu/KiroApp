@@ -101,7 +101,7 @@ fun AdminPage() {
                     modifier = Modifier.weight(1f).clickable { tab = i }.padding(top = 10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(label, color = if (tab == i) Color.White else Muted, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text(label, color = if (tab == i) Color.White else Muted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     Spacer(Modifier.height(8.dp))
                     Box(Modifier.fillMaxWidth().height(2.dp).background(if (tab == i) Color.White else Color.Transparent))
                 }
@@ -148,7 +148,7 @@ private fun OnlineTab() {
         item {
             Text(
                 "${online.size} online · ${online.count { it.watching != null }} watching",
-                color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold,
+                color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium,
             )
             Text("Signed-in users with Kiro open. Updates live.", color = Muted, fontSize = 12.sp)
             Spacer(Modifier.height(6.dp))
@@ -170,7 +170,7 @@ private fun UserRow(u: PresenceUser, online: Boolean, now: Long) {
         Box(Modifier.size(10.dp).clip(CircleShape).background(if (online) Green else Color(0xFF55555A)))
         Spacer(Modifier.width(10.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(u.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(u.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
             Text(
                 if (online) (u.watching?.let { "Watching: $it" } ?: "Browsing") else "Last seen ${ago(u.lastSeen)}",
                 color = if (online && u.watching != null) Color.White else Muted, fontSize = 12.sp,
@@ -207,12 +207,12 @@ private fun LettersTab() {
         items(letters, key = { it.id }) { l ->
             Column(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Card).padding(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(l.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(l.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                     if (l.topic.isNotEmpty()) {
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            l.topic, color = Color.Black, fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(Color.White).padding(horizontal = 6.dp, vertical = 2.dp),
+                            l.topic, color = Color.Black, fontSize = 10.sp, fontWeight = FontWeight.Medium,
+                            modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Color.White).padding(horizontal = 6.dp, vertical = 2.dp),
                         )
                     }
                     Spacer(Modifier.weight(1f))
@@ -261,7 +261,7 @@ private fun ReportsTab() {
         items(reports, key = { it.id }) { r ->
             Column(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Card).padding(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("${r.title} · Ep ${r.episode}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Text("${r.title} · Ep ${r.episode}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
                     Text(ago(r.createdAt), color = Muted, fontSize = 11.sp)
                 }
                 Spacer(Modifier.height(6.dp))
@@ -293,7 +293,7 @@ private fun AnnounceTab() {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
-            Text(if (editing == null) "New announcement" else "Edit announcement", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(if (editing == null) "New announcement" else "Edit announcement", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             Text("Appears in every user's Notifications, right away for anyone with Kiro open.", color = Muted, fontSize = 12.sp)
             Spacer(Modifier.height(10.dp))
             UnderlineField(
@@ -335,7 +335,7 @@ private fun AnnounceTab() {
         }
         items(announcements, key = { it.id }) { a ->
             Column(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Card).padding(14.dp)) {
-                Text(a.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text(a.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(3.dp))
                 Text(a.body, color = Color(0xFFB4B4BA), fontSize = 13.sp, lineHeight = 18.sp, maxLines = 4)
                 Spacer(Modifier.height(8.dp))
@@ -378,14 +378,14 @@ private fun DesignsTab() {
 
     LazyColumn(modifier = Modifier.fillMaxSize().imePadding(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
-            Text("Publish a design", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text("Publish a design", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             Text("Up to 5 MB. Shows up for every user right away. Animated PNG, GIF and WebP all play.", color = Muted, fontSize = 12.sp)
             Spacer(Modifier.height(12.dp))
             androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(types) { (id, label) ->
                     val on = type == id
                     Text(
-                        label, color = if (on) Color.Black else Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                        label, color = if (on) Color.Black else Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium,
                         modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (on) Color.White else Color(0xFF2A2A2D)).clickable { type = id }.padding(horizontal = 14.dp, vertical = 8.dp),
                     )
                 }
@@ -410,7 +410,7 @@ private fun DesignsTab() {
             }
             Text(
                 if (bytes == null) "Choose image" else "Choose a different image",
-                color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium,
                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Color(0xFF2A2A2D)).clickable { pick.launch("image/*") }.padding(vertical = 14.dp),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
@@ -444,7 +444,7 @@ private fun DesignsTab() {
                 com.biaruuu.kiro.ui.components.AnimatedAsset(d, Modifier.size(52.dp))
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(d.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(d.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                     Text(types.firstOrNull { it.first == d.type }?.second ?: d.type, color = Muted, fontSize = 12.sp)
                 }
                 Text("Delete", color = Color(0xFFFF6B6B), fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.clickable {

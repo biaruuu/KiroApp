@@ -127,7 +127,7 @@ fun NotificationsPage(onOpen: (String) -> Unit) {
                 Spacer(Modifier.height(10.dp))
                 if (a != null) {
                     if (a.title.isNotBlank()) {
-                        Text(a.title, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        Text(a.title, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                         Spacer(Modifier.height(3.dp))
                     }
                     Text(
@@ -137,7 +137,7 @@ fun NotificationsPage(onOpen: (String) -> Unit) {
                 } else if (r != null) {
                     Text(
                         if (newer) "Kiro ${r.version} is available" else "Kiro ${r.version}",
-                        color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                        color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium,
                     )
                     Spacer(Modifier.height(3.dp))
                     Text(
@@ -165,7 +165,7 @@ private fun DeveloperHeader(card: com.biaruuu.kiro.data.AdminCard?, time: String
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val context = LocalContext.current
                 Text(
-                    name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     fontFamily = com.biaruuu.kiro.data.NameStyles.family(context, card?.nameFont.orEmpty()),
                     modifier = Modifier.weight(1f, fill = false),
                 )
@@ -174,9 +174,9 @@ private fun DeveloperHeader(card: com.biaruuu.kiro.data.AdminCard?, time: String
                 Spacer(Modifier.width(6.dp))
                 Text(
                     "Dev",
-                    color = KiroPurple, fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                    color = KiroPurple, fontSize = 10.sp, fontWeight = FontWeight.Medium,
                     modifier = Modifier
-                        .border(1.dp, KiroPurple, RoundedCornerShape(4.dp))
+                        .border(1.dp, KiroPurple, RoundedCornerShape(8.dp))
                         .padding(horizontal = 5.dp, vertical = 1.dp),
                 )
             }
