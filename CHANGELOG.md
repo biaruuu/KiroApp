@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.47.0]
+
+### Changed
+- Minimalist video player: lighter type in controls, sheets and dialogs, consistent 8dp corners on
+  buttons and chips, and softer outlines.
+
 ## [1.46.0]
 
 ### Changed

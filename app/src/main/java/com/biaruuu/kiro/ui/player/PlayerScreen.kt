@@ -111,7 +111,7 @@ import kotlinx.coroutines.delay
 import java.util.Locale
 
 private val PanelBackground = Color(0xFF18181B)
-private val TrackGrey = Color(0xFF5C5C5E)
+private val TrackGrey = Color(0xFF3A3A3F)
 private val MutedText = Color(0xFF8E8E93)
 
 private const val NO_SOURCE = "This episode isn't available right now"
@@ -774,9 +774,9 @@ fun PlayerScreen(
                         "Retry",
                         color = Color.White,
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Medium,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             .background(KiroPurple)
                             .clickable { retry++ }
                             .padding(horizontal = 24.dp, vertical = 8.dp),
@@ -785,9 +785,9 @@ fun PlayerScreen(
                         if (alreadyReported) "Reported" else "Report",
                         color = if (alreadyReported) Color(0xFF9A9A9F) else Color.White,
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Medium,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             .background(Color(0xFF3A3A3E))
                             .clickable(enabled = !alreadyReported) { reportBroken() }
                             .padding(horizontal = 24.dp, vertical = 8.dp),
@@ -844,7 +844,7 @@ fun PlayerScreen(
                 modifier = Modifier.align(Alignment.BottomEnd).padding(end = 32.dp, bottom = bottomPad),
             ) {
                 val seg = active
-                val shape = RoundedCornerShape(6.dp)
+                val shape = RoundedCornerShape(8.dp)
                 Box(
                     modifier = Modifier
                         .height(44.dp)
@@ -866,7 +866,7 @@ fun PlayerScreen(
                             if (counting) "Skipping ${seg?.noun?.lowercase() ?: ""}..." else (seg?.label ?: "Skip"),
                             color = Color.Black,
                             fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.Medium,
                         )
                         Spacer(Modifier.width(8.dp))
                         Icon(
@@ -905,7 +905,7 @@ fun PlayerScreen(
                     Box(
                         modifier = Modifier
                             .size(44.dp)
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             .background(Color.Black.copy(alpha = 0.65f))
                             .clickable { dismissed = true },
                         contentAlignment = Alignment.Center,
@@ -921,7 +921,7 @@ fun PlayerScreen(
                     Box(
                         modifier = Modifier
                             .height(44.dp)
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             .background(Color.White)
                             .drawBehind {
                                 drawRect(KiroPurple.copy(alpha = 0.35f), size = androidx.compose.ui.geometry.Size(size.width * fill, size.height))
@@ -932,7 +932,7 @@ fun PlayerScreen(
                         Row(modifier = Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 "Next Episode${if (next != null) " ${next.number}" else ""}",
-                                color = Color.Black, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                                color = Color.Black, fontSize = 15.sp, fontWeight = FontWeight.Medium,
                             )
                             Spacer(Modifier.width(8.dp))
                             Icon(
@@ -1112,7 +1112,7 @@ fun PlayerScreen(
                                     m.name,
                                     color = Color.White,
                                     fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
+                                    fontWeight = FontWeight.Medium,
                                     fontFamily = com.biaruuu.kiro.data.NameStyles.family(context, m.nameFont),
                                     maxLines = 1,
                                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -1120,8 +1120,8 @@ fun PlayerScreen(
                                 )
                                 if (m.host) {
                                     Text(
-                                        "Host", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(KiroPurple).padding(horizontal = 8.dp, vertical = 3.dp),
+                                        "Host", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(KiroPurple).padding(horizontal = 8.dp, vertical = 3.dp),
                                     )
                                 }
                             }
@@ -1143,7 +1143,7 @@ fun PlayerScreen(
                             context.startActivity(android.content.Intent.createChooser(send, null))
                         }
                         if (p == null) {
-                            Text("Watch together", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text("Watch together", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                             Spacer(Modifier.height(8.dp))
                             Text(
                                 "Start a party and send the code to your friends. Their player follows yours: play, pause, seeking and next episodes. Everyone needs to be logged in.",
@@ -1159,7 +1159,7 @@ fun PlayerScreen(
                         } else {
                             Text(if (p.host) "You are hosting" else "You are in a party", color = Color(0xFF8E8E93), fontSize = 12.sp)
                             Spacer(Modifier.height(6.dp))
-                            Text(p.code, color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = 5.sp)
+                            Text(p.code, color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Medium, letterSpacing = 5.sp)
                             Spacer(Modifier.height(10.dp))
                             Text(
                                 if (partyMembers.size <= 1) "Waiting for friends to join..."
@@ -1325,7 +1325,7 @@ private fun Controls(
                 title,
                 color = Color.White,
                 fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
@@ -1425,7 +1425,7 @@ private fun Controls(
 private fun Action(icon: Int, label: String, enabled: Boolean, onClick: () -> Unit) {
     val tint = if (enabled) Color.White else Color.White.copy(alpha = 0.4f)
     Row(
-        modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable(onClick = onClick).padding(horizontal = 4.dp, vertical = 6.dp),
+        modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick).padding(horizontal = 4.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
@@ -1549,7 +1549,7 @@ private fun SidePanel(title: String, onClose: () -> Unit, wide: Boolean = false,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Text(title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
                     if (title.isEmpty()) Spacer(Modifier.weight(1f))
                     Icon(
                         painter = painterResource(R.drawable.fluent_dismiss_regular),
@@ -1578,7 +1578,7 @@ private fun EpisodeRow(ep: EpisodeInfo, playing: Boolean, watched: Boolean, onCl
             modifier = Modifier
                 .width(150.dp)
                 .aspectRatio(16f / 9f)
-                .clip(RoundedCornerShape(6.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(Color(0xFF262628)),
             contentAlignment = Alignment.Center,
         ) {
@@ -1623,7 +1623,7 @@ private fun EpisodeRow(ep: EpisodeInfo, playing: Boolean, watched: Boolean, onCl
                     ep.heading,
                     color = Color.White,
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Medium,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
@@ -1673,7 +1673,7 @@ private fun PanelRow(label: String, selected: Boolean, onClick: () -> Unit) {
             label,
             color = if (selected) Color.White else Color(0xFFD0D0D4),
             fontSize = 14.sp,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            fontWeight = if (selected) FontWeight.Medium else FontWeight.Medium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -1765,8 +1765,8 @@ private fun TracksDialog(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .border(1.dp, Color(0xFF5C5C5E), RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(8.dp))
+                            .border(1.dp, Color(0xFF3A3A3F), RoundedCornerShape(8.dp))
                             .clickable(onClick = onClose)
                             .padding(horizontal = 22.dp, vertical = 10.dp),
                     )
@@ -1775,9 +1775,9 @@ private fun TracksDialog(
                         "Apply",
                         color = Color.White,
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Medium,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             .background(KiroPurple)
                             .clickable {
                                 if (twoLanguages && (pickLanguage == 1) != dubNow) {
@@ -1826,7 +1826,7 @@ private fun TracksDialog(
 @Composable
 private fun TrackColumn(title: String, labels: List<String>, picked: Int, onPick: (Int) -> Unit, modifier: Modifier) {
     Column(modifier = modifier) {
-        Text(title, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 10.dp))
+        Text(title, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(bottom = 10.dp))
         if (labels.isEmpty()) {
             Text("None available", color = Color(0xFF8E8E93), fontSize = 14.sp, modifier = Modifier.padding(start = 40.dp, top = 8.dp))
         }
@@ -1851,7 +1851,7 @@ private fun TrackColumn(title: String, labels: List<String>, picked: Int, onPick
                         labels[i],
                         color = if (selected) Color.White else Color(0xFFB3B3B3),
                         fontSize = 16.sp,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                        fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -1924,7 +1924,7 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
                                 customName?.let { "Custom: $it" } ?: "Custom Font (.ttf / .otf)",
                                 color = Color.White,
                                 fontSize = 14.sp,
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
                             )
                             Text(
                                 if (customName != null) "Tap to use it, or browse for another file"
@@ -1948,7 +1948,7 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier
                                 .padding(start = 8.dp)
-                                .clip(RoundedCornerShape(4.dp))
+                                .clip(RoundedCornerShape(8.dp))
                                 .clickable { pickFont.launch(arrayOf("*/*")) }
                                 .padding(horizontal = 8.dp, vertical = 6.dp),
                         )
@@ -1967,7 +1967,7 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
                             font,
                             color = if (selected) KiroPurple else Color.White,
                             fontSize = 14.sp,
-                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
                             modifier = Modifier.weight(1f),
                         )
                         if (selected) {
@@ -2014,7 +2014,7 @@ private fun SectionLabel(text: String) {
         text,
         color = MutedText,
         fontSize = 11.sp,
-        fontWeight = FontWeight.Bold,
+        fontWeight = FontWeight.Medium,
         letterSpacing = 1.sp,
         modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 4.dp),
     )
@@ -2030,7 +2030,7 @@ private fun StyleRow(label: String, selected: Boolean, onClick: () -> Unit) {
             label,
             color = if (selected) KiroPurple else Color.White,
             fontSize = 14.sp,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
             modifier = Modifier.weight(1f),
         )
         if (selected) {
@@ -2050,12 +2050,12 @@ private fun PartyButton(label: String, filled: Boolean, onClick: () -> Unit) {
         label,
         color = Color.White,
         fontSize = 14.sp,
-        fontWeight = FontWeight.Bold,
+        fontWeight = FontWeight.Medium,
         textAlign = TextAlign.Center,
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .then(if (filled) Modifier.background(KiroPurple) else Modifier.border(1.dp, Color(0xFF5C5C5E), RoundedCornerShape(8.dp)))
+            .then(if (filled) Modifier.background(KiroPurple) else Modifier.border(1.dp, Color(0xFF3A3A3F), RoundedCornerShape(8.dp)))
             .clickable(onClick = onClick)
             .padding(vertical = 12.dp),
     )
@@ -2079,7 +2079,7 @@ private fun PartyChip(members: List<com.biaruuu.kiro.data.WatchParty.Member>, mo
         Spacer(Modifier.width(10.dp))
         Text(
             if (members.size > 3) "+${members.size - 3}" else "${members.size}",
-            color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+            color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium,
         )
     }
 }
