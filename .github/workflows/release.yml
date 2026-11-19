@@ -97,7 +97,6 @@ jobs:
         if: steps.version.outputs.exists == 'false'
         env:
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
-          PARTY_WS_URL: ${{ vars.PARTY_WS_URL }}
         run: ./gradlew assembleRelease --stacktrace
 
       - name: Name the APK

@@ -4,6 +4,17 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.55.0]
+
+### Changed
+- Minimalist player panels: Audio & Subtitles, Subtitle style, Episodes, Quality, Audio boost, HDR &
+  Dolby Vision and the other side panels use a flat near-black surface with a hairline under the
+  title, muted unselected rows, white ticks and pill buttons, instead of purple highlights.
+
+### Removed
+- The WebSocket watch party relay from 1.54.0 (it needed a server). Watch party uses Firestore, which
+  already pushes changes to everyone live. The minimalist party screens from 1.54.0 stay.
+
 ## [1.54.0]
 
 ### Added

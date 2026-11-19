@@ -1192,7 +1192,7 @@ fun PlayerScreen(
                         item {
                             Text(
                                 "Makes quiet dialogue louder. Loud scenes may distort at +20 dB.",
-                                color = Color(0xFF8E8E93), fontSize = 12.sp,
+                                color = Color(0xFF6A6A70), fontSize = 12.sp, lineHeight = 18.sp,
                                 modifier = Modifier.padding(20.dp),
                             )
                         }
@@ -1208,7 +1208,7 @@ fun PlayerScreen(
                         item {
                             Text(
                                 "When on, Kiro skips the intro, outro and recap for you after a short countdown. Only parts that are confirmed for this exact episode are skipped; nothing is guessed.",
-                                color = Color(0xFF8E8E93), fontSize = 12.sp,
+                                color = Color(0xFF6A6A70), fontSize = 12.sp, lineHeight = 18.sp,
                                 modifier = Modifier.padding(20.dp),
                             )
                         }
@@ -1223,7 +1223,7 @@ fun PlayerScreen(
                         item {
                             Text(
                                 "HDR10 and Dolby Vision play through your phone's hardware decoder when the stream and screen support them. \"On\" also turns on hardware tunneling and an HDR display mode.",
-                                color = Color(0xFF8E8E93), fontSize = 12.sp,
+                                color = Color(0xFF6A6A70), fontSize = 12.sp, lineHeight = 18.sp,
                                 modifier = Modifier.padding(20.dp),
                             )
                         }
@@ -1544,7 +1544,7 @@ private fun SidePanel(title: String, onClose: () -> Unit, wide: Boolean = false,
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(panelWidth)
-                    .background(Color.Black)
+                    .background(Color(0xFF0B0B0D))
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
                     .padding(top = 12.dp),
             ) {
@@ -1552,15 +1552,16 @@ private fun SidePanel(title: String, onClose: () -> Unit, wide: Boolean = false,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                    Text(title, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
                     if (title.isEmpty()) Spacer(Modifier.weight(1f))
                     Icon(
                         painter = painterResource(R.drawable.fluent_dismiss_regular),
                         contentDescription = "Close",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp).clip(CircleShape).clickable(onClick = onClose),
+                        tint = Color(0xFFB4B4BA),
+                        modifier = Modifier.size(22.dp).clip(CircleShape).clickable(onClick = onClose),
                     )
                 }
+                Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF222226)))
                 content()
             }
         }
@@ -1573,7 +1574,7 @@ private fun EpisodeRow(ep: EpisodeInfo, playing: Boolean, watched: Boolean, onCl
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if (playing) Color(0xFF1C1C1E) else Color.Transparent)
+            .background(if (playing) Color(0xFF18181B) else Color.Transparent)
             .clickable(onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 12.dp),
     ) {
@@ -1595,10 +1596,10 @@ private fun EpisodeRow(ep: EpisodeInfo, playing: Boolean, watched: Boolean, onCl
             }
             Box(
                 modifier = Modifier
-                    .size(34.dp)
+                    .size(30.dp)
                     .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.55f))
-                    .border(1.5.dp, Color.White, CircleShape),
+                    .background(Color.Black.copy(alpha = 0.45f))
+                    .border(1.dp, Color.White.copy(alpha = 0.8f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -1614,8 +1615,8 @@ private fun EpisodeRow(ep: EpisodeInfo, playing: Boolean, watched: Boolean, onCl
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .fillMaxWidth()
-                        .height(3.dp)
-                        .background(KiroPurple),
+                        .height(2.dp)
+                        .background(Color.White),
                 )
             }
         }
@@ -1659,7 +1660,7 @@ private fun EpisodeRow(ep: EpisodeInfo, playing: Boolean, watched: Boolean, onCl
 @Composable
 private fun PanelRow(label: String, selected: Boolean, onClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(52.dp).clickable(onClick = onClick).padding(horizontal = 20.dp),
+        modifier = Modifier.fillMaxWidth().height(48.dp).clickable(onClick = onClick).padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(modifier = Modifier.width(32.dp)) {
@@ -1674,9 +1675,9 @@ private fun PanelRow(label: String, selected: Boolean, onClick: () -> Unit) {
         }
         Text(
             label,
-            color = if (selected) Color.White else Color(0xFFD0D0D4),
+            color = if (selected) Color.White else Color(0xFF9A9AA2),
             fontSize = 14.sp,
-            fontWeight = if (selected) FontWeight.Medium else FontWeight.Medium,
+            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -1742,8 +1743,8 @@ private fun TracksDialog(
                 .fillMaxWidth(0.86f)
                 .widthIn(max = 780.dp)
                 .fillMaxHeight(0.88f)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color.Black)
+                .clip(RoundedCornerShape(20.dp))
+                .background(Color(0xFF0B0B0D))
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { },
         ) {
             Column(modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp, vertical = 20.dp)) {
@@ -1768,20 +1769,20 @@ private fun TracksDialog(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .border(1.dp, Color(0xFF3A3A3F), RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(24.dp))
+                            .border(1.dp, Color(0xFF3A3A3F), RoundedCornerShape(24.dp))
                             .clickable(onClick = onClose)
                             .padding(horizontal = 22.dp, vertical = 10.dp),
                     )
                     Spacer(Modifier.width(12.dp))
                     Text(
                         "Apply",
-                        color = Color.White,
+                        color = Color.Black,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(KiroPurple)
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(Color.White)
                             .clickable {
                                 if (twoLanguages && (pickLanguage == 1) != dubNow) {
                                     onPickDub(pickLanguage == 1)
@@ -1814,11 +1815,11 @@ private fun TracksDialog(
             Icon(
                 painter = painterResource(R.drawable.fluent_dismiss_regular),
                 contentDescription = "Close",
-                tint = Color.White,
+                tint = Color(0xFFB4B4BA),
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(16.dp)
-                    .size(28.dp)
+                    .size(24.dp)
                     .clip(CircleShape)
                     .clickable(onClick = onClose),
             )
@@ -1829,7 +1830,7 @@ private fun TracksDialog(
 @Composable
 private fun TrackColumn(title: String, labels: List<String>, picked: Int, onPick: (Int) -> Unit, modifier: Modifier) {
     Column(modifier = modifier) {
-        Text(title, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(bottom = 10.dp))
+        Text(title, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(bottom = 10.dp))
         if (labels.isEmpty()) {
             Text("None available", color = Color(0xFF8E8E93), fontSize = 14.sp, modifier = Modifier.padding(start = 40.dp, top = 8.dp))
         }
@@ -1852,8 +1853,8 @@ private fun TrackColumn(title: String, labels: List<String>, picked: Int, onPick
                     }
                     Text(
                         labels[i],
-                        color = if (selected) Color.White else Color(0xFFB3B3B3),
-                        fontSize = 16.sp,
+                        color = if (selected) Color.White else Color(0xFF9A9AA2),
+                        fontSize = 15.sp,
                         fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -1869,15 +1870,15 @@ private val SkipAmber = Color(0xFFFFC857)
 @Composable
 private fun MenuRow(label: String, value: String, onClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(52.dp).clickable(onClick = onClick).padding(horizontal = 20.dp),
+        modifier = Modifier.fillMaxWidth().height(48.dp).clickable(onClick = onClick).padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
-        Text(value, color = Color(0xFFB3B3B3), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 150.dp))
+        Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+        Text(value, color = Color(0xFF9A9AA2), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 150.dp))
         Icon(
             painter = painterResource(R.drawable.fluent_chevron_left_regular),
             contentDescription = null,
-            tint = Color.White,
+            tint = Color(0xFF5E5E63),
             modifier = Modifier.padding(start = 6.dp).size(16.dp).rotate(180f),
         )
     }
@@ -1940,7 +1941,7 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
                             Icon(
                                 painter = painterResource(R.drawable.fluent_checkmark_regular),
                                 contentDescription = null,
-                                tint = KiroPurple,
+                                tint = Color.White,
                                 modifier = Modifier.size(22.dp),
                             )
                         }
@@ -1951,7 +1952,7 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier
                                 .padding(start = 8.dp)
-                                .clip(RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(20.dp))
                                 .clickable { pickFont.launch(arrayOf("*/*")) }
                                 .padding(horizontal = 8.dp, vertical = 6.dp),
                         )
@@ -1968,7 +1969,7 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             font,
-                            color = if (selected) KiroPurple else Color.White,
+                            color = if (selected) Color.White else Color.White,
                             fontSize = 14.sp,
                             fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
                             modifier = Modifier.weight(1f),
@@ -1977,14 +1978,14 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
                             Icon(
                                 painter = painterResource(R.drawable.fluent_checkmark_regular),
                                 contentDescription = null,
-                                tint = KiroPurple,
+                                tint = Color.White,
                                 modifier = Modifier.size(22.dp),
                             )
                         }
                     }
                     Text(
                         "The quick brown fox jumps over the lazy dog",
-                        color = if (selected) KiroPurple.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.6f),
+                        color = if (selected) Color.White else Color.White.copy(alpha = 0.6f),
                         fontFamily = trebuchet,
                         fontSize = 13.sp,
                         maxLines = 1,
@@ -2031,7 +2032,7 @@ private fun StyleRow(label: String, selected: Boolean, onClick: () -> Unit) {
     ) {
         Text(
             label,
-            color = if (selected) KiroPurple else Color.White,
+            color = if (selected) Color.White else Color.White,
             fontSize = 14.sp,
             fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
             modifier = Modifier.weight(1f),
@@ -2040,7 +2041,7 @@ private fun StyleRow(label: String, selected: Boolean, onClick: () -> Unit) {
             Icon(
                 painter = painterResource(R.drawable.fluent_checkmark_regular),
                 contentDescription = null,
-                tint = KiroPurple,
+                tint = Color.White,
                 modifier = Modifier.size(22.dp),
             )
         }

@@ -67,18 +67,6 @@ object WatchParty {
     fun host(c: Context, animeId: Int, episode: Int, title: String, onDone: (String?, String?) -> Unit) {
         val me = uid() ?: return onDone(null, "Log in to start a watch party")
         val code = newCode()
-        if (PartySocket.enabled) {
-            PartySocket.host(me, code, animeId, episode, title) { err ->
-                if (err != null) onDone(null, err)
-                else {
-                    session.value = Session(code, true)
-                    remote.value = null
-                    Achievements.bump(c, "hosted")
-                    onDone(code, null)
-                }
-            }
-            return
-        }
         val data = hashMapOf<String, Any>(
             "hostUid" to me, "hostName" to myName(), "animeId" to animeId, "episode" to episode,
             "title" to title, "positionMs" to 0L, "playing" to false, "createdAt" to System.currentTimeMillis(),
@@ -98,7 +86,6 @@ object WatchParty {
     /** Looks the code up (without joining yet); [onDone] gets the party's current state, or an error message. */
     fun lookup(code: String, onDone: (Remote?, String?) -> Unit) {
         if (uid() == null) return onDone(null, "Log in to join a watch party")
-        if (PartySocket.enabled) return PartySocket.lookup(code, onDone)
         db().collection("parties").document(code.trim().uppercase()).get()
             .addOnSuccessListener { snap ->
                 val r = if (snap.exists()) toRemote(snap.data) else null
@@ -130,7 +117,6 @@ object WatchParty {
         session.value = Session(code, false)
         remote.value = null
         Achievements.bump(c, "joined")
-        if (PartySocket.enabled) return PartySocket.join(me, code)
         writeMember(code, me, false)
         partyReg = db().collection("parties").document(code).addSnapshotListener { snap, err ->
             if (err != null || snap == null) return@addSnapshotListener
@@ -164,7 +150,6 @@ object WatchParty {
     fun push(animeId: Int, episode: Int, positionMs: Long, playing: Boolean) {
         val s = session.value ?: return
         if (!s.host) return
-        if (PartySocket.enabled) return PartySocket.push(animeId, episode, positionMs, playing)
         db().collection("parties").document(s.code).update(
             mapOf(
                 "animeId" to animeId, "episode" to episode, "positionMs" to positionMs, "playing" to playing,
@@ -182,18 +167,12 @@ object WatchParty {
     }
 
     /** The host ends the party for everyone; a guest just leaves. */
-    fun leave(local: Boolean = false) {
+    fun leave() {
         val s = session.value ?: return
         val me = uid()
         stopListening()
         session.value = null
         remote.value = null
-        if (PartySocket.enabled) {
-            if (s.host && !local) PartySocket.end()
-            PartySocket.close()
-            members.value = emptyList()
-            return
-        }
         try {
             if (me != null) db().collection("parties").document(s.code).collection("members").document(me).delete()
             if (s.host) db().collection("parties").document(s.code).delete()
