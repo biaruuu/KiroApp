@@ -20,7 +20,7 @@ import com.biaruuu.kiro.ui.theme.KiroPurple
 fun RewatchDialog(onNo: () -> Unit, onYes: () -> Unit) {
     AlertDialog(
         onDismissRequest = onNo,
-        containerColor = Color(0xFF1E1E22),
+        containerColor = Color(0xFF18181B),
         title = { Text("Watch again?", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
         text = { Text("Are you sure you want to rewatch this again?", color = Color(0xFF9A9A9F), fontSize = 15.sp) },
         confirmButton = { TextButton(onClick = onYes) { Text("Yes", color = KiroPurple, fontWeight = FontWeight.Bold) } },

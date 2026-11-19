@@ -38,10 +38,11 @@ private val KiroColors = darkColorScheme(
 val AppFont = FontFamily(
     Font(R.font.netflix_sans_light, FontWeight.Light),
     Font(R.font.netflix_sans_regular, FontWeight.Normal),
-    Font(R.font.netflix_sans_medium, FontWeight.Medium),
-    Font(R.font.netflix_sans_bold, FontWeight.SemiBold),
-    Font(R.font.netflix_sans_bold, FontWeight.Bold),
-    Font(R.font.netflix_sans_bold, FontWeight.ExtraBold),
+    // Minimal look: "Medium" renders as Regular, and every bold weight renders as Medium.
+    Font(R.font.netflix_sans_regular, FontWeight.Medium),
+    Font(R.font.netflix_sans_medium, FontWeight.SemiBold),
+    Font(R.font.netflix_sans_medium, FontWeight.Bold),
+    Font(R.font.netflix_sans_medium, FontWeight.ExtraBold),
     Font(R.font.netflix_sans_bold, FontWeight.Black),
 )
 

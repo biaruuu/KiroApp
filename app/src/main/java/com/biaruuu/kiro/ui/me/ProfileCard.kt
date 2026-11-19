@@ -75,7 +75,7 @@ fun ProfileCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(shape)
-                .background(Color(0xFF17171B))
+                .background(Color(0xFF18181B))
                 .border(1.dp, Color.White.copy(alpha = 0.09f), shape),
         ) {
             Row(
@@ -87,11 +87,11 @@ fun ProfileCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            name.uppercase(),
+                            name,
                             color = Color.White,
                             fontSize = (19 * k).sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 0.4.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 0.sp,
                             fontFamily = NameStyles.family(context, profile.nameFont),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,

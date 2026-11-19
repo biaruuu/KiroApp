@@ -43,7 +43,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val Card = Color(0xFF1E1E22)
+private val Card = Color(0xFF18181B)
 private val Dim = Color(0xFF8E8E93)
 
 /** Me > Backup and restore: save the library to a file, or load one (e.g. on a new phone or account). */

@@ -87,7 +87,7 @@ import kotlinx.coroutines.launch
 private val Bg = Color(0xFF121212)
 private val DividerColor = Color(0xFF333335)
 private val MutedText = Color(0xFF8E8E93)
-private val SheetBackground = Color(0xFF161616)
+private val SheetBackground = Color(0xFF18181B)
 private val ThumbBackground = Color(0xFF2A2A2C)
 
 @Composable
@@ -784,7 +784,7 @@ private fun DownloadButton(item: com.biaruuu.kiro.data.Downloads.Item?, onStart:
     if (confirm) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { confirm = false },
-            containerColor = Color(0xFF1E1E22),
+            containerColor = Color(0xFF18181B),
             title = { Text("Remove download?", color = Color.White) },
             text = { Text("This episode will be deleted from your phone.", color = MutedText) },
             confirmButton = {

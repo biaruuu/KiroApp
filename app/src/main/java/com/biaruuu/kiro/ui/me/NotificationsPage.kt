@@ -48,7 +48,7 @@ import com.biaruuu.kiro.ui.auth.Avatar
 import com.biaruuu.kiro.ui.theme.KiroPurple
 
 private val Muted = Color(0xFF9A9A9F)
-private val Card = Color(0xFF1A1A1D)
+private val Card = Color(0xFF18181B)
 private val VerifiedBlue = Color(0xFF1D9BF0)
 
 /** One row of the list: a message from the developer, or a published version. */

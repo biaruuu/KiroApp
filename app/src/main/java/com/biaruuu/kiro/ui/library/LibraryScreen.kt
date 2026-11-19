@@ -93,7 +93,7 @@ private val Hairline = Color(0xFF2B2B2F)
 private val Muted = Color(0xFF9A9A9F)
 private val EmptyTint = Color(0xFF5E5E63)
 private val Placeholder = Color(0xFF262628)
-private val SheetBackground = Color(0xFF141414)
+private val SheetBackground = Color(0xFF18181B)
 
 private const val TAB_WATCHED = 0
 private const val TAB_LIST = 1
@@ -307,7 +307,7 @@ fun LibraryScreen(
         }
         AlertDialog(
             onDismissRequest = { removeTarget = null },
-            containerColor = Color(0xFF1E1E22),
+            containerColor = Color(0xFF18181B),
             title = { Text(heading, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
             text = { Text(body, color = Muted, fontSize = 15.sp) },
             confirmButton = {

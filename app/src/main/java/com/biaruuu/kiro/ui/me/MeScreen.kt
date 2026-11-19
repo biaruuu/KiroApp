@@ -164,8 +164,8 @@ private fun Chevron() {
     Icon(
         painter = painterResource(R.drawable.fluent_chevron_right_regular),
         contentDescription = null,
-        tint = Color.White,
-        modifier = Modifier.size(28.dp),
+        tint = Color(0xFF5E5E63),
+        modifier = Modifier.size(22.dp),
     )
 }
 
@@ -174,7 +174,7 @@ private fun SettingsRow(@DrawableRes icon: Int, label: String, value: String? = 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(45.dp)
+            .height(48.dp)
             .clip(RoundedCornerShape(6.dp))
             .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
@@ -183,11 +183,11 @@ private fun SettingsRow(@DrawableRes icon: Int, label: String, value: String? = 
         Icon(
             painter = painterResource(icon),
             contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(22.dp),
+            tint = Color(0xFFB4B4BA),
+            modifier = Modifier.size(20.dp),
         )
-        Spacer(Modifier.size(6.dp))
-        Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+        Spacer(Modifier.size(12.dp))
+        Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
         if (value != null) {
             Text(value, color = Muted, fontSize = 13.sp)
             Spacer(Modifier.size(4.dp))

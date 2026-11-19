@@ -247,7 +247,7 @@ fun ContactPage(onDone: () -> Unit) {
                 Spacer(Modifier.height(10.dp))
                 val hints = listOf("Something isn't working", "An idea to make Kiro better", "Ask the developer anything", "Anything else")
                 Column(
-                    Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).background(Color(0xFF1A1A1D)),
+                    Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).background(Color(0xFF18181B)),
                 ) {
                     topics.forEachIndexed { i, label ->
                         val on = topic == i
@@ -279,7 +279,7 @@ fun ContactPage(onDone: () -> Unit) {
                         .fillMaxWidth()
                         .height(180.dp)
                         .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
-                        .background(Color(0xFF1A1A1D))
+                        .background(Color(0xFF18181B))
                         .padding(14.dp),
                 ) {
                     androidx.compose.foundation.text.BasicTextField(

@@ -172,8 +172,8 @@ internal fun ChevronRow(label: String, value: String? = null, onClick: () -> Uni
         Icon(
             painter = painterResource(R.drawable.fluent_chevron_right_regular),
             contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(28.dp),
+            tint = Color(0xFF5E5E63),
+            modifier = Modifier.size(22.dp),
         )
     }
 }
@@ -228,7 +228,7 @@ private fun DownloadPage() {
         ModalBottomSheet(
             onDismissRequest = { limitSheet = false },
             sheetState = state,
-            containerColor = Color(0xFF141414),
+            containerColor = Color(0xFF18181B),
             scrimColor = Color.Black.copy(alpha = 0.72f),
             shape = RectangleShape,
             tonalElevation = 0.dp,
@@ -266,7 +266,7 @@ private fun DownloadPage() {
         ModalBottomSheet(
             onDismissRequest = { sheet = false },
             sheetState = state,
-            containerColor = Color(0xFF141414),
+            containerColor = Color(0xFF18181B),
             scrimColor = Color.Black.copy(alpha = 0.72f),
             shape = RectangleShape,
             tonalElevation = 0.dp,
@@ -462,8 +462,8 @@ private fun ValueRow(label: String, value: String, placeholder: Boolean = false,
         Icon(
             painter = painterResource(R.drawable.fluent_chevron_right_regular),
             contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(28.dp),
+            tint = Color(0xFF5E5E63),
+            modifier = Modifier.size(22.dp),
         )
     }
 }
@@ -549,8 +549,8 @@ private fun ChevronRowPadless(label: String, onClick: () -> Unit) {
         Icon(
             painter = painterResource(R.drawable.fluent_chevron_right_regular),
             contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(28.dp),
+            tint = Color(0xFF5E5E63),
+            modifier = Modifier.size(22.dp),
         )
     }
 }
@@ -564,7 +564,7 @@ private fun ConfirmDialog(text: String, confirm: String, onDismiss: () -> Unit, 
                 .widthIn(max = 420.dp)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(6.dp))
-                .background(Color(0xFF141414))
+                .background(Color(0xFF18181B))
                 .padding(24.dp),
         ) {
             Text(text, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, lineHeight = 22.sp)

@@ -52,7 +52,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 
 private val Muted = Color(0xFF9A9A9F)
-private val Card = Color(0xFF1A1A1D)
+private val Card = Color(0xFF18181B)
 private val Green = Color(0xFF3DDC84)
 private const val ONLINE_WINDOW_MS = 90_000L
 

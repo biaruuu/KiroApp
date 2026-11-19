@@ -36,7 +36,7 @@ import com.biaruuu.kiro.data.Achievements
 import com.biaruuu.kiro.ui.theme.KiroPurple
 
 private val Muted = Color(0xFF9A9A9F)
-private val Card = Color(0xFF1B1B1F)
+private val Card = Color(0xFF18181B)
 private val Locked = Color(0xFF2E2E32)
 
 private fun tierColor(tier: Int) = when (tier) {

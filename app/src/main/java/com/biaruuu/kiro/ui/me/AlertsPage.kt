@@ -53,7 +53,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val CardBg = Color(0xFF1B1B1F)
+private val CardBg = Color(0xFF18181B)
 private val Line = Color(0xFF2B2B2F)
 private val Muted = Color(0xFF9A9A9F)
 

@@ -41,7 +41,7 @@ import com.biaruuu.kiro.ui.i18n.Text
 import com.biaruuu.kiro.ui.theme.KiroPurple
 
 private val Dim = Color(0xFF8E8E93)
-private val Card = Color(0xFF1E1E22)
+private val Card = Color(0xFF18181B)
 
 internal fun speedText(bps: Long): String = when {
     bps >= 1_000_000 -> String.format(java.util.Locale.US, "%.1f MB/s", bps / 1_000_000.0)
@@ -105,7 +105,7 @@ internal fun DownloadQueueSheet(onDismiss: () -> Unit) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color(0xFF161616),
+        containerColor = Color(0xFF18181B),
         scrimColor = Color.Black.copy(alpha = 0.72f),
         shape = RectangleShape,
         tonalElevation = 0.dp,

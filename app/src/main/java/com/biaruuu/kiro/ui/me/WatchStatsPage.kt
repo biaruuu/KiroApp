@@ -57,7 +57,7 @@ import java.time.format.TextStyle
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
-private val Card = Color(0xFF17171B)
+private val Card = Color(0xFF18181B)
 private val Dim = Color(0xFF9A9AA2)
 
 internal fun durText(seconds: Int): String {
@@ -163,10 +163,10 @@ private fun StreakCard(streak: WatchStats.Streak, today: LocalDate) {
                 StreakBadge(streak.count, streak.doneToday, badge)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(tier.name.uppercase(), color = tier.top, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                    Text(tier.name, color = tier.top, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp)
                     Text(
-                        if (streak.count == 1) "1 DAY" else "${streak.count} DAYS",
-                        color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Black,
+                        if (streak.count == 1) "1 day" else "${streak.count} days",
+                        color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.SemiBold,
                     )
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
                         androidx.compose.material3.Icon(
@@ -232,8 +232,8 @@ private fun StreakCard(streak: WatchStats.Streak, today: LocalDate) {
 private fun SectionTitle(text: String, modifier: Modifier = Modifier, action: String? = null, onAction: () -> Unit = {}) {
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            com.biaruuu.kiro.ui.i18n.I18n.tr(text).uppercase(),
-            color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Black, letterSpacing = 0.2.sp,
+            com.biaruuu.kiro.ui.i18n.I18n.tr(text),
+            color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp,
             modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
         if (action != null) {
@@ -368,7 +368,7 @@ private fun LibraryCard() {
 @Composable
 private fun Count(label: String, n: Int, modifier: Modifier) {
     Column(modifier.clip(RoundedCornerShape(10.dp)).background(Color.White.copy(alpha = 0.05f)).padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("$n", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Black, maxLines = 1)
+        Text("$n", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
         Text(label, color = Dim, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
@@ -397,7 +397,7 @@ private fun LevelCard(level: WatchStats.Level) {
     }
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Card).padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("LEVEL ${level.level}", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+            Text("Level ${level.level}", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
             Text("${level.totalXp} XP", color = Dim, fontSize = 13.sp)
         }
         Spacer(Modifier.height(10.dp))
@@ -418,7 +418,7 @@ private fun Tile(label: String, value: String, modifier: Modifier) {
     Column(modifier.clip(RoundedCornerShape(16.dp)).background(Card).padding(14.dp)) {
         Text(label, color = Dim, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(4.dp))
-        Text(value, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1)
+        Text(value, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
 }
 

@@ -46,7 +46,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private val Muted = Color(0xFF9A9A9F)
-private val CardBg = Color(0xFF1B1B1F)
+private val CardBg = Color(0xFF18181B)
 
 private class Confirm(val title: String, val text: String, val action: () -> Unit)
 
@@ -140,7 +140,7 @@ fun StoragePage() {
     confirm?.let { c ->
         AlertDialog(
             onDismissRequest = { confirm = null },
-            containerColor = Color(0xFF1E1E22),
+            containerColor = Color(0xFF18181B),
             title = { Text(c.title, color = Color.White) },
             text = { Text(c.text, color = Color(0xFFD0D0D4)) },
             confirmButton = { TextButton(onClick = { confirm = null; c.action() }) { Text("Delete", color = Color(0xFFFF6B6B)) } },

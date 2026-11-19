@@ -48,7 +48,7 @@ import com.biaruuu.kiro.ui.components.DecoratedAvatar
 import com.biaruuu.kiro.ui.theme.KiroPurple
 
 private val Muted = Color(0xFF9A9A9F)
-private val Card = Color(0xFF1A1A1D)
+private val Card = Color(0xFF18181B)
 
 /** Pick an avatar decoration, library effect, library decoration and name font. A live preview is at the top; every pick saves at once. */
 @Composable

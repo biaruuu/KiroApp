@@ -49,7 +49,7 @@ import com.biaruuu.kiro.R
 import com.biaruuu.kiro.data.Downloads
 import com.biaruuu.kiro.ui.theme.KiroPurple
 
-private val Panel = Color(0xFF1A1A1D)
+private val Panel = Color(0xFF18181B)
 private val Muted = Color(0xFF8E8E93)
 
 private fun sizeText(bytes: Long): String =
@@ -128,7 +128,7 @@ fun DownloadedEpisodesScreen(
     removeTarget?.let { d ->
         AlertDialog(
             onDismissRequest = { removeTarget = null },
-            containerColor = Color(0xFF1E1E22),
+            containerColor = Color(0xFF18181B),
             title = { Text("Delete episode ${d.episode}?", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
             text = { Text("It will be deleted from your phone.", color = Muted, fontSize = 15.sp) },
             confirmButton = {
@@ -142,7 +142,7 @@ fun DownloadedEpisodesScreen(
     if (removeAll) {
         AlertDialog(
             onDismissRequest = { removeAll = false },
-            containerColor = Color(0xFF1E1E22),
+            containerColor = Color(0xFF18181B),
             title = { Text("Delete all episodes?", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
             text = { Text("Every downloaded episode of \"$title\" will be deleted from your phone.", color = Muted, fontSize = 15.sp) },
             confirmButton = {

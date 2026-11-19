@@ -102,7 +102,7 @@ private val HeaderBackground = Color(0xFF1A1A1A)
 private val FieldBackground = Color(0xFF3A3A3C)
 private val DividerColor = Color(0xFF333335)
 private val MutedText = Color(0xFF8E8E93)
-private val SheetBackground = Color(0xFF161616)
+private val SheetBackground = Color(0xFF18181B)
 
 // These match AniList's genre names exactly. "All" is added in front and means "no genre".
 private val GENRES = listOf(

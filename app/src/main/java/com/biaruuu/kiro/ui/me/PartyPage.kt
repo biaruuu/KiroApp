@@ -51,7 +51,7 @@ fun PartyPage() {
         )
         Spacer(Modifier.height(24.dp))
         Box(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Color(0xFF1B1B1F)).padding(vertical = 16.dp),
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Color(0xFF18181B)).padding(vertical = 16.dp),
             contentAlignment = Alignment.Center,
         ) {
             BasicTextField(

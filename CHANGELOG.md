@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.44.0] - 2026-11-19
+
+### Changed
+- Minimalist look across the app: lighter typography everywhere (bold text is now medium weight, medium is regular), one shared card and sheet colour instead of several near-identical greys, quieter chevrons and icons in Me and Settings, and calmer headings on Watch stats and the profile card (no heavy uppercase).
+
 ## [1.43.5] - 2026-11-19
 
 ### Changed

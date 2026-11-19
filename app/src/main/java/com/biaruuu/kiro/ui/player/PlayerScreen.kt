@@ -110,7 +110,7 @@ import com.biaruuu.kiro.ui.theme.KiroPurple
 import kotlinx.coroutines.delay
 import java.util.Locale
 
-private val PanelBackground = Color(0xFF161616)
+private val PanelBackground = Color(0xFF18181B)
 private val TrackGrey = Color(0xFF5C5C5E)
 private val MutedText = Color(0xFF8E8E93)
 
