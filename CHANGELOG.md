@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.49.0]
+
+### Changed
+- Minimalist Schedule: lighter type, pill filter and time chips, 8dp posters, calmer hairlines and
+  the shared card colour.
+
 ## [1.48.0]
 
 ### Changed

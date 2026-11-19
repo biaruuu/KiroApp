@@ -60,7 +60,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 
-private val Hairline = Color(0xFF2B2B2F)
+private val Hairline = Color(0xFF222226)
 private val Muted = Color(0xFF9A9A9F)
 private val Placeholder = Color(0xFF262628)
 
@@ -105,7 +105,7 @@ fun ScheduleScreen(onAnimeClick: (Anime) -> Unit, modifier: Modifier = Modifier)
 
     Column(modifier = modifier.statusBarsPadding()) {
         Box(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 16.dp), contentAlignment = Alignment.CenterStart) {
-            Text("Schedule", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("Schedule", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium)
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Hairline))
         UnderlineTabs(labels, pager) { scope.launch { pager.animateScrollToPage(it) } }
@@ -118,13 +118,13 @@ fun ScheduleScreen(onAnimeClick: (Anime) -> Unit, modifier: Modifier = Modifier)
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Text("Couldn't load the schedule", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text("Couldn't load the schedule", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(6.dp))
                 Text("Check your connection and try again.", color = Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "Retry", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(KiroPurple).clickable { attempt++ }
+                    "Retry", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(KiroPurple).clickable { attempt++ }
                         .padding(horizontal = 26.dp, vertical = 10.dp),
                 )
             }
@@ -146,10 +146,10 @@ fun ScheduleScreen(onAnimeClick: (Anime) -> Unit, modifier: Modifier = Modifier)
                             "My list only",
                             color = if (onlyMine) Color.White else Muted,
                             fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.Medium,
                             modifier = Modifier
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(if (onlyMine) KiroPurple else Color(0xFF232326))
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(if (onlyMine) KiroPurple else Color(0xFF18181B))
                                 .clickable { onlyMine = !onlyMine }
                                 .padding(horizontal = 12.dp, vertical = 6.dp),
                         )
@@ -191,7 +191,7 @@ private fun AiringRow(a: AniListExtra.Airing, inList: Boolean, now: Long, zone: 
         else -> "in ${left / 86_400}d ${left % 86_400 / 3600}h"
     }
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.width(60.dp).height(86.dp).clip(RoundedCornerShape(4.dp)).background(Placeholder)) {
+        Box(Modifier.width(60.dp).height(86.dp).clip(RoundedCornerShape(8.dp)).background(Placeholder)) {
             AsyncImage(
                 model = a.anime.posterUrl,
                 contentDescription = a.anime.displayTitle,
@@ -202,7 +202,7 @@ private fun AiringRow(a: AniListExtra.Airing, inList: Boolean, now: Long, zone: 
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                a.anime.displayTitle, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                a.anime.displayTitle, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium,
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(4.dp))
@@ -210,15 +210,15 @@ private fun AiringRow(a: AniListExtra.Airing, inList: Boolean, now: Long, zone: 
             if (inList) {
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "In your list", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(KiroPurple).padding(horizontal = 6.dp, vertical = 2.dp),
+                    "In your list", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Medium,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(KiroPurple).padding(horizontal = 6.dp, vertical = 2.dp),
                 )
             }
         }
         Spacer(Modifier.width(10.dp))
         Text(
-            status, color = if (left <= 0) Muted else Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold,
-            modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(Color(0xFF232326)).padding(horizontal = 10.dp, vertical = 6.dp),
+            status, color = if (left <= 0) Muted else Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium,
+            modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0xFF18181B)).padding(horizontal = 10.dp, vertical = 6.dp),
         )
     }
 }
