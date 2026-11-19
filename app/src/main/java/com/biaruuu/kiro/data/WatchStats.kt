@@ -81,6 +81,48 @@ object WatchStats {
         return out
     }
 
+    /** Which of the day's quests have been claimed, as a bit mask (bit 0 = first quest). */
+    fun claimedMask(c: Context, day: Long): Int = read(c).optJSONObject(day.toString())?.optInt("q") ?: 0
+
+    fun claimedMasks(c: Context): Map<Long, Int> {
+        val all = read(c)
+        val out = HashMap<Long, Int>()
+        val keys = all.keys()
+        while (keys.hasNext()) {
+            val k = keys.next()
+            val d = k.toLongOrNull() ?: continue
+            val m = all.optJSONObject(k)?.optInt("q") ?: 0
+            if (m != 0) out[d] = m
+        }
+        return out
+    }
+
+    @Synchronized
+    fun setClaimedMask(c: Context, day: Long, mask: Int) {
+        val all = read(c)
+        val o = all.optJSONObject(day.toString()) ?: JSONObject()
+        o.put("q", mask)
+        all.put(day.toString(), o)
+        prefs(c).edit().putString(KEY, all.toString()).apply()
+        CloudSync.libraryChanged(c)
+        _version.value++
+    }
+
+    /** Seconds per genre between two days (inclusive), biggest first. */
+    fun genresIn(c: Context, from: Long, to: Long): List<Pair<String, Int>> {
+        val all = read(c)
+        val sum = HashMap<String, Int>()
+        for (d in from..to) {
+            val g = all.optJSONObject(d.toString())?.optJSONObject("g") ?: continue
+            val names = g.keys()
+            while (names.hasNext()) {
+                val n = names.next()
+                sum[n] = (sum[n] ?: 0) + g.optInt(n)
+            }
+        }
+        return sum.entries.sortedByDescending { it.value }.map { it.key to it.value }
+    }
+
     /** Seconds per genre over all time, biggest first. */
     fun genres(c: Context): List<Pair<String, Int>> {
         val all = read(c)
@@ -158,6 +200,7 @@ object WatchStats {
         xp += WatchedStore.totalEpisodes(c) * 15L
         xp += WatchedStore.completed(c).size * 100L
         xp += streak.activeDays.size * 20L
+        xp += DailyQuests.bonusXp(c)
         xp += MyListStore.allRated(c).size * 5L
         xp += MyListStore.all(c).size * 2L
         STREAK_BONUS.forEach { (d, b) -> if (streak.best >= d) xp += b }
@@ -193,6 +236,7 @@ object WatchStats {
             }
             r.put("s", maxOf(l.optInt("s"), r.optInt("s")))
             r.put("e", maxOf(l.optInt("e"), r.optInt("e")))
+            r.put("q", l.optInt("q") or r.optInt("q"))
             val lg = l.optJSONObject("g")
             if (lg != null) {
                 val rg = r.optJSONObject("g") ?: JSONObject().also { r.put("g", it) }

@@ -33,6 +33,7 @@ class EpisodeAlertWorker(context: Context, params: WorkerParameters) : Coroutine
         if (!AppSettings.episodeAlerts(c)) return Result.success()
         // Quiet hours: wait. "last" stays put, so what aired meanwhile is announced afterwards.
         if (AppSettings.inQuietHours(c)) return Result.success()
+        RetentionNotifier.run(c)
         val prefs = c.getSharedPreferences("kiro_alerts", Context.MODE_PRIVATE)
         val now = System.currentTimeMillis() / 1000
         val last = prefs.getLong("last", 0L)
@@ -61,6 +62,7 @@ class EpisodeAlertWorker(context: Context, params: WorkerParameters) : Coroutine
                 },
             )
         }
+        var posted = 0
         for (a in aired.take(8)) {
             val key = "${a.anime.id}:${a.episode}"
             if (!seen.add(key)) continue
@@ -76,10 +78,26 @@ class EpisodeAlertWorker(context: Context, params: WorkerParameters) : Coroutine
                 .setContentText(com.biaruuu.kiro.ui.i18n.I18n.tr("Episode ${a.episode} is out now"))
                 .setContentIntent(pending)
                 .setAutoCancel(true)
+                .setGroup(GROUP)
                 .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
                 .build()
             try {
                 manager.notify(6000 + (key.hashCode() and 0xFFFF), n)
+                posted++
+            } catch (_: SecurityException) {
+            }
+        }
+        if (posted >= 2) {
+            val summary = NotificationCompat.Builder(c, CHANNEL)
+                .setSmallIcon(R.drawable.fluent_alert_regular)
+                .setContentTitle(com.biaruuu.kiro.ui.i18n.I18n.tr("New episodes"))
+                .setContentText(com.biaruuu.kiro.ui.i18n.I18n.tr("$posted shows have new episodes"))
+                .setGroup(GROUP)
+                .setGroupSummary(true)
+                .setAutoCancel(true)
+                .build()
+            try {
+                manager.notify(5999, summary)
             } catch (_: SecurityException) {
             }
         }
@@ -89,6 +107,7 @@ class EpisodeAlertWorker(context: Context, params: WorkerParameters) : Coroutine
 
     companion object {
         private const val CHANNEL = "episodes_v1"
+        private const val GROUP = "kiro_episodes"
 
         @JvmStatic
         fun schedule(context: Context) {

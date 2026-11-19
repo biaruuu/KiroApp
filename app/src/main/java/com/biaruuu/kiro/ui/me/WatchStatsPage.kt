@@ -92,9 +92,13 @@ fun WatchStatsPage() {
     val allSeconds = days.values.sumOf { it.seconds }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
+        QuestsCard(days, sv)
+        Spacer(Modifier.height(14.dp))
         StreakCard(streak, today)
         Spacer(Modifier.height(14.dp))
         LevelCard(level)
+        Spacer(Modifier.height(14.dp))
+        RecapCard(days, sv)
         Spacer(Modifier.height(14.dp))
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -137,7 +141,7 @@ fun WatchStatsPage() {
                 "Every completed series: +100 XP",
                 "Every day you watch: +20 XP",
                 "Ratings +5 XP, My List +2 XP each",
-                "Streak milestones and badges give bonus XP",
+                "Daily quests, streak milestones and badges give bonus XP",
             ).forEach { Text("• $it", color = Dim, fontSize = 13.sp, lineHeight = 20.sp) }
             Spacer(Modifier.height(8.dp))
             Text("Higher levels unlock avatar decorations in Customize profile.", color = Dim, fontSize = 13.sp, lineHeight = 20.sp)

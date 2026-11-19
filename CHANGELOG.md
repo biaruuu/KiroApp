@@ -4,6 +4,18 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.53.0]
+
+### Added
+- Daily quests on Watch stats: three small goals a day (watch an episode, watch for a set time, a
+  bigger stretch goal) with XP to claim and a bonus for clearing all three. Claims sync with your
+  account and backup.
+- Weekly recap card: this week's watch time against last week, episodes, active days, top genre and
+  best day, with a Share button.
+- Reminders: an evening nudge when a streak of 3+ days is about to break and a Sunday weekly recap
+  notification that opens Watch stats. They follow the new-episode alerts switch and quiet hours.
+- New-episode alerts now group into one summary when several shows air together.
+
 ## [1.52.0]
 
 ### Changed
