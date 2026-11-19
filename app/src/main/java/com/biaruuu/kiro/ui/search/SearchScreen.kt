@@ -98,7 +98,7 @@ import kotlinx.coroutines.launch
 import java.text.NumberFormat
 
 // Colours sampled from the reference screens.
-private val HeaderBackground = Color(0xFF0B0B0D)
+private val HeaderBackground = Color(0xFF121212)
 private val FieldBackground = Color(0xFF18181B)
 private val DividerColor = Color(0xFF333335)
 private val MutedText = Color(0xFF8E8E93)
