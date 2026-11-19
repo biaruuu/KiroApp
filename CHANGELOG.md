@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.50.0]
+
+### Changed
+- Minimalist Library: lighter type on tabs, dialogs, downloads and the queue, 8dp posters and
+  thumbnails, and quieter dividers.
+
 ## [1.49.0]
 
 ### Changed

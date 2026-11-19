@@ -81,7 +81,7 @@ internal fun QueueBanner(onOpen: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text("Download queue", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text("Download queue", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
             val parts = buildList {
                 if (active.isNotEmpty()) add("${active.size} in queue")
                 if (speed > 0) add(speedText(speed))
@@ -89,7 +89,7 @@ internal fun QueueBanner(onOpen: () -> Unit) {
             }
             Text(parts.joinToString(" · "), color = Dim, fontSize = 12.sp)
         }
-        Text("Manage", color = KiroPurple, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        Text("Manage", color = KiroPurple, fontSize = 13.sp, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -114,7 +114,7 @@ internal fun DownloadQueueSheet(onDismiss: () -> Unit) {
         Column(modifier = Modifier.navigationBarsPadding().padding(top = 16.dp)) {
             Row(modifier = Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Download queue", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("Download queue", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium)
                     val speed = active.sumOf { it.speed }
                     val left = active.filter { it.downloading }.maxOfOrNull { it.secondsLeft } ?: -1L
                     val sub = buildList {
@@ -127,7 +127,7 @@ internal fun DownloadQueueSheet(onDismiss: () -> Unit) {
                 if (active.isNotEmpty()) {
                     Text(
                         if (allPaused) "Resume all" else "Pause all",
-                        color = KiroPurple, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                        color = KiroPurple, fontSize = 14.sp, fontWeight = FontWeight.Medium,
                         modifier = Modifier.clickable { if (allPaused) Downloads.resumeAll(context) else Downloads.pauseAll(context) }.padding(8.dp),
                     )
                 }
@@ -155,7 +155,7 @@ private fun QueueRow(d: Downloads.Item, position: Int, activeCount: Int) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             AsyncImage(
                 model = d.poster, contentDescription = null, contentScale = ContentScale.Crop,
-                modifier = Modifier.size(width = 40.dp, height = 56.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFF2A2A2E)),
+                modifier = Modifier.size(width = 40.dp, height = 56.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF2A2A2E)),
             )
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -209,7 +209,7 @@ private fun QueueRow(d: Downloads.Item, position: Int, activeCount: Int) {
 @Composable
 private fun Action(label: String, color: Color = Color.White, onClick: () -> Unit) {
     Text(
-        label, color = color, fontSize = 12.sp, fontWeight = FontWeight.Bold,
-        modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 6.dp),
+        label, color = color, fontSize = 12.sp, fontWeight = FontWeight.Medium,
+        modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 6.dp),
     )
 }

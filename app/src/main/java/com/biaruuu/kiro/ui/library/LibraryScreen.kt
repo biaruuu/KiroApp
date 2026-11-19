@@ -89,7 +89,7 @@ import com.biaruuu.kiro.ui.theme.KiroBackground
 import com.biaruuu.kiro.ui.theme.KiroPurple
 import kotlinx.coroutines.launch
 
-private val Hairline = Color(0xFF2B2B2F)
+private val Hairline = Color(0xFF222226)
 private val Muted = Color(0xFF9A9A9F)
 private val EmptyTint = Color(0xFF5E5E63)
 private val Placeholder = Color(0xFF262628)
@@ -308,7 +308,7 @@ fun LibraryScreen(
         AlertDialog(
             onDismissRequest = { removeTarget = null },
             containerColor = Color(0xFF18181B),
-            title = { Text(heading, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+            title = { Text(heading, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 18.sp) },
             text = { Text(body, color = Muted, fontSize = 15.sp) },
             confirmButton = {
                 TextButton(onClick = {
@@ -325,7 +325,7 @@ fun LibraryScreen(
                     }
                     version++
                     removeTarget = null
-                }) { Text("Remove", color = KiroPurple, fontWeight = FontWeight.Bold) }
+                }) { Text("Remove", color = KiroPurple, fontWeight = FontWeight.Medium) }
             },
             dismissButton = {
                 TextButton(onClick = { removeTarget = null }) { Text("Cancel", color = Color.White) }
@@ -384,7 +384,7 @@ private fun LibraryTabs(pager: PagerState, onSelect: (Int) -> Unit) {
                         ) { onSelect(index) },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(label, color = color, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(label, color = color, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
                 }
                 Spacer(Modifier.width(if (index == Tabs.lastIndex) 16.dp else 24.dp))
             }
@@ -443,7 +443,7 @@ private fun WatchedCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(16f / 9f)
-                .clip(RoundedCornerShape(4.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(Placeholder),
         ) {
             AsyncImage(
@@ -515,7 +515,7 @@ private fun WatchedCard(
             "Episode ${entry.episode}",
             color = Color.White,
             fontSize = 13.sp,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Medium,
         )
     }
 }
@@ -541,7 +541,7 @@ private fun PosterGrid(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(0.707f)
-                        .clip(RoundedCornerShape(4.dp))
+                        .clip(RoundedCornerShape(8.dp))
                         .background(Placeholder),
                 ) {
                     AsyncImage(
@@ -570,7 +570,7 @@ private fun PosterGrid(
                             modifier = Modifier.size(14.dp),
                         )
                         Spacer(Modifier.width(4.dp))
-                        Text(String.format(java.util.Locale.US, "%.1f", e.rating / 2f), color = KiroPurple, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text(String.format(java.util.Locale.US, "%.1f", e.rating / 2f), color = KiroPurple, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     }
                 }
             }
@@ -693,7 +693,7 @@ private fun DownloadPosterGrid(
             val active = episodes.count { it.active }
             Column(modifier = Modifier.combinedClickable(onClick = { onOpen(first.animeId) }, onLongClick = { onRemove(first) })) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().aspectRatio(0.707f).clip(RoundedCornerShape(4.dp)).background(Placeholder),
+                    modifier = Modifier.fillMaxWidth().aspectRatio(0.707f).clip(RoundedCornerShape(8.dp)).background(Placeholder),
                 ) {
                     AsyncImage(
                         model = first.poster.ifEmpty { null },
@@ -715,7 +715,7 @@ private fun DownloadPosterGrid(
                             Box(Modifier.size(6.dp).clip(androidx.compose.foundation.shape.CircleShape).background(KiroPurple))
                             Spacer(Modifier.width(5.dp))
                         }
-                        Text("${episodes.size} ep", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text("${episodes.size} ep", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                     }
                 }
                 Spacer(Modifier.height(6.dp))
