@@ -1128,7 +1128,7 @@ fun PlayerScreen(
                         }
                     }
                     Panel.Party -> Column(
-                        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp),
+                        Modifier.fillMaxWidth().widthIn(max = 420.dp).verticalScroll(rememberScrollState()).padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         val p = party
@@ -1159,7 +1159,10 @@ fun PlayerScreen(
                         } else {
                             Text(if (p.host) "You are hosting" else "You are in a party", color = Color(0xFF8E8E93), fontSize = 12.sp)
                             Spacer(Modifier.height(6.dp))
-                            Text(p.code, color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Medium, letterSpacing = 5.sp)
+                            Text(
+                                p.code, color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Medium, letterSpacing = 5.sp,
+                                modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFF18181B)).padding(horizontal = 20.dp, vertical = 10.dp),
+                            )
                             Spacer(Modifier.height(10.dp))
                             Text(
                                 if (partyMembers.size <= 1) "Waiting for friends to join..."
@@ -2048,14 +2051,14 @@ private fun StyleRow(label: String, selected: Boolean, onClick: () -> Unit) {
 private fun PartyButton(label: String, filled: Boolean, onClick: () -> Unit) {
     Text(
         label,
-        color = Color.White,
+        color = if (filled) Color.Black else Color.White,
         fontSize = 14.sp,
         fontWeight = FontWeight.Medium,
         textAlign = TextAlign.Center,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .then(if (filled) Modifier.background(KiroPurple) else Modifier.border(1.dp, Color(0xFF3A3A3F), RoundedCornerShape(8.dp)))
+            .clip(RoundedCornerShape(24.dp))
+            .then(if (filled) Modifier.background(Color.White) else Modifier.border(1.dp, Color(0xFF3A3A3F), RoundedCornerShape(24.dp)))
             .clickable(onClick = onClick)
             .padding(vertical = 12.dp),
     )

@@ -4,6 +4,18 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.54.0]
+
+### Added
+- Watch party over WebSocket: the host's play, pause, seeking and episode changes reach everyone
+  instantly through a small relay server (`server/party`), with automatic reconnect and a 30 s grace
+  period if the host's connection drops. Set the `PARTY_WS_URL` repository variable to your deployed
+  relay (see `server/party/README.md`); without it the app keeps using Firestore as before.
+
+### Changed
+- Minimalist watch party: Join page and the in-player party panel use a flat card for the code, pill
+  buttons and a centred layout that stays narrow on tablets.
+
 ## [1.53.0]
 
 ### Added
