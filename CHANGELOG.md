@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.46.0]
+
+### Changed
+- Minimalist Detail page: lighter type, a pill Play button, softer 8dp corners on thumbnails and
+  buttons, muted genre line and action labels, and a slightly smaller title.
+
 ## [1.45.0]
 
 ### Changed

@@ -298,7 +298,7 @@ private fun DetailContent(
                         if (rate != null) {
                             Row(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(4.dp))
+                                    .clip(RoundedCornerShape(8.dp))
                                     .background(Color.Black.copy(alpha = 0.6f))
                                     .padding(horizontal = 6.dp, vertical = 3.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -310,7 +310,7 @@ private fun DetailContent(
                                     modifier = Modifier.size(12.dp),
                                 )
                                 Spacer(Modifier.width(3.dp))
-                                Text(rate, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text(rate, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                             }
                         }
                         Spacer(Modifier.weight(1f))
@@ -338,14 +338,14 @@ private fun DetailContent(
                     Text(
                         anime.displayTitle,
                         color = Color.White,
-                        fontSize = 24.sp,
-                        lineHeight = 29.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                        lineHeight = 27.sp,
+                        fontWeight = FontWeight.Medium,
                     )
                     val genres = genreLine(anime)
                     if (genres.isNotEmpty()) {
                         Spacer(Modifier.height(6.dp))
-                        Text(genres, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Normal)
+                        Text(genres, color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp, fontWeight = FontWeight.Normal)
                     }
                 }
             }
@@ -357,8 +357,8 @@ private fun DetailContent(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
-                        .clip(RoundedCornerShape(4.dp))
+                        .height(46.dp)
+                        .clip(RoundedCornerShape(24.dp))
                         .background(KiroPurple)
                         .clickable {
                             val first = released.firstOrNull()
@@ -377,7 +377,7 @@ private fun DetailContent(
                             modifier = Modifier.size(20.dp),
                         )
                         Spacer(Modifier.width(6.dp))
-                        Text("Play", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        Text("Play", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     }
                 }
                 Spacer(Modifier.height(16.dp))
@@ -438,7 +438,7 @@ private fun DetailContent(
                     }
                     // Not a button: finishing an anime earns this shimmering medal automatically.
                     if (completedByMe) {
-                        Box(Modifier.height(48.dp), contentAlignment = Alignment.Center) {
+                        Box(Modifier.height(46.dp), contentAlignment = Alignment.Center) {
                             com.biaruuu.kiro.ui.components.AnimatedAsset(awardDesign, Modifier.height(38.dp).width(30.dp))
                         }
                         // The green "COMPLETED" rubber stamp, right of the medal.
@@ -468,7 +468,7 @@ private fun DetailContent(
                             color = Color.White,
                             fontSize = 11.sp,
                             lineHeight = 18.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.Medium,
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
                                 .background(Bg)
@@ -488,8 +488,8 @@ private fun DetailContent(
                     modifier = Modifier
                         .padding(horizontal = 16.dp, vertical = 12.dp)
                         .height(32.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .border(BorderStroke(1.dp, MutedText), RoundedCornerShape(4.dp))
+                        .clip(RoundedCornerShape(8.dp))
+                        .border(BorderStroke(1.dp, MutedText), RoundedCornerShape(8.dp))
                         .clickable { showSeasons = true }
                         .padding(horizontal = 12.dp),
                     contentAlignment = Alignment.Center,
@@ -641,7 +641,7 @@ private fun ActionButton(label: String, icon: Int, tint: Color, onClick: () -> U
     ) {
         Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
         Spacer(Modifier.height(5.dp))
-        Text(label, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Normal)
+        Text(label, color = Color(0xFFB4B4BA), fontSize = 10.sp, fontWeight = FontWeight.Normal)
     }
 }
 
@@ -657,7 +657,7 @@ private fun CountdownRow(number: Int, label: String, image: String?) {
             modifier = Modifier
                 .width(120.dp)
                 .height(68.dp)
-                .clip(RoundedCornerShape(4.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(ThumbBackground),
         ) {
             if (image != null) {
@@ -672,9 +672,9 @@ private fun CountdownRow(number: Int, label: String, image: String?) {
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text("Episode $number", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text("Episode $number", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.height(4.dp))
-            Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
         }
     }
 }
@@ -701,7 +701,7 @@ private fun EpisodeRow(
                 .align(Alignment.Top)
                 .width(120.dp)
                 .height(68.dp)
-                .clip(RoundedCornerShape(4.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(ThumbBackground),
         ) {
             val thumb = episode.thumbnailUrl ?: fallbackImage
@@ -721,7 +721,7 @@ private fun EpisodeRow(
                 episode.heading,
                 color = Color.White,
                 fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Medium,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -776,7 +776,7 @@ private fun DownloadButton(item: com.biaruuu.kiro.data.Downloads.Item?, onStart:
                 } else {
                     com.biaruuu.kiro.ui.components.KiroSpinner(size = 24.dp, strokeWidth = 2.5.dp)
                 }
-                Text(if (p > 0f) "${(p * 100).toInt()}" else "", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                Text(if (p > 0f) "${(p * 100).toInt()}" else "", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Medium)
             }
             else -> Icon(painterResource(R.drawable.fluent_arrow_download_regular), contentDescription = "Download", tint = if (item?.failed == true) Color(0xFFFF6B6B) else Color.White, modifier = Modifier.size(24.dp))
         }
@@ -855,7 +855,7 @@ private fun RatingSheet(current: Int, onSelect: (Int) -> Unit, onDismiss: () -> 
                 color = if (picked > 0) Color.White else Color(0xFF8E8E93),
                 fontSize = 28.sp,
                 lineHeight = 34.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Medium,
             )
             Text(
                 if (picked > 0) RatingLabels[picked - 1] else "Tap to rate",
@@ -906,8 +906,8 @@ private fun RatingSheet(current: Int, onSelect: (Int) -> Unit, onDismiss: () -> 
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
                     .fillMaxWidth()
-                    .height(48.dp)
-                    .clip(RoundedCornerShape(4.dp))
+                    .height(46.dp)
+                    .clip(RoundedCornerShape(8.dp))
                     .background(if (enabled) KiroPurple else Color(0xFF2E2E30))
                     .clickable(enabled = enabled) {
                         onSelect(picked)
@@ -919,7 +919,7 @@ private fun RatingSheet(current: Int, onSelect: (Int) -> Unit, onDismiss: () -> 
                     "Confirm",
                     color = if (enabled) Color.White else Color(0xFF5E5E63),
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Medium,
                 )
             }
         }
@@ -975,7 +975,7 @@ private fun SeasonSheet(
                         entry.title,
                         color = if (selected) Color.White else Color(0xFFD0D0D4),
                         fontSize = 15.sp,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                        fontWeight = if (selected) FontWeight.Medium else FontWeight.Medium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -1031,7 +1031,7 @@ private fun StatusSheet(current: String?, onPick: (String?) -> Unit, onDismiss: 
                         if (opt == null) "Clear status" else com.biaruuu.kiro.data.ShowStatus.label(opt),
                         color = if (selected) Color.White else Color(0xFFD0D0D4),
                         fontSize = 15.sp,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                        fontWeight = if (selected) FontWeight.Medium else FontWeight.Medium,
                     )
                 }
             }
