@@ -4,6 +4,19 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.43.0] - 2026-11-19
+
+### Added
+- Watch stats (Me > Watch stats): hours watched this week and this month, total time, total episodes, a daily chart (week or month, tap a bar for that day) and your most-watched genres. Time is counted while a video really plays.
+- Streak badge: an animated flame with a day counter, like a daily-streak badge. It changes colour and animation as the streak grows: Spark, Flame, Blaze, Inferno, Violet Fire, Blue Flame, Golden Blaze and Legend (a shimmering rainbow). It dims when you haven't watched yet today, and shows a Monday to Sunday week row.
+- XP and levels: watching, finishing episodes and series, daily activity, ratings, streak milestones and badges earn XP. Your level shows on your profile card and on the stats page, with progress to the next level.
+- Profile card: Me now opens with a new card (avatar, bold display name, level, XP bar, your streak flame, Edit Profile, Share and a Badges strip with View All).
+
+### Changed
+- Avatar decorations are now earned with level (levels 3, 6, 10, 15, 20, 25, 30, 40, 50, then every 10). Locked ones show the level they need; the one you already wear stays selectable.
+- Search sorting: Highest rated and Oldest first are back (only the Filters button was removed).
+- Watch time and stats sync with your account and are included in backups.
+
 ## [1.42.1] - 2026-11-19
 
 ### Removed

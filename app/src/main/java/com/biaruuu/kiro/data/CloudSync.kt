@@ -59,7 +59,7 @@ object CloudSync {
             }
             if (snap.metadata.hasPendingWrites() || dirty) return@addSnapshotListener
             applyRemote(app, userId, snap.getString("myList"), snap.getString("ratings"),
-                snap.getString("ratedMeta"), snap.getString("history"), snap.getString("watched"), snap.getString("status"))
+                snap.getString("ratedMeta"), snap.getString("history"), snap.getString("watched"), snap.getString("status"), snap.getString("stats"))
         }
     }
 
@@ -89,7 +89,7 @@ object CloudSync {
     @JvmStatic
     fun clearLocal(context: Context) {
         val p = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        p.edit().remove("my_list").remove("ratings").remove("rated_meta").remove("watch_history").remove("watched").remove("status")
+        p.edit().remove("my_list").remove("ratings").remove("rated_meta").remove("watch_history").remove("watched").remove("status").remove("stats")
             .remove(MERGED_UID).apply()
         _version.value++
         WatchedStore.notifyChanged()
@@ -128,6 +128,7 @@ object CloudSync {
             "history" to p.getString("watch_history", "[]")!!,
             "watched" to p.getString("watched", "{}")!!,
             "status" to p.getString("status", "{}")!!,
+            "stats" to p.getString("stats", "{}")!!,
             "updatedAt" to System.currentTimeMillis(),
         )
         ref.set(data).addOnCompleteListener { t ->
@@ -136,7 +137,7 @@ object CloudSync {
         }
     }
 
-    private fun applyRemote(c: Context, id: String, list: String?, ratings: String?, meta: String?, history: String?, watched: String?, status: String?) {
+    private fun applyRemote(c: Context, id: String, list: String?, ratings: String?, meta: String?, history: String?, watched: String?, status: String?, stats: String?) {
         val p = prefs(c)
         val firstOnDevice = p.getString(MERGED_UID, null) != id
         var l = list ?: "{}"
@@ -145,6 +146,7 @@ object CloudSync {
         var h = history ?: "[]"
         var w = watched ?: "{}"
         var st = status ?: "{}"
+        var sx = stats ?: "{}"
         if (firstOnDevice) {
             // Signed in on this phone for the first time: keep what was saved here as a guest too.
             l = mergeObjects(p.getString("my_list", "{}"), l, "at")
@@ -153,14 +155,17 @@ object CloudSync {
             h = mergeHistory(p.getString("watch_history", "[]"), h)
             w = mergeObjects(p.getString("watched", "{}"), w, "at")
             st = mergeObjects(p.getString("status", "{}"), st, "at")
+            sx = WatchStats.merge(p.getString("stats", "{}"), sx)
         }
         val changed = l != p.getString("my_list", "{}") || r != p.getString("ratings", "{}") ||
             m != p.getString("rated_meta", "{}") || h != p.getString("watch_history", "[]") ||
-            w != p.getString("watched", "{}") || st != p.getString("status", "{}")
+            w != p.getString("watched", "{}") || st != p.getString("status", "{}") ||
+            sx != p.getString("stats", "{}")
         if (changed) {
             p.edit().putString("my_list", l).putString("ratings", r)
-                .putString("rated_meta", m).putString("watch_history", h).putString("watched", w).putString("status", st).apply()
+                .putString("rated_meta", m).putString("watch_history", h).putString("watched", w).putString("status", st).putString("stats", sx).apply()
             _version.value++
+            WatchStats.notifyChanged()
             WatchedStore.notifyChanged()
         }
         if (firstOnDevice) {
@@ -181,13 +186,16 @@ object CloudSync {
         val h = mergeHistory(p.getString("watch_history", "[]"), b.history)
         val w = mergeObjects(p.getString("watched", "{}"), b.watched, "at")
         val st = mergeObjects(p.getString("status", "{}"), b.status, "at")
+        val sx = WatchStats.merge(p.getString("stats", "{}"), b.stats)
         val changed = l != p.getString("my_list", "{}") || r != p.getString("ratings", "{}") ||
             m != p.getString("rated_meta", "{}") || h != p.getString("watch_history", "[]") ||
-            w != p.getString("watched", "{}") || st != p.getString("status", "{}")
+            w != p.getString("watched", "{}") || st != p.getString("status", "{}") ||
+            sx != p.getString("stats", "{}")
         if (!changed) return false
         p.edit().putString("my_list", l).putString("ratings", r).putString("rated_meta", m)
-            .putString("watch_history", h).putString("watched", w).putString("status", st).apply()
+            .putString("watch_history", h).putString("watched", w).putString("status", st).putString("stats", sx).apply()
         _version.value++
+        WatchStats.notifyChanged()
         WatchedStore.notifyChanged()
         libraryChanged(c)
         return true

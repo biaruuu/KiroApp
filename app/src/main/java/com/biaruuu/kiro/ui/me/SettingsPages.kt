@@ -105,6 +105,7 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
         "alerts" -> "Notification control"
         "storage" -> "Storage"
         "backup" -> "Backup and restore"
+        "stats" -> "Watch stats"
         "party" -> "Watch party"
         else -> if (page.startsWith("release-")) "What's new" else "Version"
     }
@@ -129,6 +130,7 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
                 "alerts" -> AlertsPage()
                 "storage" -> StoragePage()
                 "backup" -> BackupPage()
+                "stats" -> WatchStatsPage()
                 "party" -> PartyPage()
                 else -> if (page.startsWith("release-")) WhatsNewPage(latest = false, onBack = onBack, version = page.removePrefix("release-")) else VersionPage()
             }

@@ -70,6 +70,15 @@ object I18n {
             p("^Queued · #(\\d+)$") { "Naka-pila · #${it.groupValues[1]}" },
             p("^Paused · (\\d+)%$") { "Naka-pause · ${it.groupValues[1]}%" },
             p("^(\\d+) failed$") { "${it.groupValues[1]} nabigo" },
+            p("^Level (\\d+)$") { "Level ${it.groupValues[1]}" },
+            p("^(\\d+) XP to level (\\d+)$") { "${it.groupValues[1]} XP bago ang level ${it.groupValues[2]}" },
+            p("^Next avatar decoration unlocks at level (\\d+)$") { "Ang susunod na dekorasyon ng avatar ay mabubuksan sa level ${it.groupValues[1]}" },
+            p("^(\\d+) day streak$") { "${it.groupValues[1]} araw na streak" },
+            p("^(\\d+)-day streak · (.+)$") { "${it.groupValues[1]}-araw na streak · ${tr(it.groupValues[2])}" },
+            p("^Best: (\\d+) days$") { "Pinakamahusay: ${it.groupValues[1]} araw" },
+            p("^(\\d+) more (day|days) to (.+)$") { "${it.groupValues[1]} pang araw para sa ${tr(it.groupValues[3])}" },
+            p("^Reach level (\\d+) to unlock this \\(you're level (\\d+)\\)\\.$") { "Abutin ang level ${it.groupValues[1]} para ma-unlock ito (level ${it.groupValues[2]} ka na)." },
+            p("^Tallest bar: (.+)$") { "Pinakamataas na bar: ${it.groupValues[1]}" },
             p("^(\\d+) shows?$") { "${it.groupValues[1]} palabas" },
             p("^(\\d+)m ago$") { "${it.groupValues[1]}m ang nakalipas" },
             p("^(\\d+)h ago$") { "${it.groupValues[1]}h ang nakalipas" },
@@ -87,6 +96,8 @@ object I18n {
         FIL_EXACT[s]?.let { return it }
         FIL_STATUS[s]?.let { return it }
         FIL_QUEUE[s]?.let { return it }
+        FIL_STATS[s]?.let { return it }
+        FIL_SORT[s]?.let { return it }
         FIL_BACKUP[s]?.let { return it }
         for ((re, f) in patterns) {
             val m = re.matchEntire(s) ?: continue

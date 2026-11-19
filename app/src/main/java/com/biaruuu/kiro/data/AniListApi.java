@@ -211,6 +211,10 @@ public final class AniListApi {
                 variables.put("sort", new JSONArray().put("START_DATE_DESC"));
                 // Skip announced-but-unreleased titles so the newest entries are real releases.
                 variables.put("statusIn", new JSONArray().put("RELEASING").put("FINISHED"));
+            } else if (sort == SortOrder.SCORE) {
+                variables.put("sort", new JSONArray().put("SCORE_DESC"));
+            } else if (sort == SortOrder.OLDEST) {
+                variables.put("sort", new JSONArray().put("START_DATE"));
             } else {
                 variables.put("sort", new JSONArray()
                         .put(text.isEmpty() ? "POPULARITY_DESC" : "SEARCH_MATCH"));

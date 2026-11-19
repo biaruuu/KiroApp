@@ -223,3 +223,24 @@ internal val FIL_BACKUP: Map<String, String> = mapOf(
     "That file isn't a Kiro backup." to "Hindi Kiro backup ang file na iyon.", "That backup is empty." to "Walang laman ang backup na iyon.",
     "Backup restored." to "Naibalik ang backup.", "Nothing new in that backup." to "Walang bago sa backup na iyon.",
 )
+
+internal val FIL_SORT: Map<String, String> = mapOf(
+    "Highest rated" to "Pinakamataas ang rating", "Oldest first" to "Pinakaluma muna",
+)
+
+internal val FIL_STATS: Map<String, String> = mapOf(
+    "Watch stats" to "Estadistika ng panonood", "Edit Profile" to "I-edit ang Profile", "View All" to "Tingnan Lahat", "No streak yet" to "Wala pang streak",
+    "No streak" to "Walang streak", "Spark" to "Sinag", "Flame" to "Apoy", "Blaze" to "Alab", "Inferno" to "Impiyerno", "Violet Fire" to "Lilang Apoy",
+    "Blue Flame" to "Asul na Apoy", "Golden Blaze" to "Gintong Alab", "Legend" to "Alamat",
+    "1 day streak" to "1 araw na streak", "Watch for a minute today to start a streak." to "Manood ng isang minuto ngayon para magsimula ng streak.",
+    "You're on fire. See you tomorrow!" to "Nag-aalab ka! Hanggang bukas!", "Watch today to keep your streak alive." to "Manood ngayon para hindi mawala ang streak mo.",
+    "This week" to "Ngayong linggo", "This month" to "Ngayong buwan", "Total time" to "Kabuuang oras", "Episodes watched" to "Mga napanood na episode",
+    "Daily watch time" to "Oras ng panonood bawat araw", "Week" to "Linggo", "Month" to "Buwan", "Most-watched genres" to "Mga pinakapinanood na genre",
+    "Watch something and your days fill in here." to "Manood at mapupuno rito ang mga araw mo.", "Genres appear here as you watch." to "Lalabas dito ang mga genre habang nanonood ka.",
+    "How you earn XP" to "Paano kumita ng XP", "Higher levels unlock avatar decorations in Customize profile." to "Ang mas mataas na level ay nag-a-unlock ng dekorasyon ng avatar sa I-customize ang profile.",
+    "Counted from the time you watch, starting with this version." to "Binibilang mula sa oras ng panonood, simula sa bersyong ito.",
+    "Every minute watched: 1 XP (up to 240 a day)" to "Bawat minutong napanood: 1 XP (hanggang 240 kada araw)", "Every finished episode: +15 XP" to "Bawat natapos na episode: +15 XP",
+    "Every completed series: +100 XP" to "Bawat natapos na serye: +100 XP", "Every day you watch: +20 XP" to "Bawat araw na manood ka: +20 XP",
+    "Ratings +5 XP, My List +2 XP each" to "Rating +5 XP, Aking Listahan +2 XP bawat isa", "Streak milestones and badges give bonus XP" to "May bonus XP ang mga milestone ng streak at mga badge",
+    " Badges" to " Badge",
+)

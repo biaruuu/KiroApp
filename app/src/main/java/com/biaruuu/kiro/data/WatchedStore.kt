@@ -64,6 +64,7 @@ object WatchedStore {
         o.put("eps", JSONArray(eps.sorted()))
         all.put(id.toString(), o)
         prefs(c).edit().putString(KEY, all.toString()).apply()
+        if (eps.size > before) WatchStats.episodeFinished(c)
         CloudSync.libraryChanged(c)
         notifyChanged()
     }

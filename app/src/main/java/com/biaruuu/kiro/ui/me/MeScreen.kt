@@ -69,6 +69,15 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
         ) {
             Spacer(Modifier.height(52.dp))
 
+            if (signedIn != null) {
+                ProfileCard(
+                    profile = profile,
+                    name = shownName,
+                    onEdit = { onOpen("account") },
+                    onBadges = { onOpen("achievements") },
+                    onStats = { onOpen("stats") },
+                )
+            } else {
             // Header: avatar + greeting. Tapping it opens the account page (or the login screen).
             Row(
                 modifier = Modifier
@@ -107,6 +116,7 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
                 }
                 if (signedIn != null || configured) Chevron()
             }
+            }
 
             if (com.biaruuu.kiro.data.Admin.isAdmin(state)) {
                 Spacer(Modifier.height(20.dp))
@@ -116,6 +126,7 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
             Text("Settings", color = Muted, fontSize = 14.sp)
             Spacer(Modifier.height(6.dp))
             if (signedIn != null) SettingsRow(R.drawable.fluent_sparkle_regular, "Customize profile") { onOpen("customize") }
+            SettingsRow(R.drawable.fluent_play_circle_regular, "Watch stats") { onOpen("stats") }
             SettingsRow(R.drawable.fluent_trophy_regular, "Achievements") { onOpen("achievements") }
             SettingsRow(R.drawable.fluent_alert_regular, "Notification", badge = hasUnread) { onOpen("notifications") }
             SettingsRow(R.drawable.fluent_calendar_regular, "Notification control") { onOpen("alerts") }

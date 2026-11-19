@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -65,6 +66,10 @@ fun CustomizePage() {
     }
     val name = profile.username.ifBlank { signedIn.name }
     val decorations = remember(remote) { Designs.all(Designs.DECORATION) }
+    val wv by com.biaruuu.kiro.data.WatchedStore.version.collectAsState()
+    val sv by com.biaruuu.kiro.data.WatchStats.version.collectAsState()
+    val cv by com.biaruuu.kiro.data.CloudSync.version.collectAsState()
+    val myLevel = remember(wv, sv, cv) { com.biaruuu.kiro.data.WatchStats.levelNow(context) }
     val fonts = NameStyles.options()
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
@@ -77,9 +82,33 @@ fun CustomizePage() {
         Grid(
             items = listOf<Design?>(null) + decorations,
             selectedId = profile.decoration,
-            onPick = { ProfileRepository.save(decoration = it) },
-            tile = { d -> if (d == null) NoneTile() else TileWithLabel(d.name) { DecoratedAvatar(profile.avatar, name, 46.dp, d.id) } },
+            onPick = { id ->
+                val d = Designs.find(id)
+                val need = if (d == null) 1 else Designs.requiredLevel(d)
+                // Decorations are earned with level; one you already wear stays selectable.
+                if (d != null && need > myLevel && id != profile.decoration) {
+                    com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Reach level $need to unlock this (you're level $myLevel).", android.widget.Toast.LENGTH_SHORT).show()
+                } else {
+                    ProfileRepository.save(decoration = id)
+                }
+            },
+            tile = { d ->
+                if (d == null) {
+                    NoneTile()
+                } else {
+                    val need = Designs.requiredLevel(d)
+                    val locked = need > myLevel && d.id != profile.decoration
+                    TileWithLabel(if (locked) "Level $need" else d.name) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Box(Modifier.alpha(if (locked) 0.3f else 1f)) { DecoratedAvatar(profile.avatar, name, 46.dp, d.id) }
+                            if (locked) Icon(painterResource(R.drawable.fluent_lock_closed_regular), null, tint = Color.White, modifier = Modifier.size(22.dp))
+                        }
+                    }
+                }
+            },
         )
+        Spacer(Modifier.height(2.dp))
+        Text("Level $myLevel · earn XP by watching to unlock more decorations. See Watch stats.", color = Muted, fontSize = 12.sp)
 
         Section("Display Name Style")
         for (font in fonts) {

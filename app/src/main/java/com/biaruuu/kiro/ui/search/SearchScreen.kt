@@ -122,6 +122,8 @@ private fun columnsFor(widthDp: Float, gutterDp: Float, gapDp: Float): Int {
 private fun SortOrder.label(): String = when (this) {
     SortOrder.POPULARITY -> "Popularity"
     SortOrder.RECENT -> "Recently updated"
+    SortOrder.SCORE -> "Highest rated"
+    SortOrder.OLDEST -> "Oldest first"
 }
 
 @Composable

@@ -15,6 +15,7 @@ object Backup {
         val history: String,
         val watched: String,
         val status: String,
+        val stats: String = "{}",
     ) {
         val listCount get() = count(myList)
         val ratedCount get() = count(ratings)
@@ -38,6 +39,7 @@ object Backup {
             p.getString("my_list", "{}") ?: "{}", p.getString("ratings", "{}") ?: "{}",
             p.getString("rated_meta", "{}") ?: "{}", p.getString("watch_history", "[]") ?: "[]",
             p.getString("watched", "{}") ?: "{}", p.getString("status", "{}") ?: "{}",
+            p.getString("stats", "{}") ?: "{}",
         )
     }
 
@@ -53,6 +55,7 @@ object Backup {
             .put("history", JSONArray(d.history))
             .put("watched", JSONObject(d.watched))
             .put("status", JSONObject(d.status))
+            .put("stats", JSONObject(d.stats))
             .toString(2)
     }
 
@@ -69,6 +72,7 @@ object Backup {
                 (o.optJSONArray("history") ?: JSONArray()).toString(),
                 (o.optJSONObject("watched") ?: JSONObject()).toString(),
                 (o.optJSONObject("status") ?: JSONObject()).toString(),
+                (o.optJSONObject("stats") ?: JSONObject()).toString(),
             )
         }
     } catch (_: Exception) {

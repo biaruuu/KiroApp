@@ -19,6 +19,8 @@ data class Design(
     val asset: String? = null,
     val file: String? = null,
     val bytes: ByteArray? = null,
+    /** Level needed to use it; 0 = worked out from its place in the list (see [Designs.requiredLevel]). */
+    val level: Int = 0,
 )
 
 object Designs {
@@ -37,6 +39,19 @@ object Designs {
     val remote = MutableStateFlow<List<Design>>(emptyList())
 
     fun all(type: String): List<Design> = builtIn.filter { it.type == type } + remote.value.filter { it.type == type }
+
+    private val UNLOCK_LEVELS = listOf(3, 6, 10, 15, 20, 25, 30, 40, 50)
+
+    /**
+     * Avatar decorations are earned: the first needs level 3, then 6, 10, 15, 20, 25, 30, 40, 50 and
+     * every 10 levels after that, in the order they were added. A decoration can also carry its own level.
+     */
+    fun requiredLevel(d: Design): Int {
+        if (d.type != DECORATION) return 1
+        if (d.level > 0) return d.level
+        val i = all(DECORATION).indexOfFirst { it.id == d.id }.coerceAtLeast(0)
+        return UNLOCK_LEVELS.getOrElse(i) { UNLOCK_LEVELS.last() + 10 * (i - UNLOCK_LEVELS.size + 1) }
+    }
 
     fun find(id: String?): Design? =
         if (id.isNullOrEmpty()) null else builtIn.firstOrNull { it.id == id } ?: remote.value.firstOrNull { it.id == id }
@@ -80,9 +95,9 @@ object Designs {
         val db = FirebaseFirestore.getInstance()
         db.collection("designs").orderBy("createdAt", Query.Direction.ASCENDING).addSnapshotListener { snap, err ->
             if (err != null || snap == null) return@addSnapshotListener
-            class Meta(val id: String, val type: String, val name: String, val version: Long, val parts: Int, val legacy: String?)
+            class Meta(val id: String, val type: String, val name: String, val version: Long, val parts: Int, val legacy: String?, val level: Int)
             val metas = snap.documents.map {
-                Meta(it.id, it.getString("type").orEmpty(), it.getString("name").orEmpty(), it.getLong("createdAt") ?: 0L, (it.getLong("parts") ?: 0L).toInt(), it.getString("data"))
+                Meta(it.id, it.getString("type").orEmpty(), it.getString("name").orEmpty(), it.getLong("createdAt") ?: 0L, (it.getLong("parts") ?: 0L).toInt(), it.getString("data"), (it.getLong("level") ?: 0L).toInt())
             }
             val order = metas.map { it.id }
             ready.keys.retainAll(order.toSet())
@@ -90,10 +105,10 @@ object Designs {
             for (m in metas) {
                 val file = java.io.File(dir, "${m.id}_${m.version}.bin")
                 if (file.exists()) {
-                    ready[m.id] = Design(m.id, m.type, m.name, file = file.absolutePath)
+                    ready[m.id] = Design(m.id, m.type, m.name, file = file.absolutePath, level = m.level)
                 } else if (m.legacy != null) {
                     file.writeBytes(android.util.Base64.decode(m.legacy, android.util.Base64.DEFAULT))
-                    ready[m.id] = Design(m.id, m.type, m.name, file = file.absolutePath)
+                    ready[m.id] = Design(m.id, m.type, m.name, file = file.absolutePath, level = m.level)
                 } else if (m.parts > 0 && loading.add(m.id)) {
                     io.execute {
                         try {
@@ -105,7 +120,7 @@ object Designs {
                                 docs.documents.forEach { out.write(android.util.Base64.decode(it.getString("data").orEmpty(), android.util.Base64.DEFAULT)) }
                                 dir.listFiles()?.filter { it.name.startsWith(m.id + "_") }?.forEach { it.delete() }
                                 file.writeBytes(out.toByteArray())
-                                ready[m.id] = Design(m.id, m.type, m.name, file = file.absolutePath)
+                                ready[m.id] = Design(m.id, m.type, m.name, file = file.absolutePath, level = m.level)
                                 publishList()
                             }
                         } catch (_: Exception) {

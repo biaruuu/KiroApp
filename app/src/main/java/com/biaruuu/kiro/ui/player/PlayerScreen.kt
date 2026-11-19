@@ -251,6 +251,27 @@ fun PlayerScreen(
     var tracks by remember { mutableStateOf(Tracks.EMPTY) }
     var speed by remember { mutableFloatStateOf(com.biaruuu.kiro.data.AppSettings.playSpeed(context)) }
 
+    // Watch time for the stats page, streak and XP: counted while the video really plays.
+    val latestPlaying by rememberUpdatedState(isPlaying && !buffering && error == null)
+    val latestSpeed by rememberUpdatedState(speed)
+    LaunchedEffect(Unit) {
+        var acc = 0f
+        try {
+            while (true) {
+                kotlinx.coroutines.delay(5000)
+                if (latestPlaying) {
+                    acc += 5f * latestSpeed
+                    if (acc >= 30f) {
+                        com.biaruuu.kiro.data.WatchStats.addWatchTime(context, acc.toInt(), latestUi.base?.genres.orEmpty())
+                        acc = 0f
+                    }
+                }
+            }
+        } finally {
+            if (acc >= 1f) com.biaruuu.kiro.data.WatchStats.addWatchTime(context, acc.toInt(), latestUi.base?.genres.orEmpty())
+        }
+    }
+
     var controlsVisible by remember { mutableStateOf(true) }
     var interaction by remember { mutableIntStateOf(0) }
     var locked by remember { mutableStateOf(false) }
