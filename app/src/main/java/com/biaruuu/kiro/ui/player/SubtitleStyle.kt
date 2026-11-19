@@ -22,7 +22,7 @@ data class SubtitleStyle(
     val font: String = SubtitleOptions.DEFAULT_FONT,
     val size: Int = 1,
     val background: Int = 0,
-    val edge: Int = 2,
+    val edge: Int = 1,
 )
 
 object SubtitleOptions {
@@ -38,12 +38,12 @@ object SubtitleOptions {
         DEFAULT_FONT to Face("fonts/satoshi_bold.otf", 0),
         TREBUCHET to Face("fonts/trebuchet.ttf", 0),
         "Roboto" to Face(null, 0),
-        "Inter" to Face("fonts/inter.ttf", 600),
-        "Open Sans" to Face("fonts/opensans.ttf", 600),
+        "Inter" to Face("fonts/inter.ttf", 500),
+        "Open Sans" to Face("fonts/opensans.ttf", 500),
         "Poppins" to Face("fonts/poppins_medium.ttf", 0),
-        "Montserrat" to Face("fonts/montserrat.ttf", 600),
-        "Cinzel" to Face("fonts/cinzel.ttf", 600),
-        "Roboto Mono" to Face("fonts/robotomono.ttf", 600),
+        "Montserrat" to Face("fonts/montserrat.ttf", 500),
+        "Cinzel" to Face("fonts/cinzel.ttf", 500),
+        "Roboto Mono" to Face("fonts/robotomono.ttf", 500),
         "Comic Neue" to Face("fonts/comicneue_bold.ttf", 0),
     )
 
@@ -57,7 +57,7 @@ object SubtitleOptions {
     const val TEXT_SCALE = 1.1f
     val backgrounds = listOf(
         "Transparent" to Color.TRANSPARENT,
-        "Semi-Transparent" to Color.argb(0x88, 0, 0, 0),
+        "Semi-Transparent" to Color.argb(0x73, 0, 0, 0),
         "Solid" to Color.BLACK,
     )
     val edges = listOf(
@@ -95,7 +95,7 @@ object SubtitleOptions {
     }
 
     fun typeface(context: Context, font: String): Typeface = cache.getOrPut(font) {
-        val bold = if (Build.VERSION.SDK_INT >= 28) 600 else 0
+        val bold = if (Build.VERSION.SDK_INT >= 28) 500 else 0
         when (font) {
             "Roboto" ->
                 if (bold > 0) Typeface.create(Typeface.SANS_SERIF, bold, false) else Typeface.SANS_SERIF
@@ -132,7 +132,7 @@ object SubtitleStyleStore {
             font = font,
             size = p.getInt("sub_size_idx", 1).coerceIn(0, SubtitleOptions.sizes.lastIndex),
             background = p.getInt("sub_bg_idx", 0).coerceIn(0, SubtitleOptions.backgrounds.lastIndex),
-            edge = p.getInt("sub_edge_idx", 2).coerceIn(0, SubtitleOptions.edges.lastIndex),
+            edge = p.getInt("sub_edge_idx", 1).coerceIn(0, SubtitleOptions.edges.lastIndex),
         )
     }
 
@@ -161,12 +161,12 @@ fun SubtitleView.applyKiroStyle(context: Context, style: SubtitleStyle) {
             SubtitleOptions.typeface(context, style.font),
         ),
     )
-    // Same as the reference: size x 1.1 in dp, 24dp from the sides and 20dp above the bottom.
+    // Same as the reference: size x 1.1 in dp, 32dp from the sides and 28dp above the bottom.
     setFixedTextSize(
         android.util.TypedValue.COMPLEX_UNIT_DIP,
         SubtitleOptions.sizes[style.size].second * SubtitleOptions.TEXT_SCALE,
     )
     val d = context.resources.displayMetrics.density
     setBottomPaddingFraction(0f)
-    setPadding((24 * d).toInt(), 0, (24 * d).toInt(), (20 * d).toInt())
+    setPadding((32 * d).toInt(), 0, (32 * d).toInt(), (28 * d).toInt())
 }

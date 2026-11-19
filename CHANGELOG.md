@@ -4,6 +4,15 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.56.0]
+
+### Changed
+- Minimalist captions: lighter font weights, a subtle shadow instead of a heavy outline by default
+  (existing choices are kept), a softer semi-transparent background and more space from the screen
+  edge and bottom.
+- Subtitle style now shows a live sample caption pinned above the options, so font, size,
+  background and text style changes are visible as you pick them.
+
 ## [1.55.0]
 
 ### Changed

@@ -1909,7 +1909,9 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
     }
 
     androidx.compose.material3.ProvideTextStyle(TextStyle(fontFamily = trebuchet)) {
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize()) {
+    CaptionPreview(style)
+    LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
         item { SectionLabel("FONT") }
         items(SubtitleOptions.fonts) { font ->
             val selected = style.font == font
@@ -2009,6 +2011,43 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
         }
         item { Spacer(Modifier.height(16.dp)) }
     }
+    }
+    }
+}
+
+/** A live sample of the captions, pinned above the options so every change shows at once. */
+@Composable
+private fun CaptionPreview(style: SubtitleStyle) {
+    val context = LocalContext.current
+    val family = remember(style.font, style.edge) { FontFamily(SubtitleOptions.typeface(context, style.font)) }
+    val bg = SubtitleOptions.backgrounds[style.background].second
+    val shadow = when (style.edge) {
+        1 -> androidx.compose.ui.graphics.Shadow(Color(0xD9000000), androidx.compose.ui.geometry.Offset(2f, 2f), 4f)
+        2 -> androidx.compose.ui.graphics.Shadow(Color.Black, androidx.compose.ui.geometry.Offset(0f, 0f), 7f)
+        else -> androidx.compose.ui.graphics.Shadow(Color.Transparent, androidx.compose.ui.geometry.Offset.Zero, 0f)
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .height(104.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF2A2A31), Color(0xFF111114)))),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        Text(
+            "Sample caption text",
+            color = Color.White,
+            fontFamily = family,
+            fontSize = (SubtitleOptions.sizes[style.size].second * 0.8f).sp,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            style = TextStyle(shadow = shadow),
+            modifier = Modifier
+                .padding(bottom = 14.dp, start = 12.dp, end = 12.dp)
+                .background(Color(bg))
+                .padding(horizontal = 6.dp, vertical = 2.dp),
+        )
     }
 }
 
