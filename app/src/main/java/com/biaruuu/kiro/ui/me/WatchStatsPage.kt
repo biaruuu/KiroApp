@@ -279,7 +279,7 @@ private fun ChartCard(
                         Modifier.fillMaxWidth().height(maxOf(chartH * h, if (values[i] > 0) 4.dp else 2.dp))
                             .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
                             .background(
-                                if (values[i] == 0) Color.White.copy(alpha = 0.08f)
+                                if (values[i] == 0) Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.08f), Color.White.copy(alpha = 0.08f)))
                                 else if (i == shownIdx) Brush.verticalGradient(listOf(Color(0xFFB7A9FF), KiroPurple))
                                 else Brush.verticalGradient(listOf(KiroPurple.copy(alpha = 0.7f), KiroPurple.copy(alpha = 0.45f))),
                             ),
