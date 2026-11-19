@@ -103,8 +103,7 @@ fun NotificationsPage(onOpen: (String) -> Unit) {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
     ) {
         items(entries, key = { it.key }) { e ->
             val a = e.announcement
@@ -115,13 +114,11 @@ fun NotificationsPage(onOpen: (String) -> Unit) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Card)
                     .clickable {
                         if (r != null) onOpen("release-${r.version}")
                         else if (e.key in expanded) expanded.remove(e.key) else expanded.add(e.key)
                     }
-                    .padding(14.dp),
+                    .padding(vertical = 16.dp),
             ) {
                 DeveloperHeader(admin, ago(e.time), unread)
                 Spacer(Modifier.height(10.dp))
@@ -150,6 +147,7 @@ fun NotificationsPage(onOpen: (String) -> Unit) {
                     }
                 }
             }
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF222226)))
         }
     }
 }
@@ -174,16 +172,13 @@ private fun DeveloperHeader(card: com.biaruuu.kiro.data.AdminCard?, time: String
                 Spacer(Modifier.width(6.dp))
                 Text(
                     "Dev",
-                    color = KiroPurple, fontSize = 10.sp, fontWeight = FontWeight.Medium,
-                    modifier = Modifier
-                        .border(1.dp, KiroPurple, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 5.dp, vertical = 1.dp),
+                    color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Medium,
                 )
             }
             Text(Admin.EMAIL, color = Muted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Column(horizontalAlignment = Alignment.End) {
-            if (unread) Box(Modifier.size(9.dp).clip(CircleShape).background(Color(0xFFFF4D4F)))
+            if (unread) Box(Modifier.size(7.dp).clip(CircleShape).background(Color(0xFFFF4D4F)))
             if (time.isNotEmpty()) {
                 Spacer(Modifier.height(if (unread) 4.dp else 0.dp))
                 Text(time, color = Muted, fontSize = 11.sp)
