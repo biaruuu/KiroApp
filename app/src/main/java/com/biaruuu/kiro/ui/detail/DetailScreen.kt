@@ -178,6 +178,9 @@ private fun DetailContent(
     var trailerPlaying by remember(trailerIds, trailerIndex) { mutableStateOf(false) }
     var showRating by remember { mutableStateOf(false) }
     var showSeasons by remember { mutableStateOf(false) }
+    var showStatus by remember { mutableStateOf(false) }
+    val cloudVersion by com.biaruuu.kiro.data.CloudSync.version.collectAsState()
+    var status by remember(anime.id, cloudVersion) { mutableStateOf(com.biaruuu.kiro.data.ShowStatus.get(context, anime.id)) }
     var newestFirst by rememberSaveable { mutableStateOf(false) }
     var expanded by rememberSaveable { mutableStateOf(false) }
     val watchedVersion by com.biaruuu.kiro.data.WatchedStore.version.collectAsState()
@@ -396,6 +399,17 @@ private fun DetailContent(
                         ).show()
                     }
                     ActionButton(
+                        label = status?.let { com.biaruuu.kiro.data.ShowStatus.label(it) } ?: "Status",
+                        icon = R.drawable.fluent_inbox_regular,
+                        tint = if (status != null) KiroPurple else Color.White,
+                    ) {
+                        if (!com.biaruuu.kiro.data.CloudSync.allowed(context)) {
+                            com.biaruuu.kiro.data.CloudSync.requireLogin(context)
+                            return@ActionButton
+                        }
+                        showStatus = true
+                    }
+                    ActionButton(
                         label = if (rating > 0) (if (rating % 2 == 0) "${rating / 2}" else "${rating / 2}.5") else "Rate",
                         icon = if (rating > 0) R.drawable.fluent_star_filled else R.drawable.fluent_star_regular,
                         tint = Color.White,
@@ -596,6 +610,17 @@ private fun DetailContent(
                 MyListStore.setRating(context, anime, it)
             },
             onDismiss = { showRating = false },
+        )
+    }
+    if (showStatus) {
+        StatusSheet(
+            current = status,
+            onPick = { picked ->
+                com.biaruuu.kiro.data.ShowStatus.set(context, anime, picked)
+                status = picked
+                inList = MyListStore.isInList(context, anime.id)
+            },
+            onDismiss = { showStatus = false },
         )
     }
     if (showSeasons && seasonsFromState.isNotEmpty()) {
@@ -953,6 +978,60 @@ private fun SeasonSheet(
                         fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StatusSheet(current: String?, onPick: (String?) -> Unit, onDismiss: () -> Unit) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = SheetBackground,
+        scrimColor = Color.Black.copy(alpha = 0.72f),
+        shape = RectangleShape,
+        tonalElevation = 0.dp,
+        dragHandle = null,
+    ) {
+        Column(modifier = Modifier.navigationBarsPadding().padding(vertical = 8.dp)) {
+            val options: List<String?> = com.biaruuu.kiro.data.ShowStatus.ALL + listOf(null)
+            options.forEach { opt ->
+                if (opt == null && current == null) return@forEach
+                val selected = opt == current
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .clickable {
+                            scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                onDismiss()
+                                onPick(opt)
+                            }
+                        }
+                        .padding(horizontal = 22.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(modifier = Modifier.width(40.dp)) {
+                        if (selected) {
+                            Icon(
+                                painter = painterResource(R.drawable.fluent_checkmark_regular),
+                                contentDescription = null,
+                                tint = KiroPurple,
+                                modifier = Modifier.size(24.dp),
+                            )
+                        }
+                    }
+                    Text(
+                        if (opt == null) "Clear status" else com.biaruuu.kiro.data.ShowStatus.label(opt),
+                        color = if (selected) Color.White else Color(0xFFD0D0D4),
+                        fontSize = 15.sp,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                     )
                 }
             }

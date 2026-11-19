@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.42.0] - 2026-11-19
+
+### Added
+- Library statuses: mark a show Watching, Plan to watch, On hold or Dropped with the new Status button on its page. Each status has its own tab in Library. Setting a status also adds the show to My List, and statuses sync with your account.
+- Smart search filters: a Filters button under the genre tabs combines genre (several at once), year, season, format and airing status. Sorting now also offers Highest rated and Oldest first.
+- Download queue manager: Library > Download shows a queue banner (count and total speed). Manage it to pause or resume one or all downloads, move a download up or down, or download it first, and see each download's speed and time left. Downloads run one at a time in the order you set.
+- Backup and restore (Me > Backup and restore): export your list, ratings, progress and statuses to a file, and import it on a new phone or another account. Importing merges, so nothing is deleted.
+
 ## [1.41.1] - 2026-11-19
 
 ### Removed

@@ -59,11 +59,31 @@ object Downloads {
         val waitingForNetwork: Boolean,
         val subtitles: List<SubtitleTrack>,
         val error: String = "",
+        val stopReason: Int = 0,
+        /** Current speed in bytes per second (0 when not downloading). */
+        val speed: Long = 0,
     ) {
         val completed get() = state == Download.STATE_COMPLETED
         val failed get() = state == Download.STATE_FAILED
         val active get() = !completed && !failed
+        /** Paused by the user (as opposed to held back by the queue). */
+        val paused get() = state == Download.STATE_STOPPED && stopReason == STOP_USER
+        val downloading get() = state == Download.STATE_DOWNLOADING
+        /** Waiting for its turn behind other downloads. */
+        val queued get() = state == Download.STATE_STOPPED && stopReason == STOP_HOLD
+
+        /** Seconds left at the current speed, or -1 when unknown. */
+        val secondsLeft: Long
+            get() {
+                if (!downloading || speed <= 0 || percent < 0.5f) return -1
+                val total = bytes * 100.0 / percent
+                return ((total - bytes) / speed).toLong().coerceAtLeast(0)
+            }
     }
+
+    /** Stop reasons: the user paused it / the queue is holding it back until its turn. */
+    const val STOP_USER = 1
+    const val STOP_HOLD = 2
 
     private const val PREFS = "kiro_downloads"
     private val main = Handler(Looper.getMainLooper())
@@ -79,6 +99,121 @@ object Downloads {
 
     private val _items = MutableStateFlow<List<Item>>(emptyList())
     val items: StateFlow<List<Item>> = _items
+
+    /** Everything unfinished (and failed), in the order it will download. */
+    private val _queue = MutableStateFlow<List<Item>>(emptyList())
+    val queue: StateFlow<List<Item>> = _queue
+
+    private val lastBytes = HashMap<String, Long>()
+    private val lastAt = HashMap<String, Long>()
+    private val speeds = HashMap<String, Long>()
+    private var orderIds: List<String>? = null
+
+    private fun speedFor(id: String, bytes: Long, state: Int, now: Long): Long {
+        if (state != Download.STATE_DOWNLOADING) {
+            lastBytes.remove(id); lastAt.remove(id); speeds.remove(id)
+            return 0
+        }
+        val pb = lastBytes[id]
+        val pt = lastAt[id]
+        if (pb == null || pt == null) {
+            lastBytes[id] = bytes; lastAt[id] = now
+            return 0
+        }
+        val dt = now - pt
+        if (dt < 800) return speeds[id] ?: 0
+        val inst = ((bytes - pb) * 1000 / dt).coerceAtLeast(0)
+        val old = speeds[id] ?: 0
+        val smooth = if (old == 0L) inst else (old * 0.6 + inst * 0.4).toLong()
+        lastBytes[id] = bytes; lastAt[id] = now; speeds[id] = smooth
+        return smooth
+    }
+
+    // ---- queue order ----
+
+    @Synchronized
+    private fun order(context: Context): MutableList<String> {
+        orderIds?.let { return it.toMutableList() }
+        val out = ArrayList<String>()
+        try {
+            val arr = JSONArray(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("order", "[]") ?: "[]")
+            for (i in 0 until arr.length()) out.add(arr.optString(i))
+        } catch (_: Exception) {
+        }
+        orderIds = out
+        return out.toMutableList()
+    }
+
+    @Synchronized
+    private fun saveOrder(context: Context, ids: List<String>) {
+        orderIds = ids.toList()
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("order", JSONArray(ids).toString()).apply()
+    }
+
+    private fun sendStopReason(app: Context, id: String, reason: Int) {
+        try {
+            DownloadService.sendSetStopReason(app, DownloadsService::class.java, id, reason, false)
+        } catch (_: Exception) {
+        }
+    }
+
+    /** One download runs at a time: the first of the queue runs, the rest wait their turn. */
+    private fun schedule(app: Context, list: List<Item>) {
+        val ids = order(app)
+        val live = list.filter { it.active }.map { it.id }.toSet()
+        val pruned = ids.filter { it in live }
+        if (pruned != ids) saveOrder(app, pruned)
+        val cands = list.filter { it.active && it.stopReason != STOP_USER }
+            .sortedBy { c -> pruned.indexOf(c.id).let { if (it < 0) Int.MAX_VALUE else it } }
+        cands.forEachIndexed { i, c ->
+            val want = if (i == 0) 0 else STOP_HOLD
+            if (c.stopReason != want) sendStopReason(app, c.id, want)
+        }
+    }
+
+    private fun sortedQueue(app: Context, list: List<Item>): List<Item> {
+        val ids = order(app)
+        val active = list.filter { it.active }.sortedBy { c -> ids.indexOf(c.id).let { if (it < 0) Int.MAX_VALUE else it } }
+        return active + list.filter { it.failed }
+    }
+
+    fun pause(context: Context, id: String) = sendStopReason(context.applicationContext, id, STOP_USER)
+
+    fun resume(context: Context, id: String) {
+        sendStopReason(context.applicationContext, id, 0)
+        main.postDelayed({ refresh(context.applicationContext) }, 400)
+    }
+
+    fun pauseAll(context: Context) {
+        _queue.value.filter { it.active }.forEach { pause(context, it.id) }
+    }
+
+    fun resumeAll(context: Context) {
+        _queue.value.filter { it.active && it.paused }.forEach { sendStopReason(context.applicationContext, it.id, 0) }
+        main.postDelayed({ refresh(context.applicationContext) }, 400)
+    }
+
+    /** Moves a download to the front of the queue (and resumes it when paused). */
+    fun prioritize(context: Context, id: String) {
+        val app = context.applicationContext
+        val ids = _queue.value.filter { it.active }.map { it.id }.toMutableList()
+        ids.remove(id); ids.add(0, id)
+        saveOrder(app, ids)
+        if (_queue.value.firstOrNull { it.id == id }?.paused == true) sendStopReason(app, id, 0)
+        refresh(app)
+    }
+
+    /** Moves a download one place up (-1) or down (+1) in the queue. */
+    fun move(context: Context, id: String, delta: Int) {
+        val app = context.applicationContext
+        val ids = _queue.value.filter { it.active }.map { it.id }.toMutableList()
+        val i = ids.indexOf(id)
+        val j = i + delta
+        if (i < 0 || j < 0 || j >= ids.size) return
+        ids.removeAt(i); ids.add(j, id)
+        saveOrder(app, ids)
+        refresh(app)
+    }
 
     @Synchronized
     private fun db(context: Context): DatabaseProvider =
@@ -233,6 +368,7 @@ object Downloads {
                 val dm = manager(context)
                 val metas = loadMeta(context)
                 val notMet = dm.notMetRequirements != 0
+                val now = System.currentTimeMillis()
                 val list = ArrayList<Item>()
                 val live = dm.currentDownloads.associateBy { it.request.id }
                 dm.downloadIndex.getDownloads().use { cursor ->
@@ -270,11 +406,15 @@ object Downloads {
                                 waitingForNetwork = notMet && d.state == Download.STATE_QUEUED,
                                 subtitles = subs,
                                 error = errors[d.request.id].orEmpty(),
+                                stopReason = d.stopReason,
+                                speed = speedFor(d.request.id, d.bytesDownloaded, d.state, now),
                             ),
                         )
                     }
                 }
                 _items.value = list.sortedWith(compareBy({ it.title }, { it.episode }))
+                _queue.value = sortedQueue(context, list)
+                schedule(context, list)
             } catch (_: Exception) {
             }
         }
@@ -336,6 +476,7 @@ object Downloads {
                             .put("url", source.url).put("hls", source.isHls)
                             .put("quality", source.qualityLabel)
                             .put("headers", headersJson(source.headers)))
+                        order(app).let { o -> if (id !in o) saveOrder(app, o + id) }
                         DownloadService.sendAddDownload(app, DownloadsService::class.java, request, true)
                         saveSubtitles(app, id, source)
                         refresh(app)

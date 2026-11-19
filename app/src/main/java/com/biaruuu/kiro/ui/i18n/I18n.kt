@@ -65,6 +65,12 @@ object I18n {
                 "Panoorin ang ${it.groupValues[1]} kasama ako sa Kiro! Buksan ang Ako > Watch party at ilagay ang code ${it.groupValues[2]}"
             },
             p("^(\\d+) episodes?$") { "${it.groupValues[1]} episode" },
+            p("^Filters \\((\\d+)\\)$") { "Mga Filter (${it.groupValues[1]})" },
+            p("^(\\d+) in queue(.*)$") { "${it.groupValues[1]} sa pila${it.groupValues[2]}" },
+            p("^(\\d+) waiting or running$") { "${it.groupValues[1]} naghihintay o tumatakbo" },
+            p("^Queued · #(\\d+)$") { "Naka-pila · #${it.groupValues[1]}" },
+            p("^Paused · (\\d+)%$") { "Naka-pause · ${it.groupValues[1]}%" },
+            p("^(\\d+) failed$") { "${it.groupValues[1]} nabigo" },
             p("^(\\d+) shows?$") { "${it.groupValues[1]} palabas" },
             p("^(\\d+)m ago$") { "${it.groupValues[1]}m ang nakalipas" },
             p("^(\\d+)h ago$") { "${it.groupValues[1]}h ang nakalipas" },
@@ -80,6 +86,10 @@ object I18n {
     fun tr(s: String): String {
         if (lang != FIL || s.isEmpty()) return s
         FIL_EXACT[s]?.let { return it }
+        FIL_STATUS[s]?.let { return it }
+        FIL_SEARCH[s]?.let { return it }
+        FIL_QUEUE[s]?.let { return it }
+        FIL_BACKUP[s]?.let { return it }
         for ((re, f) in patterns) {
             val m = re.matchEntire(s) ?: continue
             return f(m)

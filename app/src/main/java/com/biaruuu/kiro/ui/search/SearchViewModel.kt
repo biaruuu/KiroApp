@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 
 data class SearchUiState(
     val query: String = "",
-    val genre: String? = null,
+    val filters: com.biaruuu.kiro.data.SearchFilters = com.biaruuu.kiro.data.SearchFilters(),
     val sort: SortOrder = SortOrder.POPULARITY,
     val total: Int = 0,
     val results: List<Anime> = emptyList(),
@@ -49,8 +49,23 @@ class SearchViewModel : ViewModel() {
         schedule(debounce = true)
     }
 
+    /** Genre tabs: picking one replaces any others; picking it again clears it. */
     fun onGenreToggle(genre: String) {
-        _state.update { it.copy(genre = if (it.genre == genre) null else genre) }
+        _state.update {
+            val g = if (it.filters.genres == setOf(genre)) emptySet() else setOf(genre)
+            it.copy(filters = it.filters.copy(genres = g))
+        }
+        schedule(debounce = false)
+    }
+
+    fun clearGenres() {
+        _state.update { it.copy(filters = it.filters.copy(genres = emptySet())) }
+        schedule(debounce = false)
+    }
+
+    fun onFiltersChange(filters: com.biaruuu.kiro.data.SearchFilters) {
+        if (_state.value.filters == filters) return
+        _state.update { it.copy(filters = filters) }
         schedule(debounce = false)
     }
 
@@ -111,7 +126,7 @@ class SearchViewModel : ViewModel() {
             else it.copy(loadingMore = true, error = null)
         }
         try {
-            val result = AniListRepository.search(snapshot.query.trim(), snapshot.genre, snapshot.sort, page)
+            val result = AniListRepository.search(snapshot.query.trim(), snapshot.filters, snapshot.sort, page)
             _state.update { cur ->
                 val merged = if (page == 1) {
                     result.items

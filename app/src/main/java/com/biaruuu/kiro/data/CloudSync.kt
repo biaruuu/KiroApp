@@ -59,7 +59,7 @@ object CloudSync {
             }
             if (snap.metadata.hasPendingWrites() || dirty) return@addSnapshotListener
             applyRemote(app, userId, snap.getString("myList"), snap.getString("ratings"),
-                snap.getString("ratedMeta"), snap.getString("history"), snap.getString("watched"))
+                snap.getString("ratedMeta"), snap.getString("history"), snap.getString("watched"), snap.getString("status"))
         }
     }
 
@@ -89,7 +89,7 @@ object CloudSync {
     @JvmStatic
     fun clearLocal(context: Context) {
         val p = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        p.edit().remove("my_list").remove("ratings").remove("rated_meta").remove("watch_history").remove("watched")
+        p.edit().remove("my_list").remove("ratings").remove("rated_meta").remove("watch_history").remove("watched").remove("status")
             .remove(MERGED_UID).apply()
         _version.value++
         WatchedStore.notifyChanged()
@@ -127,6 +127,7 @@ object CloudSync {
             "ratedMeta" to p.getString("rated_meta", "{}")!!,
             "history" to p.getString("watch_history", "[]")!!,
             "watched" to p.getString("watched", "{}")!!,
+            "status" to p.getString("status", "{}")!!,
             "updatedAt" to System.currentTimeMillis(),
         )
         ref.set(data).addOnCompleteListener { t ->
@@ -135,7 +136,7 @@ object CloudSync {
         }
     }
 
-    private fun applyRemote(c: Context, id: String, list: String?, ratings: String?, meta: String?, history: String?, watched: String?) {
+    private fun applyRemote(c: Context, id: String, list: String?, ratings: String?, meta: String?, history: String?, watched: String?, status: String?) {
         val p = prefs(c)
         val firstOnDevice = p.getString(MERGED_UID, null) != id
         var l = list ?: "{}"
@@ -143,6 +144,7 @@ object CloudSync {
         var m = meta ?: "{}"
         var h = history ?: "[]"
         var w = watched ?: "{}"
+        var st = status ?: "{}"
         if (firstOnDevice) {
             // Signed in on this phone for the first time: keep what was saved here as a guest too.
             l = mergeObjects(p.getString("my_list", "{}"), l, "at")
@@ -150,13 +152,14 @@ object CloudSync {
             m = mergeObjects(p.getString("rated_meta", "{}"), m, null)
             h = mergeHistory(p.getString("watch_history", "[]"), h)
             w = mergeObjects(p.getString("watched", "{}"), w, "at")
+            st = mergeObjects(p.getString("status", "{}"), st, "at")
         }
         val changed = l != p.getString("my_list", "{}") || r != p.getString("ratings", "{}") ||
             m != p.getString("rated_meta", "{}") || h != p.getString("watch_history", "[]") ||
-            w != p.getString("watched", "{}")
+            w != p.getString("watched", "{}") || st != p.getString("status", "{}")
         if (changed) {
             p.edit().putString("my_list", l).putString("ratings", r)
-                .putString("rated_meta", m).putString("watch_history", h).putString("watched", w).apply()
+                .putString("rated_meta", m).putString("watch_history", h).putString("watched", w).putString("status", st).apply()
             _version.value++
             WatchedStore.notifyChanged()
         }
@@ -166,8 +169,32 @@ object CloudSync {
         }
     }
 
+    /**
+     * Merges a backup (the "remote" side: it wins ties) into this phone's library and syncs it
+     * when signed in. Returns false when nothing changed.
+     */
+    fun mergeBackup(c: Context, b: Backup.Data): Boolean {
+        val p = prefs(c)
+        val l = mergeObjects(p.getString("my_list", "{}"), b.myList, "at")
+        val r = mergeObjects(p.getString("ratings", "{}"), b.ratings, null)
+        val m = mergeObjects(p.getString("rated_meta", "{}"), b.ratedMeta, null)
+        val h = mergeHistory(p.getString("watch_history", "[]"), b.history)
+        val w = mergeObjects(p.getString("watched", "{}"), b.watched, "at")
+        val st = mergeObjects(p.getString("status", "{}"), b.status, "at")
+        val changed = l != p.getString("my_list", "{}") || r != p.getString("ratings", "{}") ||
+            m != p.getString("rated_meta", "{}") || h != p.getString("watch_history", "[]") ||
+            w != p.getString("watched", "{}") || st != p.getString("status", "{}")
+        if (!changed) return false
+        p.edit().putString("my_list", l).putString("ratings", r).putString("rated_meta", m)
+            .putString("watch_history", h).putString("watched", w).putString("status", st).apply()
+        _version.value++
+        WatchedStore.notifyChanged()
+        libraryChanged(c)
+        return true
+    }
+
     /** Union of two JSON objects keyed by anime id; for a clash the newer [timeKey] wins. */
-    private fun mergeObjects(localJson: String?, remoteJson: String, timeKey: String?): String = try {
+    internal fun mergeObjects(localJson: String?, remoteJson: String, timeKey: String?): String = try {
         val out = JSONObject(remoteJson)
         val local = JSONObject(localJson ?: "{}")
         val keys = local.keys()
@@ -186,7 +213,7 @@ object CloudSync {
         remoteJson
     }
 
-    private fun mergeHistory(localJson: String?, remoteJson: String): String = try {
+    internal fun mergeHistory(localJson: String?, remoteJson: String): String = try {
         val byAnime = LinkedHashMap<Int, JSONObject>()
         for (src in listOf(remoteJson, localJson ?: "[]")) {
             val arr = JSONArray(src)

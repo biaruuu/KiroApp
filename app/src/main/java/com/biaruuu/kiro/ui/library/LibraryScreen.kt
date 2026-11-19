@@ -100,7 +100,9 @@ private const val TAB_LIST = 1
 private const val TAB_COMPLETED = 2
 private const val TAB_DOWNLOAD = 3
 private const val TAB_RATED = 4
-private val Tabs = listOf("Recently Watched", "My List", "Completed", "Download", "Rated")
+private const val TAB_STATUS_FIRST = 5 // Watching, Plan to watch, On hold, Dropped follow Rated
+private val Tabs = listOf("Recently Watched", "My List", "Completed", "Download", "Rated") +
+    com.biaruuu.kiro.data.ShowStatus.ALL.map { com.biaruuu.kiro.data.ShowStatus.label(it) }
 
 /** What a long-press → "Remove" will act on. */
 private data class RemoveTarget(val tab: Int, val animeId: Int, val title: String)
@@ -126,6 +128,7 @@ fun LibraryScreen(
     var ratedSort by rememberSaveable { mutableIntStateOf(0) }
     var version by remember { mutableIntStateOf(0) }
     var sortSheet by remember { mutableStateOf(false) }
+    var showQueue by remember { mutableStateOf(false) }
     var removeTarget by remember { mutableStateOf<RemoveTarget?>(null) }
 
     // Reloaded when a page opened from here is closed (refreshKey) and after every removal.
@@ -133,6 +136,9 @@ fun LibraryScreen(
     val history = remember(refreshKey, version, cloud) { WatchHistory.all(context) }
     val myList = remember(refreshKey, version, cloud) { MyListStore.all(context) }
     val rated = remember(refreshKey, version, cloud) { MyListStore.allRated(context) }
+    val byStatus = remember(refreshKey, version, cloud) {
+        com.biaruuu.kiro.data.ShowStatus.ALL.map { com.biaruuu.kiro.data.ShowStatus.entries(context, it) }
+    }
 
     val watchedVersion by com.biaruuu.kiro.data.WatchedStore.version.collectAsState()
     val completed = remember(refreshKey, version, cloud, watchedVersion) {
@@ -231,6 +237,7 @@ fun LibraryScreen(
                         val downloads by com.biaruuu.kiro.data.Downloads.items.collectAsState()
                         val series = downloads.map { it.animeId }.distinct().size
                         CountBar(if (downloads.isEmpty()) "0 Series" else "$series Series \u00b7 ${downloads.size} Episodes", null) {}
+                        QueueBanner { showQueue = true }
                         if (downloads.isEmpty()) {
                             EmptyState(R.drawable.fluent_arrow_download_regular, "Download episodes to watch offline")
                         } else {
@@ -238,6 +245,22 @@ fun LibraryScreen(
                                 downloads = downloads,
                                 onOpen = onOpenDownloads,
                                 onRemove = { removeTarget = RemoveTarget(TAB_DOWNLOAD, it.animeId, it.title) },
+                            )
+                        }
+                    }
+
+                    in TAB_STATUS_FIRST until TAB_STATUS_FIRST + 4 -> {
+                        val si = page - TAB_STATUS_FIRST
+                        val entries = byStatus[si]
+                        CountBar("${entries.size} Series", null) {}
+                        if (entries.isEmpty()) {
+                            EmptyState(R.drawable.fluent_inbox_regular, "No shows marked ${com.biaruuu.kiro.data.ShowStatus.label(com.biaruuu.kiro.data.ShowStatus.ALL[si])} yet. Set a status on a show's page.")
+                        } else {
+                            PosterGrid(
+                                entries = entries,
+                                showRating = false,
+                                onOpen = onOpenAnime,
+                                onRemove = { removeTarget = RemoveTarget(page, it.id, it.title) },
                             )
                         }
                     }
@@ -260,6 +283,8 @@ fun LibraryScreen(
         }
     }
 
+    if (showQueue) DownloadQueueSheet(onDismiss = { showQueue = false })
+
     if (sortSheet && (tab == TAB_LIST || tab == TAB_RATED)) {
         val labels = if (tab == TAB_LIST) listSortLabels else ratedSortLabels
         val current = if (tab == TAB_LIST) listSort else ratedSort
@@ -277,6 +302,7 @@ fun LibraryScreen(
             TAB_COMPLETED -> "Remove from Completed?" to "\"${target.title}\" will be marked as not watched."
             TAB_DOWNLOAD -> "Delete downloads?" to "All downloaded episodes of \"${target.title}\" will be deleted from your phone."
             TAB_LIST -> "Remove from My List?" to "\"${target.title}\" will be removed from your list."
+            in TAB_STATUS_FIRST until TAB_STATUS_FIRST + 4 -> "Clear status?" to "\"${target.title}\" will no longer be marked ${com.biaruuu.kiro.data.ShowStatus.label(com.biaruuu.kiro.data.ShowStatus.ALL[target.tab - TAB_STATUS_FIRST])}. It stays in My List."
             else -> "Remove your rating?" to "Your rating for \"${target.title}\" will be cleared."
         }
         AlertDialog(
@@ -291,6 +317,7 @@ fun LibraryScreen(
                         TAB_DOWNLOAD -> com.biaruuu.kiro.data.Downloads.removeSeries(context, target.animeId)
                         TAB_LIST -> MyListStore.remove(context, target.animeId)
                         TAB_COMPLETED -> com.biaruuu.kiro.data.WatchedStore.clear(context, target.animeId)
+                        in TAB_STATUS_FIRST until TAB_STATUS_FIRST + 4 -> com.biaruuu.kiro.data.ShowStatus.clear(context, target.animeId)
                         else -> {
                             MyListStore.setRating(context, target.animeId, 0)
                             MyListStore.clearRatedMeta(context, target.animeId)

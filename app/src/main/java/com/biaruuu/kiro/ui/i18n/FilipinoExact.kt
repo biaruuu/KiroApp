@@ -201,3 +201,32 @@ internal val FIL_EXACT: Map<String, String> = mapOf(
     "Up to 5 MB. Shows up for every user right away. Animated PNG, GIF and WebP all play." to "Hanggang 5 MB. Lalabas agad sa lahat ng user. Gumagana ang animated PNG, GIF at WebP.",
     "Autoplay previews" to "Auto-play na preview", "Open the anime, tap Rate" to "Buksan ang anime, i-tap ang I-rate",
 )
+
+internal val FIL_STATUS: Map<String, String> = mapOf(
+    "Watching" to "Pinapanood", "Plan to watch" to "Balak panoorin", "On hold" to "Naka-hold", "Dropped" to "Tinigil",
+    "Status" to "Katayuan", "Clear status" to "Alisin ang katayuan", "Clear status?" to "Alisin ang katayuan?",
+)
+
+internal val FIL_SEARCH: Map<String, String> = mapOf(
+    "Filters" to "Mga Filter", "Reset" to "I-reset", "Genre" to "Genre", "Year" to "Taon", "Season" to "Season", "Format" to "Format",
+    "Any" to "Alinman", "Winter" to "Taglamig", "Spring" to "Tagsibol", "Summer" to "Tag-init", "Fall" to "Taglagas", "Finished" to "Tapos na",
+    "Show results" to "Ipakita ang resulta", "Highest rated" to "Pinakamataas ang rating", "Oldest first" to "Pinakaluma muna",
+    "Try a different title or loosen the filters." to "Subukan ang ibang pamagat o luwagan ang mga filter.",
+)
+
+internal val FIL_QUEUE: Map<String, String> = mapOf(
+    "Download queue" to "Pila ng download", "Manage" to "Pamahalaan", "Pause" to "I-pause", "Resume" to "Ipagpatuloy",
+    "Pause all" to "I-pause lahat", "Resume all" to "Ipagpatuloy lahat", "Download first" to "Unahin", "Up" to "Itaas", "Down" to "Ibaba",
+    "Nothing is downloading." to "Walang dina-download.", "Queued · waiting for its turn" to "Naka-pila · naghihintay ng turn",
+    "Starting..." to "Sinisimulan...", "Paused" to "Naka-pause",
+)
+
+internal val FIL_BACKUP: Map<String, String> = mapOf(
+    "Backup and restore" to "Backup at ibalik", "On this phone" to "Sa phone na ito", "My List" to "Aking Listahan", "With a status" to "May katayuan",
+    "Backup" to "Backup", "Export backup" to "I-export ang backup", "Import backup" to "I-import ang backup",
+    "Save your list, ratings, progress and statuses to a file." to "I-save sa file ang listahan, rating, progreso at katayuan mo.",
+    "Load a backup file. It is merged with what you already have." to "Mag-load ng backup file. Pagsasamahin ito sa mayroon ka na.",
+    "Restore backup?" to "Ibalik ang backup?", "Restore" to "Ibalik", "Backup saved." to "Na-save ang backup.", "Couldn't save the backup." to "Hindi na-save ang backup.",
+    "That file isn't a Kiro backup." to "Hindi Kiro backup ang file na iyon.", "That backup is empty." to "Walang laman ang backup na iyon.",
+    "Backup restored." to "Naibalik ang backup.", "Nothing new in that backup." to "Walang bago sa backup na iyon.",
+)

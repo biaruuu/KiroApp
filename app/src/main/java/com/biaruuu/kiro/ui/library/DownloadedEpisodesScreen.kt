@@ -198,6 +198,8 @@ private fun EpisodeCard(d: Downloads.Item, onClick: () -> Unit, onRemove: () -> 
         val status = when {
             d.completed -> "Ready to watch · ${sizeText(d.bytes)}"
             d.failed -> "Failed (${d.error.ifEmpty { "unknown" }}). Tap to retry"
+            d.paused -> "Paused · $pct%"
+            d.queued -> "Queued · waiting for its turn"
             d.waitingForNetwork -> "Waiting for Wi-Fi"
             d.percent > 0f -> "Downloading $pct% · ${sizeText(d.bytes)}"
             d.bytes > 0 -> "Downloading · ${sizeText(d.bytes)}"

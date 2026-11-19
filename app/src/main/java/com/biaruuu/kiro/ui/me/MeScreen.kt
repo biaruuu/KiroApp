@@ -120,6 +120,7 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
             SettingsRow(R.drawable.fluent_alert_regular, "Notification", badge = hasUnread) { onOpen("notifications") }
             SettingsRow(R.drawable.fluent_calendar_regular, "Notification control") { onOpen("alerts") }
             SettingsRow(R.drawable.fluent_arrow_download_regular, "Storage") { onOpen("storage") }
+            SettingsRow(R.drawable.fluent_inbox_regular, "Backup and restore") { onOpen("backup") }
             SettingsRow(R.drawable.fluent_people_regular, "Watch party") { onOpen("party") }
             SettingsRow(R.drawable.fluent_arrow_download_regular, "Download") { onOpen("download") }
             SettingsRow(R.drawable.fluent_play_circle_regular, "Play") { onOpen("play") }
