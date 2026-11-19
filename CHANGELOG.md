@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.43.2] - 2026-11-19
+
+### Changed
+- Profile card is now compact (smaller avatar, name, buttons and badge strip) so it reads as a neat box that scales with the screen width, and the streak flame's glow no longer shows a square edge.
+
 ## [1.43.1] - 2026-11-19
 
 ### Fixed
