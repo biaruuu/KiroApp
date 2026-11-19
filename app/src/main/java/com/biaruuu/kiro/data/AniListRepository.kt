@@ -19,11 +19,6 @@ object AniListRepository {
     suspend fun search(query: String, genre: String?, sort: SortOrder, page: Int): SearchResult =
         await<SearchResult> { callback -> AniListApi.search(query, genre, sort, page, callback) }
 
-    suspend fun search(query: String, f: SearchFilters, sort: SortOrder, page: Int): SearchResult =
-        await<SearchResult> { callback ->
-            AniListApi.search(query, f.genres.toList(), f.formats.toList(), f.season, f.year ?: 0, f.status, sort, page, callback)
-        }
-
     // Kept for the whole session: reopening an anime shows instantly, then refreshes.
     private val detailCache = java.util.concurrent.ConcurrentHashMap<Int, AnimeDetail>()
     private val tmdbCache = java.util.concurrent.ConcurrentHashMap<Int, List<String>>()

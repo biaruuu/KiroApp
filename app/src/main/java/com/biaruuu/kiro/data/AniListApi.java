@@ -90,14 +90,12 @@ public final class AniListApi {
                     + MEDIA_FIELDS;
 
     private static final String SEARCH_QUERY =
-            "query Search($search: String, $genreIn: [String], $page: Int, $perPage: Int,"
-                    + " $sort: [MediaSort], $statusIn: [MediaStatus], $status: MediaStatus,"
-                    + " $formatIn: [MediaFormat], $season: MediaSeason, $seasonYear: Int) {"
+            "query Search($search: String, $genre: String, $page: Int, $perPage: Int,"
+                    + " $sort: [MediaSort], $statusIn: [MediaStatus]) {"
                     + " Page(page: $page, perPage: $perPage) {"
                     + " pageInfo { hasNextPage total }"
-                    + " media(type: ANIME, search: $search, genre_in: $genreIn, sort: $sort,"
-                    + " status_in: $statusIn, status: $status, format_in: $formatIn,"
-                    + " season: $season, seasonYear: $seasonYear, isAdult: false) { ...M } } } "
+                    + " media(type: ANIME, search: $search, genre: $genre, sort: $sort,"
+                    + " status_in: $statusIn, isAdult: false) { ...M } } } "
                     + MEDIA_FIELDS;
 
     private static final java.util.concurrent.ExecutorService IO =
@@ -198,67 +196,21 @@ public final class AniListApi {
             @NonNull SortOrder sort,
             int page,
             @NonNull Callback<SearchResult> callback) {
-        List<String> genres = new ArrayList<>();
-        if (genre != null && !genre.isEmpty()) {
-            genres.add(genre);
-        }
-        return search(query, genres, new ArrayList<>(), null, 0, null, sort, page, callback);
-    }
-
-    /**
-     * Searches with filters. Empty/zero/null filters are left out of the request.
-     *
-     * @param genres  AniList genre names (all must match)
-     * @param formats AniList formats, e.g. "TV", "MOVIE" (any may match)
-     * @param season  WINTER, SPRING, SUMMER or FALL, or null
-     * @param year    season year, 0 for any
-     * @param status  RELEASING, FINISHED or NOT_YET_RELEASED, or null
-     */
-    @NonNull
-    public static Cancelable search(
-            @NonNull String query,
-            @NonNull List<String> genres,
-            @NonNull List<String> formats,
-            @Nullable String season,
-            int year,
-            @Nullable String status,
-            @NonNull SortOrder sort,
-            int page,
-            @NonNull Callback<SearchResult> callback) {
         String text = query.trim();
         JSONObject variables = new JSONObject();
         try {
             if (!text.isEmpty()) {
                 variables.put("search", text);
             }
-            if (!genres.isEmpty()) {
-                variables.put("genreIn", new JSONArray(genres));
-            }
-            if (!formats.isEmpty()) {
-                variables.put("formatIn", new JSONArray(formats));
-            }
-            if (season != null && !season.isEmpty()) {
-                variables.put("season", season);
-            }
-            if (year > 0) {
-                variables.put("seasonYear", year);
-            }
-            if (status != null && !status.isEmpty()) {
-                variables.put("status", status);
+            if (genre != null && !genre.isEmpty()) {
+                variables.put("genre", genre);
             }
             variables.put("page", page);
             variables.put("perPage", SEARCH_PAGE_SIZE);
             if (sort == SortOrder.RECENT) {
                 variables.put("sort", new JSONArray().put("START_DATE_DESC"));
-                // Skip announced-but-unreleased titles so the newest entries are real releases
-                // (unless the user picked a status themselves).
-                if (status == null || status.isEmpty()) {
-                    variables.put("statusIn", new JSONArray().put("RELEASING").put("FINISHED"));
-                }
-            } else if (sort == SortOrder.SCORE) {
-                variables.put("sort", new JSONArray().put("SCORE_DESC"));
-            } else if (sort == SortOrder.OLDEST) {
-                variables.put("sort", new JSONArray().put("START_DATE"));
+                // Skip announced-but-unreleased titles so the newest entries are real releases.
+                variables.put("statusIn", new JSONArray().put("RELEASING").put("FINISHED"));
             } else {
                 variables.put("sort", new JSONArray()
                         .put(text.isEmpty() ? "POPULARITY_DESC" : "SEARCH_MATCH"));

@@ -122,8 +122,6 @@ private fun columnsFor(widthDp: Float, gutterDp: Float, gapDp: Float): Int {
 private fun SortOrder.label(): String = when (this) {
     SortOrder.POPULARITY -> "Popularity"
     SortOrder.RECENT -> "Recently updated"
-    SortOrder.SCORE -> "Highest rated"
-    SortOrder.OLDEST -> "Oldest first"
 }
 
 @Composable
@@ -137,7 +135,6 @@ fun SearchScreen(
     val focusManager: FocusManager = LocalFocusManager.current
     val context = LocalContext.current
     var showSort by remember { mutableStateOf(false) }
-    var showFilters by remember { mutableStateOf(false) }
     var focused by remember { mutableStateOf(false) }
     var recents by remember { mutableStateOf(SearchHistory.all(context)) }
 
@@ -181,15 +178,9 @@ fun SearchScreen(
             Divider()
             if (!focused) {
                 GenreTabs(
-                    selected = state.filters.genres.singleOrNull() ?: ALL,
+                    selected = state.genre ?: ALL,
                     onSelect = { genre -> viewModel.onGenreToggle(genre) },
-                    onSelectAll = { viewModel.clearGenres() },
-                )
-                Divider()
-                FilterBar(
-                    active = state.filters,
-                    onOpen = { showFilters = true },
-                    onClear = { viewModel.onFiltersChange(com.biaruuu.kiro.data.SearchFilters()) },
+                    onSelectAll = { state.genre?.let(viewModel::onGenreToggle) },
                 )
                 Divider()
             }
@@ -216,7 +207,7 @@ fun SearchScreen(
 
                     state.results.isEmpty() && state.loaded -> MessageState(
                         title = "No results",
-                        subtitle = "Try a different title or loosen the filters.",
+                        subtitle = "Try a different title or pick another genre.",
                     )
 
                     else -> ResultsGrid(
@@ -247,14 +238,6 @@ fun SearchScreen(
         }
     }
 
-    if (showFilters) {
-        FilterSheet(
-            current = state.filters,
-            genres = GENRES,
-            onApply = viewModel::onFiltersChange,
-            onDismiss = { showFilters = false },
-        )
-    }
     if (showSort) {
         SortSheet(
             current = state.sort,

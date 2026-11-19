@@ -207,13 +207,6 @@ internal val FIL_STATUS: Map<String, String> = mapOf(
     "Status" to "Katayuan", "Clear status" to "Alisin ang katayuan", "Clear status?" to "Alisin ang katayuan?",
 )
 
-internal val FIL_SEARCH: Map<String, String> = mapOf(
-    "Filters" to "Mga Filter", "Reset" to "I-reset", "Genre" to "Genre", "Year" to "Taon", "Season" to "Season", "Format" to "Format",
-    "Any" to "Alinman", "Winter" to "Taglamig", "Spring" to "Tagsibol", "Summer" to "Tag-init", "Fall" to "Taglagas", "Finished" to "Tapos na",
-    "Show results" to "Ipakita ang resulta", "Highest rated" to "Pinakamataas ang rating", "Oldest first" to "Pinakaluma muna",
-    "Try a different title or loosen the filters." to "Subukan ang ibang pamagat o luwagan ang mga filter.",
-)
-
 internal val FIL_QUEUE: Map<String, String> = mapOf(
     "Download queue" to "Pila ng download", "Manage" to "Pamahalaan", "Pause" to "I-pause", "Resume" to "Ipagpatuloy",
     "Pause all" to "I-pause lahat", "Resume all" to "Ipagpatuloy lahat", "Download first" to "Unahin", "Up" to "Itaas", "Down" to "Ibaba",

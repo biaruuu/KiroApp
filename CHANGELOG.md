@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.42.1] - 2026-11-19
+
+### Removed
+- Search filters (the Filters button, and the Highest rated / Oldest first sorting added with it). Search is back to the genre tabs and the original sort options.
+
 ## [1.42.0] - 2026-11-19
 
 ### Added
