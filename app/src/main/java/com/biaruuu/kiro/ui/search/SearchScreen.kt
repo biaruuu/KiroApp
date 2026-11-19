@@ -98,8 +98,8 @@ import kotlinx.coroutines.launch
 import java.text.NumberFormat
 
 // Colours sampled from the reference screens.
-private val HeaderBackground = Color(0xFF1A1A1A)
-private val FieldBackground = Color(0xFF3A3A3C)
+private val HeaderBackground = Color(0xFF0B0B0D)
+private val FieldBackground = Color(0xFF18181B)
 private val DividerColor = Color(0xFF333335)
 private val MutedText = Color(0xFF8E8E93)
 private val SheetBackground = Color(0xFF18181B)
@@ -290,8 +290,8 @@ private fun SearchField(
             keyboardActions = KeyboardActions(onSearch = { onSearch() }),
             modifier = Modifier
                 .weight(1f)
-                .height(32.dp)
-                .clip(RoundedCornerShape(4.dp))
+                .height(40.dp)
+                .clip(RoundedCornerShape(20.dp))
                 .background(FieldBackground)
                 .onFocusChanged { onFocusChange(it.isFocused) },
             decorationBox = { inner ->
@@ -304,10 +304,10 @@ private fun SearchField(
                     Icon(
                         painter = painterResource(R.drawable.fluent_search_regular),
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = MutedText,
                         modifier = Modifier.size(20.dp),
                     )
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(8.dp))
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
                         if (value.isEmpty()) {
                             Text(
@@ -342,7 +342,7 @@ private fun SearchField(
                 text = "Cancel",
                 color = Color.White,
                 fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Medium,
                 modifier = Modifier
                     .padding(start = 16.dp)
                     .clickable(
@@ -376,12 +376,12 @@ private fun SearchOverlay(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Text("Recent Searches", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("Recent Searches", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                         Text(
                             "Clear",
                             color = KiroPurple,
                             fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.Medium,
                             modifier = Modifier.clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
@@ -504,7 +504,7 @@ private fun GenreTabs(
                         text = tab,
                         color = if (isSelected) Color.White else MutedText,
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Medium,
                         maxLines = 1,
                     )
                 }

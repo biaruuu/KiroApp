@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.48.0]
+
+### Changed
+- Minimalist Search: a rounded pill search field on the page background with a muted icon, lighter
+  type in titles and headers.
+
 ## [1.47.0]
 
 ### Changed
