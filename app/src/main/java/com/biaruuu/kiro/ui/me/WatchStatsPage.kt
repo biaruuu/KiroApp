@@ -248,7 +248,7 @@ private fun SectionTitle(text: String, modifier: Modifier = Modifier, action: St
 
 private class Event(val kind: String, val title: String, val poster: String, val at: Long, val detail: String, val id: Int)
 
-private fun ago(ms: Long): String {
+private fun agoText(ms: Long): String {
     val d = ((System.currentTimeMillis() - ms) / 1000).coerceAtLeast(0)
     return when {
         d < 60 -> "just now"
@@ -305,7 +305,7 @@ private fun RecentActivityCard(events: List<Event>) {
                     )
                 }
                 Spacer(Modifier.width(8.dp))
-                Text(ago(e.at), color = Dim, fontSize = 12.sp, maxLines = 1)
+                Text(agoText(e.at), color = Dim, fontSize = 12.sp, maxLines = 1)
             }
         }
     }

@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.43.4] - 2026-11-19
+
+### Fixed
+- Build fix for the 1.43.3 release; same changes as 1.43.3 (smaller responsive profile buttons, diary-style watch stats).
+
 ## [1.43.3] - 2026-11-19
 
 ### Changed
