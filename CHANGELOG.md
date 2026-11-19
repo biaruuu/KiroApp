@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.45.0]
+
+### Changed
+- Minimalist Home: lighter type, calmer section titles and spacing, softer 8dp poster corners,
+  subtle dark status tags instead of purple, quieter Continue Watching cards, a slimmer hero with a
+  pill Play button and a pill page indicator.
+
 ## [1.44.0] - 2026-11-19
 
 ### Changed

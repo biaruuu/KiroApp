@@ -155,8 +155,8 @@ fun HeroCarousel(
                     style = TextStyle(shadow = TextShadow),
                     color = Color.White,
                     fontSize = dims.wordmark,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 1.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 4.sp,
                 )
                 IconButton(onClick = onNotifications) {
                     // Plain white bell like the reference. A faint offset copy underneath keeps
@@ -164,17 +164,9 @@ fun HeroCarousel(
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             painter = painterResource(R.drawable.fluent_alert_regular),
-                            contentDescription = null,
-                            tint = Color.Black.copy(alpha = 0.35f),
-                            modifier = Modifier
-                                .size(26.dp)
-                                .offset(y = 1.dp),
-                        )
-                        Icon(
-                            painter = painterResource(R.drawable.fluent_alert_regular),
                             contentDescription = "Notifications",
                             tint = Color.White,
-                            modifier = Modifier.size(26.dp),
+                            modifier = Modifier.size(24.dp),
                         )
                         if (hasUnread) {
                             Box(
@@ -200,9 +192,10 @@ fun HeroCarousel(
                     val selected = index == pagerState.currentPage
                     Box(
                         modifier = Modifier
-                            .size(8.dp)
+                            .height(4.dp)
+                            .width(if (selected) 16.dp else 4.dp)
                             .clip(CircleShape)
-                            .background(if (selected) Color.White else Color.White.copy(alpha = 0.4f)),
+                            .background(if (selected) Color.White else Color.White.copy(alpha = 0.35f)),
                     )
                 }
             }
@@ -261,7 +254,7 @@ private fun PhoneHeroPage(
                     style = TextStyle(shadow = TextShadow),
                     fontSize = dims.heroTitle,
                     lineHeight = dims.heroTitle * 1.3f,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = Color.White,
                     textAlign = TextAlign.Center,
                     maxLines = 2,
@@ -275,7 +268,7 @@ private fun PhoneHeroPage(
                     text = line,
                     style = TextStyle(shadow = TextShadow),
                     fontSize = dims.heroTagline,
-                    color = Color.White,
+                    color = Color.White.copy(alpha = 0.75f),
                     textAlign = TextAlign.Center,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -349,14 +342,14 @@ private fun WideHeroPage(
 private fun PlayButton(onClick: () -> Unit) {
     Button(
         onClick = onClick,
-        shape = RoundedCornerShape(4.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.White,
             contentColor = Color.Black,
         ),
         modifier = Modifier
-            .width(116.dp)
-            .height(40.dp),
+            .width(108.dp)
+            .height(38.dp),
     ) {
         Icon(
             painter = painterResource(R.drawable.fluent_play_filled),
@@ -364,6 +357,6 @@ private fun PlayButton(onClick: () -> Unit) {
             modifier = Modifier.size(20.dp),
         )
         Spacer(Modifier.width(6.dp))
-        Text("Play", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Text("Play", fontWeight = FontWeight.Medium, fontSize = 16.sp)
     }
 }

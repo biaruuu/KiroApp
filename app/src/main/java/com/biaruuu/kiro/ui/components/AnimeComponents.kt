@@ -80,7 +80,7 @@ fun PosterCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(if (compact) 0.707f else PosterAspect)
-                .clip(RoundedCornerShape(if (compact) 4.dp else 6.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(placeholder.copy(alpha = 0.3f)),
         ) {
             AsyncImage(
@@ -92,19 +92,19 @@ fun PosterCard(
             if (tag != null) {
                 // Small pill like the reference. Home rows pin it to the top-right corner,
                 // the search grid floats it at the bottom-right.
-                val pillShape = if (tagAtBottom) RoundedCornerShape(4.dp) else RoundedCornerShape(bottomStart = 6.dp)
+                val pillShape = if (tagAtBottom) RoundedCornerShape(4.dp) else RoundedCornerShape(4.dp)
                 Text(
                     text = tag,
                     color = Color.White,
                     fontSize = if (compact) 10.sp else 9.sp,
                     lineHeight = 12.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     modifier = Modifier
                         .align(if (tagAtBottom) Alignment.BottomEnd else Alignment.TopEnd)
-                        .padding(if (tagAtBottom) 6.dp else 0.dp)
+                        .padding(6.dp)
                         .clip(pillShape)
-                        .background(KiroPurple)
+                        .background(Color.Black.copy(alpha = 0.55f))
                         .padding(horizontal = 6.dp, vertical = 2.dp),
                 )
             }
@@ -136,13 +136,13 @@ fun AnimeRow(
             text = title,
             style = MaterialTheme.typography.titleLarge,
             fontSize = dims.sectionTitle,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = dims.gutter),
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = dims.gutter),
             horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing),
@@ -183,13 +183,13 @@ fun RankedRow(
             text = title,
             style = MaterialTheme.typography.titleLarge,
             fontSize = dims.sectionTitle,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = dims.gutter),
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = dims.gutter),
             horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing + 8.dp),

@@ -80,11 +80,11 @@ fun ContinueWatchingRow(
             text = "Continue Watching",
             style = MaterialTheme.typography.titleLarge,
             fontSize = dims.sectionTitle,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(horizontal = dims.gutter),
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = dims.gutter),
             horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing),
@@ -97,7 +97,7 @@ fun ContinueWatchingRow(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(16f / 9f)
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             .background(Color(0xFF262628)),
                     ) {
                         AsyncImage(
@@ -109,10 +109,10 @@ fun ContinueWatchingRow(
                         Box(
                             modifier = Modifier
                                 .align(Alignment.Center)
-                                .size(40.dp)
+                                .size(36.dp)
                                 .clip(CircleShape)
-                                .background(Color.Black.copy(alpha = 0.6f))
-                                .border(1.5.dp, Color.White, CircleShape),
+                                .background(Color.Black.copy(alpha = 0.45f))
+                                .border(1.dp, Color.White.copy(alpha = 0.8f), CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
@@ -128,7 +128,7 @@ fun ContinueWatchingRow(
                                     .align(Alignment.BottomStart)
                                     .fillMaxWidth()
                                     .height(3.dp)
-                                    .background(Color.White.copy(alpha = 0.3f)),
+                                    .background(Color.White.copy(alpha = 0.25f)),
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -144,7 +144,7 @@ fun ContinueWatchingRow(
                         e.title,
                         color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Medium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
