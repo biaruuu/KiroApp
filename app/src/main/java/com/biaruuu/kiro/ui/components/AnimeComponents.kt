@@ -160,8 +160,8 @@ fun AnimeRow(
 }
 
 /**
- * "Top 10" row: a big outlined rank number sits to the left of each poster, like the
- * Trending Now row in the reference. Titles are one line so every number lines up.
+ * "Top 10" row: the same quiet poster row as the others, with a small rank pill in the corner of
+ * each poster instead of big outlined numerals.
  */
 @Composable
 fun RankedRow(
@@ -171,13 +171,6 @@ fun RankedRow(
     modifier: Modifier = Modifier,
 ) {
     val dims = LocalDimens.current
-    val density = LocalDensity.current
-
-    // Numeral size follows the poster so the pair scales together on every screen.
-    val numberSize = with(density) { (dims.cardWidth * 0.62f).toSp() }
-    val singleDigitWidth = dims.cardWidth * 0.36f
-    val strokeWidth = with(density) { 2.5.dp.toPx() }
-
     Column(modifier = modifier) {
         Text(
             text = title,
@@ -192,36 +185,29 @@ fun RankedRow(
         Spacer(Modifier.height(12.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = dims.gutter),
-            horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing + 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing),
         ) {
             itemsIndexed(items, key = { _, anime -> anime.id }, contentType = { _, _ -> "ranked" }) { index, anime ->
-                val rank = index + 1
-                val numberWidth = if (rank >= 10) singleDigitWidth * 1.8f else singleDigitWidth
-                Box(modifier = Modifier.width(numberWidth + dims.cardWidth)) {
+                Box(modifier = Modifier.width(dims.cardWidth)) {
                     PosterCard(
                         anime = anime,
                         onClick = { onAnimeClick(anime) },
                         titleMaxLines = 1,
                         compact = true,
-                        modifier = Modifier
-                            .padding(start = numberWidth)
-                            .width(dims.cardWidth),
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     Text(
-                        text = rank.toString(),
-                        style = TextStyle(
-                            drawStyle = Stroke(width = strokeWidth, join = StrokeJoin.Round),
-                            fontStyle = FontStyle.Italic,
-                        ),
+                        text = "${index + 1}",
                         color = Color.White,
-                        fontSize = numberSize,
-                        lineHeight = numberSize,
-                        fontWeight = FontWeight.Light,
-                        maxLines = 1,
-                        softWrap = false,
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp,
+                        fontWeight = FontWeight.Medium,
                         modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .offset(y = 14.dp),
+                            .align(Alignment.TopStart)
+                            .padding(6.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color.Black.copy(alpha = 0.55f))
+                            .padding(horizontal = 7.dp, vertical = 2.dp),
                     )
                 }
             }

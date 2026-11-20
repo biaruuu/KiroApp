@@ -210,7 +210,6 @@ private fun PhoneHeroPage(
     dims: Dimens,
     onPlay: (Anime) -> Unit,
 ) {
-    val line = remember(anime.id) { tagline(anime.description) }
 
     Box(modifier = Modifier.fillMaxSize().background(KiroBackground)) {
         com.biaruuu.kiro.ui.components.HdArtwork(anime, Modifier.fillMaxSize(), anime.displayTitle)
@@ -261,19 +260,6 @@ private fun PhoneHeroPage(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Spacer(Modifier.height(6.dp))
-            if (line.isNotEmpty()) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = line,
-                    style = TextStyle(shadow = TextShadow),
-                    fontSize = dims.heroTagline,
-                    color = Color.White.copy(alpha = 0.75f),
-                    textAlign = TextAlign.Center,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
             Spacer(Modifier.height(18.dp))
             PlayButton(onClick = { onPlay(anime) })
         }
@@ -287,7 +273,6 @@ private fun WideHeroPage(
     dims: Dimens,
     onPlay: (Anime) -> Unit,
 ) {
-    val line = remember(anime.id) { tagline(anime.description) }
     val details = remember(anime.id) { meta(anime) }
 
     Row(modifier = Modifier.fillMaxSize().background(KiroBackground)) {
@@ -317,16 +302,6 @@ private fun WideHeroPage(
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (line.isNotEmpty()) {
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    text = line,
-                    fontSize = dims.heroTagline,
-                    color = Color.White.copy(alpha = 0.88f),
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
             Spacer(Modifier.height(20.dp))
             PlayButton(onClick = { onPlay(anime) })
         }

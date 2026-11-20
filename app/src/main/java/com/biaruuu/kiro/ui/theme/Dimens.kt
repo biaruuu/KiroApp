@@ -46,7 +46,7 @@ fun dimensFor(widthDp: Int): Dimens {
             Dimens(
                 windowClass = windowClass,
                 gutter = gutter.dp,
-                rowSpacing = 28.dp,
+                rowSpacing = 36.dp,
                 cardSpacing = 8.dp,
                 // About 2.7 cards fit, so the third peeks in and hints that the row scrolls.
                 cardWidth = ((widthDp - gutter * 1.5f) / 2.7f).coerceIn(104f, 160f).dp,
@@ -66,7 +66,7 @@ fun dimensFor(widthDp: Int): Dimens {
             Dimens(
                 windowClass = windowClass,
                 gutter = gutter.dp,
-                rowSpacing = 32.dp,
+                rowSpacing = 40.dp,
                 cardSpacing = 10.dp,
                 cardWidth = ((widthDp - gutter) / 4.4f).coerceIn(130f, 190f).dp,
                 gridMinCell = 128.dp,
@@ -85,7 +85,7 @@ fun dimensFor(widthDp: Int): Dimens {
             Dimens(
                 windowClass = windowClass,
                 gutter = gutter.dp,
-                rowSpacing = 36.dp,
+                rowSpacing = 44.dp,
                 cardSpacing = 12.dp,
                 cardWidth = ((widthDp - gutter - 80) / 6.3f).coerceIn(150f, 210f).dp,
                 gridMinCell = 148.dp,

@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.63.0]
+
+### Changed
+- Home: the hero shows only the title and Play (no tagline), Top 10 uses a small rank pill on each
+  poster instead of big outlined numbers, and sections have more space between them.
+- Me: settings are grouped under small headings (Your space, Alerts, Library and data, Preferences,
+  About) with plain text rows, no icons.
+
 ## [1.62.0]
 
 ### Changed

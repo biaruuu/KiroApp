@@ -122,23 +122,26 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
                 Spacer(Modifier.height(20.dp))
                 SettingsRow(R.drawable.fluent_shield_regular, "Admin panel") { onOpen("admin") }
             }
-            Spacer(Modifier.height(32.dp))
-            Text("Settings", color = Muted, fontSize = 14.sp)
-            Spacer(Modifier.height(6.dp))
+            Group("Your space")
             if (signedIn != null) SettingsRow(R.drawable.fluent_sparkle_regular, "Customize profile") { onOpen("customize") }
             SettingsRow(R.drawable.fluent_play_circle_regular, "Watch stats") { onOpen("stats") }
             SettingsRow(R.drawable.fluent_trophy_regular, "Achievements") { onOpen("achievements") }
+            SettingsRow(R.drawable.fluent_people_regular, "Watch party") { onOpen("party") }
+
+            Group("Alerts")
             SettingsRow(R.drawable.fluent_alert_regular, "Notification", badge = hasUnread) { onOpen("notifications") }
             SettingsRow(R.drawable.fluent_calendar_regular, "Notification control") { onOpen("alerts") }
+
+            Group("Library and data")
             SettingsRow(R.drawable.fluent_arrow_download_regular, "Storage") { onOpen("storage") }
             SettingsRow(R.drawable.fluent_inbox_regular, "Backup and restore") { onOpen("backup") }
-            SettingsRow(R.drawable.fluent_people_regular, "Watch party") { onOpen("party") }
             SettingsRow(R.drawable.fluent_arrow_download_regular, "Download") { onOpen("download") }
+
+            Group("Preferences")
             SettingsRow(R.drawable.fluent_play_circle_regular, "Play") { onOpen("play") }
             SettingsRow(R.drawable.fluent_language_regular, "Language") { onOpen("language") }
 
-            Box(Modifier.padding(vertical = 12.dp).fillMaxWidth().height(1.dp).background(Hairline))
-
+            Group("About")
             SettingsRow(R.drawable.fluent_help_circle_regular, "Help Center") { onOpen("help") }
             SettingsRow(R.drawable.fluent_headset_regular, "Contact us") { onOpen("contact") }
             SettingsRow(R.drawable.fluent_terms_regular, "Terms of Use") { onOpen("terms") }
@@ -170,6 +173,11 @@ private fun Chevron() {
 }
 
 @Composable
+private fun Group(title: String) {
+    Text(title, color = Color(0xFF6A6A70), fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 28.dp, bottom = 4.dp))
+}
+
+@Composable
 private fun SettingsRow(@DrawableRes icon: Int, label: String, value: String? = null, badge: Boolean = false, onClick: () -> Unit) {
     Row(
         modifier = Modifier
@@ -180,14 +188,7 @@ private fun SettingsRow(@DrawableRes icon: Int, label: String, value: String? = 
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
     ) {
-        Icon(
-            painter = painterResource(icon),
-            contentDescription = null,
-            tint = Color(0xFFB4B4BA),
-            modifier = Modifier.size(20.dp),
-        )
-        Spacer(Modifier.size(12.dp))
-        Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+        Text(label, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Normal, modifier = Modifier.weight(1f))
         if (value != null) {
             Text(value, color = Muted, fontSize = 13.sp)
             Spacer(Modifier.size(4.dp))
