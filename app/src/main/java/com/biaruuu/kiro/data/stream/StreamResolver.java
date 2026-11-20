@@ -65,6 +65,8 @@ public final class StreamResolver {
         providers.add(new AnimetsuProvider());
         providers.add(new AnimexProvider());
         providers.add(new MiruroProvider());
+        providers.add(new AnikotoProvider());
+        providers.add(new ReanimeProvider());
         providers.add(new AnimePaheProvider());
         providers.add(new AniZoneProvider());
         providers.add(new GojoProvider());

@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.64.0]
+### Added
+- Reanime stream provider (reanime.to), found through the AniList cover id, with FlixCloud addresses and encoded playlists decoded in the app.
+### Changed
+- Anikoto is now its own provider: it finds the show on the site, picks the right season by MAL id, and reads its servers (MegaPlay and direct links) instead of relying on a third-party aggregator.
+
 ## [1.63.0]
 
 ### Changed
