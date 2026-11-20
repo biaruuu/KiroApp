@@ -47,7 +47,7 @@ import androidx.compose.material3.Icon
 import coil.compose.AsyncImage
 import com.biaruuu.kiro.R
 import com.biaruuu.kiro.data.Downloads
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 
 private val Panel = Color(0xFF18181B)
 private val Muted = Color(0xFF8E8E93)
@@ -105,7 +105,7 @@ fun DownloadedEpisodesScreen(
                                 "${episodes.size} episode${if (episodes.size == 1) "" else "s"} · ${sizeText(episodes.sumOf { it.bytes })}",
                                 color = Muted, fontSize = 13.sp, modifier = Modifier.weight(1f),
                             )
-                            Text("Open anime", color = KiroPurple, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Text("Open anime", color = KiroAccent, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         }
                     }
                     items(episodes, key = { it.id }) { d ->
@@ -133,7 +133,7 @@ fun DownloadedEpisodesScreen(
             text = { Text("It will be deleted from your phone.", color = Muted, fontSize = 15.sp) },
             confirmButton = {
                 TextButton(onClick = { Downloads.remove(context, d.animeId, d.episode); removeTarget = null }) {
-                    Text("Delete", color = KiroPurple, fontWeight = FontWeight.Medium)
+                    Text("Delete", color = KiroAccent, fontWeight = FontWeight.Medium)
                 }
             },
             dismissButton = { TextButton(onClick = { removeTarget = null }) { Text("Cancel", color = Color.White) } },
@@ -147,7 +147,7 @@ fun DownloadedEpisodesScreen(
             text = { Text("Every downloaded episode of \"$title\" will be deleted from your phone.", color = Muted, fontSize = 15.sp) },
             confirmButton = {
                 TextButton(onClick = { Downloads.removeSeries(context, animeId); removeAll = false; onBack() }) {
-                    Text("Delete", color = KiroPurple, fontWeight = FontWeight.Medium)
+                    Text("Delete", color = KiroAccent, fontWeight = FontWeight.Medium)
                 }
             },
             dismissButton = { TextButton(onClick = { removeAll = false }) { Text("Cancel", color = Color.White) } },
@@ -175,7 +175,7 @@ private fun EpisodeCard(d: Downloads.Item, onClick: () -> Unit, onRemove: () -> 
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text("Episode ${d.episode}", color = KiroPurple, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                Text("Episode ${d.episode}", color = KiroAccent, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                 Text(name, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (d.quality.isNotBlank() && d.completed) {
                     Spacer(Modifier.height(2.dp))
@@ -206,13 +206,13 @@ private fun EpisodeCard(d: Downloads.Item, onClick: () -> Unit, onRemove: () -> 
             else -> "Starting..."
         }
         Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
-            Text(status, color = if (d.failed) Color(0xFFFF6B6B) else if (d.completed) KiroPurple else Muted, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            Text(status, color = if (d.failed) Color(0xFFFF6B6B) else if (d.completed) KiroAccent else Muted, fontSize = 12.sp, fontWeight = FontWeight.Medium)
             if (d.active) {
                 Spacer(Modifier.height(6.dp))
                 if (d.percent > 0f) {
-                    LinearProgressIndicator(progress = { (d.percent / 100f).coerceIn(0.02f, 1f) }, color = KiroPurple, trackColor = Color(0xFF3A3A3D), modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)))
+                    LinearProgressIndicator(progress = { (d.percent / 100f).coerceIn(0.02f, 1f) }, color = KiroAccent, trackColor = Color(0xFF3A3A3D), modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)))
                 } else {
-                    LinearProgressIndicator(color = KiroPurple, trackColor = Color(0xFF3A3A3D), modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)))
+                    LinearProgressIndicator(color = KiroAccent, trackColor = Color(0xFF3A3A3D), modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)))
                 }
             }
         }

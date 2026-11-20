@@ -86,7 +86,7 @@ import com.biaruuu.kiro.R
 import com.biaruuu.kiro.data.MyListStore
 import com.biaruuu.kiro.data.WatchHistory
 import com.biaruuu.kiro.ui.theme.KiroBackground
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 import kotlinx.coroutines.launch
 
 private val Hairline = Color(0xFF222226)
@@ -325,7 +325,7 @@ fun LibraryScreen(
                     }
                     version++
                     removeTarget = null
-                }) { Text("Remove", color = KiroPurple, fontWeight = FontWeight.Medium) }
+                }) { Text("Remove", color = KiroAccent, fontWeight = FontWeight.Medium) }
             },
             dismissButton = {
                 TextButton(onClick = { removeTarget = null }) { Text("Cancel", color = Color.White) }
@@ -481,7 +481,7 @@ private fun WatchedCard(
                     Modifier
                         .fillMaxWidth(entry.progress().coerceIn(0.04f, 1f))
                         .height(4.dp)
-                        .background(KiroPurple),
+                        .background(KiroAccent),
                 )
             }
         }
@@ -566,11 +566,11 @@ private fun PosterGrid(
                         Icon(
                             painter = painterResource(R.drawable.fluent_star_filled),
                             contentDescription = null,
-                            tint = KiroPurple,
+                            tint = KiroAccent,
                             modifier = Modifier.size(14.dp),
                         )
                         Spacer(Modifier.width(4.dp))
-                        Text(String.format(java.util.Locale.US, "%.1f", e.rating / 2f), color = KiroPurple, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text(String.format(java.util.Locale.US, "%.1f", e.rating / 2f), color = KiroAccent, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     }
                 }
             }
@@ -712,7 +712,7 @@ private fun DownloadPosterGrid(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         if (active > 0) {
-                            Box(Modifier.size(6.dp).clip(androidx.compose.foundation.shape.CircleShape).background(KiroPurple))
+                            Box(Modifier.size(6.dp).clip(androidx.compose.foundation.shape.CircleShape).background(KiroAccent))
                             Spacer(Modifier.width(5.dp))
                         }
                         Text("${episodes.size} ep", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)

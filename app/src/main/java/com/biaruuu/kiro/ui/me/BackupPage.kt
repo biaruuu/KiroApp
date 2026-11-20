@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.sp
 import com.biaruuu.kiro.data.Backup
 import com.biaruuu.kiro.data.CloudSync
 import com.biaruuu.kiro.ui.i18n.Text
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -133,7 +133,7 @@ fun BackupPage() {
                     pending = null
                     val changed = CloudSync.mergeBackup(context, d)
                     toast(if (changed) "Backup restored." else "Nothing new in that backup.")
-                }) { Text("Restore", color = KiroPurple) }
+                }) { Text("Restore", color = KiroAccent) }
             },
             dismissButton = { TextButton(onClick = { pending = null }) { Text("Cancel", color = Color.White) } },
         )

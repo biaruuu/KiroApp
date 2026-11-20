@@ -41,7 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.biaruuu.kiro.data.Downloads
 import com.biaruuu.kiro.data.StorageInfo
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -73,12 +73,12 @@ fun StoragePage() {
         Text("Kiro is using ${formatBytes(total)}", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium)
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(Color(0xFF222226))) {
-            if (dlBytes > 0) Box(Modifier.weight(dlBytes.toFloat()).fillMaxSize().background(KiroPurple))
+            if (dlBytes > 0) Box(Modifier.weight(dlBytes.toFloat()).fillMaxSize().background(KiroAccent))
             if (cache > 0) Box(Modifier.weight(cache.toFloat()).fillMaxSize().background(Color(0xFFE5A93B)))
             if (data > 0) Box(Modifier.weight(data.toFloat()).fillMaxSize().background(Color(0xFF5BA8E8)))
         }
         Spacer(Modifier.height(14.dp))
-        Legend(KiroPurple, "Downloads", formatBytes(dlBytes))
+        Legend(KiroAccent, "Downloads", formatBytes(dlBytes))
         Legend(Color(0xFFE5A93B), "Cache (images, saved pages)", formatBytes(cache))
         Legend(Color(0xFF5BA8E8), "App data", formatBytes(data))
 

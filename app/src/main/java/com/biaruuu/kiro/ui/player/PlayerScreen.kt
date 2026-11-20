@@ -106,7 +106,7 @@ import com.biaruuu.kiro.data.stream.StreamRequest
 import com.biaruuu.kiro.data.stream.StreamSource
 import com.biaruuu.kiro.ui.detail.DetailViewModel
 import com.biaruuu.kiro.ui.detail.releasedEpisodes
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 import kotlinx.coroutines.delay
 import java.util.Locale
 
@@ -772,12 +772,12 @@ fun PlayerScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         "Retry",
-                        color = Color.White,
+                        color = Color.Black,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(KiroPurple)
+                            .background(KiroAccent)
                             .clickable { retry++ }
                             .padding(horizontal = 24.dp, vertical = 8.dp),
                     )
@@ -852,7 +852,7 @@ fun PlayerScreen(
                         .background(Color.White)
                         .drawBehind {
                             if (counting) {
-                                drawRect(KiroPurple.copy(alpha = 0.35f), size = androidx.compose.ui.geometry.Size(size.width * autoProgress.value, size.height))
+                                drawRect(KiroAccent.copy(alpha = 0.35f), size = androidx.compose.ui.geometry.Size(size.width * autoProgress.value, size.height))
                             }
                         }
                         .clickable { if (seg != null) skipNow(seg) },
@@ -924,7 +924,7 @@ fun PlayerScreen(
                             .clip(RoundedCornerShape(8.dp))
                             .background(Color.White)
                             .drawBehind {
-                                drawRect(KiroPurple.copy(alpha = 0.35f), size = androidx.compose.ui.geometry.Size(size.width * fill, size.height))
+                                drawRect(KiroAccent.copy(alpha = 0.35f), size = androidx.compose.ui.geometry.Size(size.width * fill, size.height))
                             }
                             .clickable { if (next != null && !guestBlocked()) playEpisode(next.number) },
                         contentAlignment = Alignment.CenterStart,
@@ -1120,8 +1120,8 @@ fun PlayerScreen(
                                 )
                                 if (m.host) {
                                     Text(
-                                        "Host", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium,
-                                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(KiroPurple).padding(horizontal = 8.dp, vertical = 3.dp),
+                                        "Host", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(KiroAccent).padding(horizontal = 8.dp, vertical = 3.dp),
                                     )
                                 }
                             }

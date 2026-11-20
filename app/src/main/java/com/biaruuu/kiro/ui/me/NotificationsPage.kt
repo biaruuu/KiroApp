@@ -45,7 +45,7 @@ import com.biaruuu.kiro.data.Admin
 import com.biaruuu.kiro.data.Announcements
 import com.biaruuu.kiro.data.UpdateChecker
 import com.biaruuu.kiro.ui.auth.Avatar
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 
 private val Muted = Color(0xFF9A9A9F)
 private val Card = Color(0xFF18181B)
@@ -84,7 +84,7 @@ fun NotificationsPage(onOpen: (String) -> Unit) {
     val rel = releases
     if (rel == null && announcements.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = KiroPurple, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
+            CircularProgressIndicator(color = KiroAccent, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
         }
         return
     }
@@ -143,7 +143,7 @@ fun NotificationsPage(onOpen: (String) -> Unit) {
                     )
                     if (newer) {
                         Spacer(Modifier.height(6.dp))
-                        Text("Tap to update", color = KiroPurple, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        Text("Tap to update", color = KiroAccent, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     }
                 }
             }

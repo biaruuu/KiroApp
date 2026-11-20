@@ -34,7 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.biaruuu.kiro.ui.theme.KiroBackground
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 
 /** Hairline between the bar and the content, same as in the design. */
 private val DividerColor = Color(0xFF1E1E22)
@@ -82,7 +82,7 @@ private fun NavItem(
                         .offset(x = 2.dp, y = (-1).dp)
                         .size(6.dp)
                         .clip(CircleShape)
-                        .background(KiroPurple),
+                        .background(KiroAccent),
                 )
             }
         }

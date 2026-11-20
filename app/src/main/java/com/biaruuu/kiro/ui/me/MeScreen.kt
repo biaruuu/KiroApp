@@ -44,7 +44,7 @@ import com.biaruuu.kiro.data.ProfileRepository
 import com.biaruuu.kiro.data.auth.AuthRepository
 import com.biaruuu.kiro.ui.auth.Avatar
 import com.biaruuu.kiro.data.auth.AuthState
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 
 private val Muted = Color(0xFF8E8E93)
 private val Hairline = Color(0xFF222226)

@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.biaruuu.kiro.R
 import com.biaruuu.kiro.data.Achievements
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 
 private val Muted = Color(0xFF9A9A9F)
 private val Card = Color(0xFF18181B)
@@ -87,7 +87,7 @@ fun AchievementsPage() {
                     }
                 }
                 Spacer(Modifier.height(12.dp))
-                Bar(done.toFloat() / rows.size, KiroPurple)
+                Bar(done.toFloat() / rows.size, KiroAccent)
             }
         }
         items(rows, key = { it.first.id }) { (a, n, unlocked) ->

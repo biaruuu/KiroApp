@@ -43,7 +43,7 @@ import com.biaruuu.kiro.data.WatchedStore
 import com.biaruuu.kiro.ui.components.DecoratedAvatar
 import com.biaruuu.kiro.ui.components.StreakBadge
 import com.biaruuu.kiro.ui.i18n.Text
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 
 private val Dim = Color(0xFF9A9AA2)
 private val Gold = Color(0xFFFFC83D)
@@ -109,7 +109,7 @@ fun ProfileCard(
                     Text("${level.xpIntoLevel} / ${level.xpForNext} XP", color = Dim, fontSize = (11 * k).sp, maxLines = 1)
                     Spacer(Modifier.height(3.dp))
                     Box(Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(Color.White.copy(alpha = 0.10f))) {
-                        Box(Modifier.fillMaxWidth(frac).height(3.dp).background(Brush.horizontalGradient(listOf(KiroPurple, KiroPurple))))
+                        Box(Modifier.fillMaxWidth(frac).height(3.dp).background(Brush.horizontalGradient(listOf(KiroAccent, KiroAccent))))
                     }
                 }
                 Spacer(Modifier.width(4.dp))

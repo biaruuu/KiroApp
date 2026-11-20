@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 
 /** Asked every time someone taps an episode they have already finished. */
 @Composable
@@ -23,7 +23,7 @@ fun RewatchDialog(onNo: () -> Unit, onYes: () -> Unit) {
         containerColor = Color(0xFF18181B),
         title = { Text("Watch again?", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
         text = { Text("Are you sure you want to rewatch this again?", color = Color(0xFF9A9A9F), fontSize = 15.sp) },
-        confirmButton = { TextButton(onClick = onYes) { Text("Yes", color = KiroPurple, fontWeight = FontWeight.Bold) } },
+        confirmButton = { TextButton(onClick = onYes) { Text("Yes", color = KiroAccent, fontWeight = FontWeight.Bold) } },
         dismissButton = { TextButton(onClick = onNo) { Text("No", color = Color.White) } },
     )
 }
@@ -41,7 +41,7 @@ fun WatchedBadge(modifier: Modifier = Modifier) {
         androidx.compose.material3.Icon(
             painter = androidx.compose.ui.res.painterResource(com.biaruuu.kiro.R.drawable.fluent_checkmark_regular),
             contentDescription = null,
-            tint = KiroPurple,
+            tint = KiroAccent,
             modifier = Modifier.size(11.dp),
         )
         androidx.compose.foundation.layout.Spacer(Modifier.width(3.dp))

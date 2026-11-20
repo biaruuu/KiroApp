@@ -72,7 +72,7 @@ import com.biaruuu.kiro.R
 import com.biaruuu.kiro.data.ProfileRepository
 import com.biaruuu.kiro.ui.components.PageTopBar
 import com.biaruuu.kiro.ui.theme.KiroBackground
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

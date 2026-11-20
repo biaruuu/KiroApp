@@ -71,7 +71,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import com.biaruuu.kiro.ui.components.PageTopBar
 import com.biaruuu.kiro.ui.theme.KiroBackground
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -150,9 +150,9 @@ internal fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> U
             checked = checked,
             onCheckedChange = onChange,
             colors = SwitchDefaults.colors(
-                checkedTrackColor = KiroPurple,
-                checkedThumbColor = Color.White,
-                checkedBorderColor = KiroPurple,
+                checkedTrackColor = KiroAccent,
+                checkedThumbColor = Color(0xFF111111),
+                checkedBorderColor = KiroAccent,
                 uncheckedTrackColor = Color(0xFF3A3A3E),
                 uncheckedThumbColor = Color(0xFFB4B4BA),
                 uncheckedBorderColor = Color(0xFF3A3A3E),
@@ -328,17 +328,17 @@ private fun LanguagePage() {
             if (code == com.biaruuu.kiro.ui.i18n.I18n.FIL) {
                 Spacer(Modifier.width(8.dp))
                 Box(
-                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(KiroPurple.copy(alpha = 0.25f))
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.14f))
                         .padding(horizontal = 6.dp, vertical = 2.dp),
                 ) {
-                    androidx.compose.material3.Text("BETA", color = KiroPurple, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+                    androidx.compose.material3.Text("BETA", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Medium)
                 }
             }
             Spacer(Modifier.weight(1f))
             if (current == code) Icon(
                 painter = painterResource(R.drawable.fluent_checkmark_regular),
                 contentDescription = null,
-                tint = KiroPurple,
+                tint = KiroAccent,
                 modifier = Modifier.size(26.dp),
             )
         }
@@ -580,12 +580,12 @@ private fun ConfirmDialog(text: String, confirm: String, onDismiss: () -> Unit, 
                 Spacer(Modifier.size(6.dp))
                 Text(
                     confirm,
-                    color = Color.White,
+                    color = Color.Black,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(KiroPurple)
+                        .background(KiroAccent)
                         .clickable(onClick = onConfirm)
                         .padding(horizontal = 20.dp, vertical = 14.dp),
                 )

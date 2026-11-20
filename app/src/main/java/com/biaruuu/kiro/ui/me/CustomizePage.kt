@@ -45,7 +45,7 @@ import com.biaruuu.kiro.data.auth.AuthRepository
 import com.biaruuu.kiro.data.auth.AuthState
 import com.biaruuu.kiro.ui.components.AnimatedAsset
 import com.biaruuu.kiro.ui.components.DecoratedAvatar
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 
 private val Muted = Color(0xFF9A9A9F)
 private val Card = Color(0xFF18181B)
@@ -153,7 +153,7 @@ private fun Grid(items: List<Design?>, selectedId: String, onPick: (String) -> U
                         .height(104.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .background(Card)
-                        .border(2.dp, if (on) KiroPurple else Color(0xFF2A2A2D), RoundedCornerShape(10.dp))
+                        .border(2.dp, if (on) KiroAccent else Color(0xFF2A2A2D), RoundedCornerShape(10.dp))
                         .clickable { onPick(d?.id ?: "") }
                         .padding(8.dp),
                     contentAlignment = Alignment.Center,

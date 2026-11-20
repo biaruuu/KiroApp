@@ -48,7 +48,7 @@ import com.biaruuu.kiro.data.MyListStore
 import com.biaruuu.kiro.data.WatchHistory
 import com.biaruuu.kiro.ui.components.KiroSpinner
 import com.biaruuu.kiro.ui.components.UnderlineTabs
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -123,8 +123,8 @@ fun ScheduleScreen(onAnimeClick: (Anime) -> Unit, modifier: Modifier = Modifier)
                 Text("Check your connection and try again.", color = Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "Retry", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium,
-                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(KiroPurple).clickable { attempt++ }
+                    "Retry", color = Color.Black, fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(KiroAccent).clickable { attempt++ }
                         .padding(horizontal = 26.dp, vertical = 10.dp),
                 )
             }
@@ -144,12 +144,12 @@ fun ScheduleScreen(onAnimeClick: (Anime) -> Unit, modifier: Modifier = Modifier)
                         Text("${dayItems.size} episodes", color = Muted, fontSize = 13.sp)
                         Text(
                             "My list only",
-                            color = if (onlyMine) Color.White else Muted,
+                            color = if (onlyMine) Color.Black else Muted,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(20.dp))
-                                .background(if (onlyMine) KiroPurple else Color(0xFF18181B))
+                                .background(if (onlyMine) KiroAccent else Color(0xFF18181B))
                                 .clickable { onlyMine = !onlyMine }
                                 .padding(horizontal = 12.dp, vertical = 6.dp),
                         )
@@ -210,8 +210,8 @@ private fun AiringRow(a: AniListExtra.Airing, inList: Boolean, now: Long, zone: 
             if (inList) {
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "In your list", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Medium,
-                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(KiroPurple).padding(horizontal = 6.dp, vertical = 2.dp),
+                    "In your list", color = Color.Black, fontSize = 10.sp, fontWeight = FontWeight.Medium,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(KiroAccent).padding(horizontal = 6.dp, vertical = 2.dp),
                 )
             }
         }

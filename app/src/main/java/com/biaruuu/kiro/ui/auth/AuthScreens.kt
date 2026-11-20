@@ -84,7 +84,7 @@ import com.biaruuu.kiro.data.auth.GoogleSignIn
 import com.biaruuu.kiro.ui.components.PageTopBar
 import com.biaruuu.kiro.ui.theme.AppFont
 import com.biaruuu.kiro.ui.theme.KiroBackground
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

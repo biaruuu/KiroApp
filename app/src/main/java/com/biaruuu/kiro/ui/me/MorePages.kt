@@ -46,7 +46,7 @@ import com.biaruuu.kiro.data.auth.AuthRepository
 import com.biaruuu.kiro.data.auth.AuthState
 import com.biaruuu.kiro.ui.auth.PrimaryButton
 import com.biaruuu.kiro.ui.auth.UnderlineField
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 import com.google.firebase.firestore.FirebaseFirestore
 
 private val Muted = Color(0xFF9A9A9F)
@@ -76,7 +76,7 @@ fun WhatsNewPage(latest: Boolean, onBack: () -> Unit, version: String? = null) {
             Spacer(Modifier.height(22.dp))
             if (loading) {
                 Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = KiroPurple, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
+                    CircularProgressIndicator(color = KiroAccent, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
                 }
             } else if (rel == null) {
                 Text("Version $current", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Medium)
@@ -86,10 +86,10 @@ fun WhatsNewPage(latest: Boolean, onBack: () -> Unit, version: String? = null) {
                 if (newer) {
                     Text(
                         "NEW VERSION",
-                        color = Color.White,
+                        color = Color.Black,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
-                        modifier = Modifier.background(KiroPurple, androidx.compose.foundation.shape.RoundedCornerShape(3.dp)).padding(horizontal = 7.dp, vertical = 3.dp),
+                        modifier = Modifier.background(KiroAccent, androidx.compose.foundation.shape.RoundedCornerShape(3.dp)).padding(horizontal = 7.dp, vertical = 3.dp),
                     )
                     Spacer(Modifier.height(10.dp))
                 }
@@ -132,7 +132,7 @@ private fun ReleaseNotes(notes: String) {
             line.startsWith("- ") || line.startsWith("* ") -> {
                 Spacer(Modifier.height(10.dp))
                 Row {
-                    Box(Modifier.padding(top = 8.dp).size(5.dp).background(KiroPurple, CircleShape))
+                    Box(Modifier.padding(top = 8.dp).size(5.dp).background(KiroAccent, CircleShape))
                     Spacer(Modifier.size(10.dp))
                     Text(clean(line.drop(2)), color = Body, fontSize = 14.sp, lineHeight = 21.sp, modifier = Modifier.weight(1f))
                 }
@@ -222,10 +222,10 @@ fun ContactPage(onDone: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
         ) {
-            Box(Modifier.size(64.dp).clip(CircleShape).background(KiroPurple), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(64.dp).clip(CircleShape).background(KiroAccent), contentAlignment = Alignment.Center) {
                 androidx.compose.material3.Icon(
                     painter = androidx.compose.ui.res.painterResource(com.biaruuu.kiro.R.drawable.fluent_checkmark_regular),
-                    contentDescription = null, tint = Color.White, modifier = Modifier.size(34.dp),
+                    contentDescription = null, tint = Color.Black, modifier = Modifier.size(34.dp),
                 )
             }
             Spacer(Modifier.height(18.dp))
@@ -261,11 +261,11 @@ fun ContactPage(onDone: () -> Unit) {
                             }
                             Box(
                                 Modifier.size(20.dp).clip(CircleShape)
-                                    .background(if (on) KiroPurple else Color.Transparent)
-                                    .border(1.5.dp, if (on) KiroPurple else Color(0xFF55555B), CircleShape),
+                                    .background(if (on) KiroAccent else Color.Transparent)
+                                    .border(1.5.dp, if (on) KiroAccent else Color(0xFF55555B), CircleShape),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                if (on) Box(Modifier.size(7.dp).clip(CircleShape).background(Color.White))
+                                if (on) Box(Modifier.size(7.dp).clip(CircleShape).background(Color.Black))
                             }
                         }
                         if (i < topics.lastIndex) Box(Modifier.fillMaxWidth().padding(start = 16.dp).height(1.dp).background(Color(0xFF2A2A2D)))
@@ -286,7 +286,7 @@ fun ContactPage(onDone: () -> Unit) {
                         value = message,
                         onValueChange = { if (it.length <= 1000) message = it },
                         textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 15.sp, lineHeight = 22.sp),
-                        cursorBrush = androidx.compose.ui.graphics.SolidColor(KiroPurple),
+                        cursorBrush = androidx.compose.ui.graphics.SolidColor(KiroAccent),
                         modifier = Modifier.fillMaxSize(),
                         decorationBox = { inner ->
                             if (message.isEmpty()) Text("Tell us what's wrong or what you'd like to see", color = Muted, fontSize = 15.sp)

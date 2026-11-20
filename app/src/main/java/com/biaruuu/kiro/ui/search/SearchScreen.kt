@@ -92,7 +92,7 @@ import com.biaruuu.kiro.data.SortOrder
 import com.biaruuu.kiro.ui.components.ErrorState
 import com.biaruuu.kiro.ui.components.MessageState
 import com.biaruuu.kiro.ui.components.PosterCard
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 import com.biaruuu.kiro.ui.theme.LocalDimens
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -231,7 +231,7 @@ fun SearchScreen(
                 }
                 if (state.loading && state.results.isNotEmpty()) {
                     LinearProgressIndicator(
-                        color = KiroPurple,
+                        color = KiroAccent,
                         trackColor = Color.Transparent,
                         modifier = Modifier.fillMaxWidth().height(2.dp).align(Alignment.TopCenter),
                     )
@@ -285,7 +285,7 @@ private fun SearchField(
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
             ),
-            cursorBrush = SolidColor(KiroPurple),
+            cursorBrush = SolidColor(KiroAccent),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { onSearch() }),
             modifier = Modifier
@@ -379,7 +379,7 @@ private fun SearchOverlay(
                         Text("Recent Searches", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                         Text(
                             "Clear",
-                            color = KiroPurple,
+                            color = Color(0xFF9A9AA2),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.clickable(
@@ -430,7 +430,7 @@ private fun SearchOverlay(
                         append(title)
                     } else {
                         append(title.substring(0, at))
-                        withStyle(SpanStyle(color = KiroPurple)) { append(title.substring(at, at + q.length)) }
+                        withStyle(SpanStyle(color = Color.White, fontWeight = FontWeight.Medium)) { append(title.substring(at, at + q.length)) }
                         append(title.substring(at + q.length))
                     }
                 }
@@ -615,7 +615,7 @@ private fun ResultsGrid(
                             .padding(16.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        CircularProgressIndicator(color = KiroPurple)
+                        CircularProgressIndicator(color = KiroAccent)
                     }
                 }
             }

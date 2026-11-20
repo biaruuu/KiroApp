@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.biaruuu.kiro.data.Anime
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 import com.biaruuu.kiro.ui.theme.KiroSurface
 import com.biaruuu.kiro.ui.theme.LocalDimens
 

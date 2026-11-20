@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.biaruuu.kiro.data.DeepLink
 import com.biaruuu.kiro.data.WatchParty
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 
 /** Join a friend's watch party with its 6 letter code. */
 @Composable

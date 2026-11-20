@@ -40,7 +40,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.biaruuu.kiro.R
 import com.biaruuu.kiro.ui.components.ErrorState
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 
 private val Bg = Color(0xFF121212)
 private val DividerColor = Color(0xFF333335)
@@ -173,7 +173,7 @@ fun MoreDetailScreen(animeId: Int, onBack: () -> Unit, modifier: Modifier = Modi
 
                     if (detail == null && state.loading) {
                         Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = KiroPurple, modifier = Modifier.size(28.dp))
+                            CircularProgressIndicator(color = KiroAccent, modifier = Modifier.size(28.dp))
                         }
                     }
 

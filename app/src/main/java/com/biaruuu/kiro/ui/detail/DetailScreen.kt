@@ -80,7 +80,7 @@ import com.biaruuu.kiro.data.AppSettings
 import com.biaruuu.kiro.data.MyListStore
 import com.biaruuu.kiro.data.SeasonEntry
 import com.biaruuu.kiro.ui.components.ErrorState
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -359,7 +359,7 @@ private fun DetailContent(
                         .fillMaxWidth()
                         .height(46.dp)
                         .clip(RoundedCornerShape(24.dp))
-                        .background(KiroPurple)
+                        .background(KiroAccent)
                         .clickable {
                             val first = released.firstOrNull()
                             if (first != null) {
@@ -373,11 +373,11 @@ private fun DetailContent(
                         Icon(
                             painter = painterResource(R.drawable.fluent_play_filled),
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = Color.Black,
                             modifier = Modifier.size(20.dp),
                         )
                         Spacer(Modifier.width(6.dp))
-                        Text("Play", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        Text("Play", color = Color.Black, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     }
                 }
                 Spacer(Modifier.height(16.dp))
@@ -385,7 +385,7 @@ private fun DetailContent(
                     ActionButton(
                         label = "My List",
                         icon = if (inList) R.drawable.fluent_checkmark_regular else R.drawable.fluent_add_regular,
-                        tint = if (inList) KiroPurple else Color.White,
+                        tint = if (inList) KiroAccent else Color(0xFF9A9AA2),
                     ) {
                         if (!com.biaruuu.kiro.data.CloudSync.allowed(context)) {
                             com.biaruuu.kiro.data.CloudSync.requireLogin(context)
@@ -401,7 +401,7 @@ private fun DetailContent(
                     ActionButton(
                         label = status?.let { com.biaruuu.kiro.data.ShowStatus.label(it) } ?: "Status",
                         icon = R.drawable.fluent_inbox_regular,
-                        tint = if (status != null) KiroPurple else Color.White,
+                        tint = if (status != null) KiroAccent else Color(0xFF9A9AA2),
                     ) {
                         if (!com.biaruuu.kiro.data.CloudSync.allowed(context)) {
                             com.biaruuu.kiro.data.CloudSync.requireLogin(context)
@@ -768,7 +768,7 @@ private fun DownloadButton(item: com.biaruuu.kiro.data.Downloads.Item?, onStart:
         contentAlignment = Alignment.Center,
     ) {
         when {
-            done -> Icon(painterResource(R.drawable.fluent_checkmark_regular), contentDescription = "Downloaded", tint = com.biaruuu.kiro.ui.theme.KiroPurple, modifier = Modifier.size(24.dp))
+            done -> Icon(painterResource(R.drawable.fluent_checkmark_regular), contentDescription = "Downloaded", tint = com.biaruuu.kiro.ui.theme.KiroAccent, modifier = Modifier.size(24.dp))
             running -> {
                 val p = (item!!.percent / 100f).coerceIn(0f, 1f)
                 if (p > 0f) {
@@ -891,7 +891,7 @@ private fun RatingSheet(current: Int, onSelect: (Int) -> Unit, onDismiss: () -> 
                             Icon(
                                 painter = painterResource(R.drawable.fluent_star_filled),
                                 contentDescription = null,
-                                tint = KiroPurple,
+                                tint = KiroAccent,
                                 modifier = Modifier.fillMaxSize().drawWithContent {
                                     clipRect(right = size.width * fill) { this@drawWithContent.drawContent() }
                                 },
@@ -908,7 +908,7 @@ private fun RatingSheet(current: Int, onSelect: (Int) -> Unit, onDismiss: () -> 
                     .fillMaxWidth()
                     .height(46.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(if (enabled) KiroPurple else Color(0xFF2E2E30))
+                    .background(if (enabled) KiroAccent else Color(0xFF2E2E30))
                     .clickable(enabled = enabled) {
                         onSelect(picked)
                         scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
@@ -917,7 +917,7 @@ private fun RatingSheet(current: Int, onSelect: (Int) -> Unit, onDismiss: () -> 
             ) {
                 Text(
                     "Confirm",
-                    color = if (enabled) Color.White else Color(0xFF5E5E63),
+                    color = if (enabled) Color.Black else Color(0xFF5E5E63),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                 )
@@ -1022,7 +1022,7 @@ private fun StatusSheet(current: String?, onPick: (String?) -> Unit, onDismiss: 
                             Icon(
                                 painter = painterResource(R.drawable.fluent_checkmark_regular),
                                 contentDescription = null,
-                                tint = KiroPurple,
+                                tint = KiroAccent,
                                 modifier = Modifier.size(24.dp),
                             )
                         }

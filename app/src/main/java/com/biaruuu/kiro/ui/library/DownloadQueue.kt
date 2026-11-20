@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.biaruuu.kiro.data.Downloads
 import com.biaruuu.kiro.ui.i18n.Text
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 
 private val Dim = Color(0xFF8E8E93)
 private val Card = Color(0xFF18181B)
@@ -89,7 +89,7 @@ internal fun QueueBanner(onOpen: () -> Unit) {
             }
             Text(parts.joinToString(" · "), color = Dim, fontSize = 12.sp)
         }
-        Text("Manage", color = KiroPurple, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        Text("Manage", color = KiroAccent, fontSize = 13.sp, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -127,7 +127,7 @@ internal fun DownloadQueueSheet(onDismiss: () -> Unit) {
                 if (active.isNotEmpty()) {
                     Text(
                         if (allPaused) "Resume all" else "Pause all",
-                        color = KiroPurple, fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                        color = KiroAccent, fontSize = 14.sp, fontWeight = FontWeight.Medium,
                         modifier = Modifier.clickable { if (allPaused) Downloads.resumeAll(context) else Downloads.pauseAll(context) }.padding(8.dp),
                     )
                 }
@@ -176,7 +176,7 @@ private fun QueueRow(d: Downloads.Item, position: Int, activeCount: Int) {
                 }
                 Text(
                     status,
-                    color = if (d.failed) Color(0xFFFF6B6B) else if (d.downloading) KiroPurple else Dim,
+                    color = if (d.failed) Color(0xFFFF6B6B) else if (d.downloading) KiroAccent else Dim,
                     fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 2.dp),
                 )
             }
@@ -185,7 +185,7 @@ private fun QueueRow(d: Downloads.Item, position: Int, activeCount: Int) {
             Spacer(Modifier.height(8.dp))
             LinearProgressIndicator(
                 progress = { (d.percent / 100f).coerceIn(0.02f, 1f) },
-                color = if (d.paused || d.queued) Dim else KiroPurple,
+                color = if (d.paused || d.queued) Dim else KiroAccent,
                 trackColor = Color(0xFF3A3A3D),
                 modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
             )

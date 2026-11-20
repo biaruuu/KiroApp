@@ -46,7 +46,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.AsyncImage
 import com.biaruuu.kiro.R
 import com.biaruuu.kiro.data.WatchHistory
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 import com.biaruuu.kiro.ui.theme.LocalDimens
 
 /** What to show in the "Continue Watching" row; reloaded each time Home comes back to the front. */
@@ -134,7 +134,7 @@ fun ContinueWatchingRow(
                                     modifier = Modifier
                                         .fillMaxWidth(e.progress())
                                         .height(3.dp)
-                                        .background(KiroPurple),
+                                        .background(KiroAccent),
                                 )
                             }
                         }

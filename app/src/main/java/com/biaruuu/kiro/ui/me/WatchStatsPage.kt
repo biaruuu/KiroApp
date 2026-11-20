@@ -50,7 +50,7 @@ import com.biaruuu.kiro.data.WatchedStore
 import com.biaruuu.kiro.ui.components.StreakBadge
 import com.biaruuu.kiro.ui.components.StreakTier
 import com.biaruuu.kiro.ui.i18n.Text
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.TextStyle
@@ -407,7 +407,7 @@ private fun LevelCard(level: WatchStats.Level) {
         Spacer(Modifier.height(10.dp))
         val frac by animateFloatAsState((level.xpIntoLevel.toFloat() / level.xpForNext).coerceIn(0f, 1f), label = "lvl")
         Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.10f))) {
-            Box(Modifier.fillMaxWidth(frac).height(8.dp).background(Brush.horizontalGradient(listOf(KiroPurple, Color(0xFFB7A9FF)))))
+            Box(Modifier.fillMaxWidth(frac).height(8.dp).background(Brush.horizontalGradient(listOf(Color.White, Color(0xFFD0D0D6)))))
         }
         Spacer(Modifier.height(8.dp))
         Text("${level.xpForNext - level.xpIntoLevel} XP to level ${level.level + 1}", color = Dim, fontSize = 13.sp)
@@ -474,8 +474,8 @@ private fun ChartCard(
                             .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
                             .background(
                                 if (values[i] == 0) Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.08f), Color.White.copy(alpha = 0.08f)))
-                                else if (i == shownIdx) Brush.verticalGradient(listOf(Color(0xFFB7A9FF), KiroPurple))
-                                else Brush.verticalGradient(listOf(KiroPurple.copy(alpha = 0.7f), KiroPurple.copy(alpha = 0.45f))),
+                                else if (i == shownIdx) Brush.verticalGradient(listOf(Color.White, Color.White))
+                                else Brush.verticalGradient(listOf(KiroAccent.copy(alpha = 0.7f), KiroAccent.copy(alpha = 0.45f))),
                             ),
                     )
                 }
@@ -504,13 +504,13 @@ private fun ChartCard(
 @Composable
 private fun Seg(label: String, on: Boolean, onClick: () -> Unit) {
     Text(
-        label, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium,
-        modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(if (on) KiroPurple else Color.White.copy(alpha = 0.08f))
+        label, color = if (on) Color.Black else Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium,
+        modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(if (on) KiroAccent else Color.White.copy(alpha = 0.08f))
             .clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 5.dp),
     )
 }
 
-private val GENRE_COLORS = listOf(Color(0xFF7B6CF6), Color(0xFFFF6FB0), Color(0xFF4DD0E1), Color(0xFFFFB74D), Color(0xFF81C784), Color(0xFFE57373))
+private val GENRE_COLORS = listOf(Color(0xFFFFFFFF), Color(0xFFD0D0D6), Color(0xFFA6A6AE), Color(0xFF85858D), Color(0xFF65656C), Color(0xFF4A4A50))
 
 @Composable
 private fun GenresCard(genres: List<Pair<String, Int>>) {

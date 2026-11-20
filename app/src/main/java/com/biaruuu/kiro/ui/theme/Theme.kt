@@ -11,15 +11,17 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import com.biaruuu.kiro.R
 
-val KiroPurple = Color(0xFF7B6CF6)
+/** The one accent: white for active states and progress, dark ink on top of it. */
+val KiroAccent = Color.White
+val KiroOnAccent = Color.Black
 val KiroBackground = Color(0xFF121212)
 val KiroSurface = Color(0xFF1E1E22)
 val KiroSurfaceHigh = Color(0xFF2A2A30)
 val KiroOnSurfaceMuted = Color(0xFF9A9AA5)
 
 private val KiroColors = darkColorScheme(
-    primary = KiroPurple,
-    onPrimary = Color.White,
+    primary = KiroAccent,
+    onPrimary = KiroOnAccent,
     background = KiroBackground,
     onBackground = Color.White,
     surface = KiroBackground,

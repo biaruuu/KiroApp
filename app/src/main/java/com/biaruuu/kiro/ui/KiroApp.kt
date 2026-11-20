@@ -57,7 +57,7 @@ import com.biaruuu.kiro.ui.library.LibraryScreen
 import com.biaruuu.kiro.ui.player.PlayerScreen
 import com.biaruuu.kiro.ui.search.SearchScreen
 import com.biaruuu.kiro.ui.theme.KiroBackground
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 import com.biaruuu.kiro.ui.theme.LocalDimens
 import com.biaruuu.kiro.ui.theme.WindowClass
 import com.biaruuu.kiro.ui.theme.dimensFor

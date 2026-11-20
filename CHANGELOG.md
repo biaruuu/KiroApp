@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.62.0]
+
+### Changed
+- One accent across the app: the purple is replaced by white (with dark text on top of it) for active
+  states, progress bars, buttons, switches and highlights, defined once in the theme. Charts and the
+  genre breakdown use shades of grey and white.
+
 ## [1.61.0]
 
 ### Changed

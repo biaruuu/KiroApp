@@ -47,7 +47,7 @@ import com.biaruuu.kiro.data.ProfileRepository
 import com.biaruuu.kiro.data.auth.AuthRepository
 import com.biaruuu.kiro.ui.auth.PrimaryButton
 import com.biaruuu.kiro.ui.auth.UnderlineField
-import com.biaruuu.kiro.ui.theme.KiroPurple
+import com.biaruuu.kiro.ui.theme.KiroAccent
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 
