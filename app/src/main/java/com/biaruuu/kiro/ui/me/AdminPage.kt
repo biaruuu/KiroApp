@@ -3,6 +3,8 @@ package com.biaruuu.kiro.ui.me
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -95,10 +97,10 @@ fun AdminPage() {
                 modifier = Modifier.fillMaxWidth().background(Color(0xFF2A1618)).padding(12.dp),
             )
         }
-        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-            listOf("Online", "Letters", "Reports", "Announce", "Designs").forEachIndexed { i, label ->
+        Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
+            listOf("Online", "Letters", "Reports", "Announce", "Designs", "Tagalog").forEachIndexed { i, label ->
                 Column(
-                    modifier = Modifier.weight(1f).clickable { tab = i }.padding(top = 10.dp),
+                    modifier = Modifier.clickable { tab = i }.padding(top = 10.dp, start = 12.dp, end = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(label, color = if (tab == i) Color.White else Muted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
@@ -112,7 +114,8 @@ fun AdminPage() {
             1 -> LettersTab()
             2 -> ReportsTab()
             3 -> AnnounceTab()
-            else -> DesignsTab()
+            4 -> DesignsTab()
+            else -> TagalogTab()
         }
     }
 }
@@ -449,6 +452,151 @@ private fun DesignsTab() {
                 }
                 Text("Delete", color = Color(0xFFFF6B6B), fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.clickable {
                     com.biaruuu.kiro.data.Designs.delete(d.id)
+                })
+            }
+        }
+    }
+}
+
+/** Add Tagalog dub episodes: find the anime on AniList, give the episode number and a video address. */
+@Composable
+private fun TagalogTab() {
+    val context = LocalContext.current
+    val entries by com.biaruuu.kiro.data.TagalogDub.entries.collectAsState()
+    DisposableEffect(Unit) {
+        val stop = com.biaruuu.kiro.data.TagalogDub.listen()
+        onDispose { stop() }
+    }
+    var query by remember { mutableStateOf("") }
+    var results by remember { mutableStateOf<List<com.biaruuu.kiro.data.Anime>>(emptyList()) }
+    var chosen by remember { mutableStateOf<com.biaruuu.kiro.data.Anime?>(null) }
+    var episode by remember { mutableStateOf("") }
+    var url by remember { mutableStateOf("") }
+    var referer by remember { mutableStateOf("") }
+    var quality by remember { mutableIntStateOf(0) }
+    var busy by remember { mutableStateOf(false) }
+
+    LaunchedEffect(query) {
+        val q = query.trim()
+        if (q.length < 2 || chosen != null) { results = emptyList(); return@LaunchedEffect }
+        kotlinx.coroutines.delay(350L)
+        com.biaruuu.kiro.data.AniListApi.search(q, null, com.biaruuu.kiro.data.SortOrder.POPULARITY, 1, object : com.biaruuu.kiro.data.AniListApi.Callback<com.biaruuu.kiro.data.SearchResult> {
+            override fun onSuccess(result: com.biaruuu.kiro.data.SearchResult) { results = result.items.take(6) }
+            override fun onError(error: Exception) {}
+        })
+    }
+
+    LazyColumn(modifier = Modifier.fillMaxSize().imePadding(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item {
+            Text("Add a Tagalog dub episode", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+            Text("Played as a \"Tagalog Dub\" source for that anime and episode. Use a direct video link (.m3u8 or .mp4) that opens without signing in.", color = Muted, fontSize = 12.sp, lineHeight = 17.sp)
+            Spacer(Modifier.height(12.dp))
+            val c = chosen
+            if (c == null) {
+                UnderlineField(
+                    value = query, onChange = { query = it }, hint = "Search AniList by title",
+                    keyboardType = KeyboardType.Text, imeAction = ImeAction.Search, onImeAction = {},
+                )
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Card).padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    coil.compose.AsyncImage(
+                        model = c.posterUrl, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier.size(width = 40.dp, height = 56.dp).clip(RoundedCornerShape(6.dp)),
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(c.displayTitle, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 2)
+                        Text("AniList ${c.id}" + if (c.episodes > 0) " · ${c.episodes} episodes" else "", color = Muted, fontSize = 12.sp)
+                    }
+                    Text("Change", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.clickable { chosen = null; query = "" }.padding(6.dp))
+                }
+            }
+        }
+        if (chosen == null) {
+            items(results, key = { "r:" + it.id }) { a ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Card).clickable { chosen = a; results = emptyList() }.padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    coil.compose.AsyncImage(
+                        model = a.posterUrl, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier.size(width = 36.dp, height = 50.dp).clip(RoundedCornerShape(6.dp)),
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(a.displayTitle, color = Color.White, fontSize = 14.sp, maxLines = 2)
+                        Text(listOf(a.format, if (a.seasonYear > 0) a.seasonYear.toString() else "").filter { !it.isNullOrEmpty() }.joinToString(" · "), color = Muted, fontSize = 12.sp)
+                    }
+                }
+            }
+        } else {
+            item {
+                UnderlineField(
+                    value = episode, onChange = { if (it.length <= 4 && it.all(Char::isDigit)) episode = it }, hint = "Episode number",
+                    keyboardType = KeyboardType.Number, imeAction = ImeAction.Next, onImeAction = {},
+                )
+                Spacer(Modifier.height(10.dp))
+                UnderlineField(
+                    value = url, onChange = { url = it.trim() }, hint = "Video link (.m3u8 or .mp4)",
+                    keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next, onImeAction = {},
+                )
+                Spacer(Modifier.height(10.dp))
+                UnderlineField(
+                    value = referer, onChange = { referer = it.trim() }, hint = "Referer (only if the host needs one)",
+                    keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done, onImeAction = {},
+                )
+                Spacer(Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(0 to "Auto", 480 to "480p", 720 to "720p", 1080 to "1080p").forEach { (h, label) ->
+                        val on = quality == h
+                        Text(
+                            label, color = if (on) Color.Black else Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium,
+                            modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (on) Color.White else Color(0xFF2A2A2D)).clickable { quality = h }.padding(horizontal = 14.dp, vertical = 8.dp),
+                        )
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+                val ep = episode.toIntOrNull() ?: 0
+                PrimaryButton(
+                    label = "Publish",
+                    enabled = ep > 0 && url.startsWith("http") && !busy,
+                    busy = busy,
+                    onClick = {
+                        val c = chosen ?: return@PrimaryButton
+                        busy = true
+                        com.biaruuu.kiro.data.TagalogDub.publish(
+                            com.biaruuu.kiro.data.TagalogDub.Entry("", c.id, c.displayTitle, c.posterUrl.orEmpty(), ep, url, quality, referer, 0L),
+                        ) { error ->
+                            busy = false
+                            if (error == null) {
+                                episode = (ep + 1).toString(); url = ""
+                                com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Published episode $ep.", Toast.LENGTH_SHORT).show()
+                            } else {
+                                com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Couldn't publish: $error", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    },
+                )
+            }
+        }
+        item {
+            Spacer(Modifier.height(10.dp))
+            Text(if (entries.isEmpty()) "Nothing published yet." else "Published (${entries.size})", color = Muted, fontSize = 13.sp)
+        }
+        items(entries, key = { it.id }) { e ->
+            Row(
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Card).padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(e.title.ifBlank { "AniList ${e.anilistId}" }, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                    Text("Episode ${e.episode} · ${if (e.quality > 0) "${e.quality}p" else "Auto"} · ${ago(e.createdAt)}", color = Muted, fontSize = 12.sp)
+                }
+                Text("Delete", color = Color(0xFFFF6B6B), fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.clickable {
+                    com.biaruuu.kiro.data.TagalogDub.delete(e.id)
                 })
             }
         }

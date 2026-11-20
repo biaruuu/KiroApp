@@ -61,6 +61,7 @@ public final class StreamResolver {
     private static List<StreamSource> run(Context context, StreamRequest request) throws Exception {
         // 1. All providers at once.
         List<StreamProvider> providers = new ArrayList<>();
+        providers.add(new TagalogDubProvider());
         providers.add(new AnivaultProvider());
         providers.add(new AnimetsuProvider());
         providers.add(new AnimexProvider());
