@@ -1309,7 +1309,16 @@ private fun Controls(
     onNext: () -> Unit,
     onLock: () -> Unit,
 ) {
-    BoxWithConstraints(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.45f))) {
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxSize().background(
+            androidx.compose.ui.graphics.Brush.verticalGradient(
+                0f to Color.Black.copy(alpha = 0.6f),
+                0.35f to Color.Black.copy(alpha = 0.22f),
+                0.65f to Color.Black.copy(alpha = 0.22f),
+                1f to Color.Black.copy(alpha = 0.75f),
+            ),
+        ),
+    ) {
         val sidePad = 24.dp
 
         // Top bar: close, title, more.
@@ -1320,13 +1329,13 @@ private fun Controls(
             Icon(
                 painter = painterResource(R.drawable.fluent_dismiss_regular),
                 contentDescription = "Close",
-                tint = Color.White,
-                modifier = Modifier.size(24.dp).clip(CircleShape).clickable(onClick = onClose),
+                tint = Color.White.copy(alpha = 0.9f),
+                modifier = Modifier.size(22.dp).clip(CircleShape).clickable(onClick = onClose),
             )
             Spacer(Modifier.width(14.dp))
             Text(
                 title,
-                color = Color.White,
+                color = Color.White.copy(alpha = 0.9f),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
@@ -1336,8 +1345,8 @@ private fun Controls(
             Icon(
                 painter = painterResource(R.drawable.fluent_more_vertical_regular),
                 contentDescription = "More",
-                tint = Color.White,
-                modifier = Modifier.size(24.dp).clip(CircleShape).clickable(onClick = onMore),
+                tint = Color.White.copy(alpha = 0.9f),
+                modifier = Modifier.size(22.dp).clip(CircleShape).clickable(onClick = onMore),
             )
         }
 
@@ -1351,7 +1360,7 @@ private fun Controls(
                 painter = painterResource(R.drawable.fluent_skip_back_10_regular),
                 contentDescription = "Back 10 seconds",
                 tint = Color.White,
-                modifier = Modifier.size(38.dp).clip(CircleShape).clickable(onClick = onBack10),
+                modifier = Modifier.size(34.dp).clip(CircleShape).clickable(onClick = onBack10),
             )
             Box(
                 modifier = Modifier.size(56.dp).clip(CircleShape).clickable(onClick = onTogglePlay),
@@ -1361,13 +1370,13 @@ private fun Controls(
                     com.biaruuu.kiro.ui.components.KiroSpinner(size = 48.dp)
                 } else {
                     if (isPlaying) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             repeat(2) {
                                 Box(
                                     modifier = Modifier
-                                        .width(10.dp)
-                                        .height(38.dp)
-                                        .clip(RoundedCornerShape(3.dp))
+                                        .width(8.dp)
+                                        .height(32.dp)
+                                        .clip(RoundedCornerShape(4.dp))
                                         .background(Color.White),
                                 )
                             }
@@ -1377,7 +1386,7 @@ private fun Controls(
                             painter = painterResource(R.drawable.fluent_play_filled),
                             contentDescription = "Play",
                             tint = Color.White,
-                            modifier = Modifier.size(48.dp),
+                            modifier = Modifier.size(44.dp),
                         )
                     }
                 }
@@ -1386,7 +1395,7 @@ private fun Controls(
                 painter = painterResource(R.drawable.fluent_skip_forward_10_regular),
                 contentDescription = "Forward 10 seconds",
                 tint = Color.White,
-                modifier = Modifier.size(38.dp).clip(CircleShape).clickable(onClick = onForward10),
+                modifier = Modifier.size(34.dp).clip(CircleShape).clickable(onClick = onForward10),
             )
         }
 
@@ -1399,7 +1408,7 @@ private fun Controls(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = sidePad),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(formatTime(position), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                Text(formatTime(position), color = Color.White.copy(alpha = 0.75f), fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.width(14.dp))
                 SeekBar(
                     position = position,
@@ -1411,10 +1420,10 @@ private fun Controls(
                     modifier = Modifier.weight(1f),
                 )
                 Spacer(Modifier.width(14.dp))
-                Text(formatTime(duration), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                Text(formatTime(duration), color = Color.White.copy(alpha = 0.75f), fontSize = 11.sp, fontWeight = FontWeight.Medium)
             }
             Spacer(Modifier.height(4.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(horizontalArrangement = Arrangement.spacedBy(28.dp), verticalAlignment = Alignment.CenterVertically) {
                 Action(R.drawable.fluent_closed_caption_regular, "Audio & Subtitles", true, onTracks)
                 Action(R.drawable.fluent_video_clip_multiple_regular, "Episodes", true, onEpisodes)
                 Action(R.drawable.fluent_next_regular, "Next Episode", hasNext, onNext)
@@ -1426,7 +1435,7 @@ private fun Controls(
 
 @Composable
 private fun Action(icon: Int, label: String, enabled: Boolean, onClick: () -> Unit) {
-    val tint = if (enabled) Color.White else Color.White.copy(alpha = 0.4f)
+    val tint = if (enabled) Color.White.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.35f)
     Row(
         modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick).padding(horizontal = 4.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -1451,7 +1460,7 @@ private fun RoundButton(icon: Int, description: String, onClick: () -> Unit) {
     }
 }
 
-/** Thin grey line, purple progress and a round purple thumb. Tap or drag to seek. */
+/** Thin line with white progress and a small white thumb. Tap or drag to seek. */
 @Composable
 private fun SeekBar(
     position: Long,
@@ -1463,7 +1472,7 @@ private fun SeekBar(
     modifier: Modifier = Modifier,
 ) {
     val fraction = if (duration > 0) (position.toFloat() / duration).coerceIn(0f, 1f) else 0f
-    val thumb = 20.dp
+    val thumb = 14.dp
     BoxWithConstraints(
         modifier = modifier
             .height(32.dp)
@@ -1496,7 +1505,7 @@ private fun SeekBar(
         contentAlignment = Alignment.CenterStart,
     ) {
         val travel = maxWidth - thumb
-        Box(modifier = Modifier.fillMaxWidth().height(2.dp).background(TrackGrey))
+        Box(modifier = Modifier.fillMaxWidth().height(3.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.25f)))
         // Amber stretches on the line mark what can be skipped (intro, outro, recap).
         if (duration > 0) {
             val usable = maxWidth - thumb
@@ -1507,19 +1516,19 @@ private fun SeekBar(
                     modifier = Modifier
                         .padding(start = thumb / 2 + usable * from)
                         .width(usable * (to - from))
-                        .height(5.dp)
+                        .height(3.dp)
                         .clip(RoundedCornerShape(2.dp))
                         .background(SkipAmber),
                 )
             }
         }
-        Box(modifier = Modifier.width(thumb / 2 + travel * fraction).height(2.dp).background(KiroPurple))
+        Box(modifier = Modifier.width(thumb / 2 + travel * fraction).height(3.dp).clip(CircleShape).background(Color.White))
         Box(
             modifier = Modifier
                 .padding(start = travel * fraction)
                 .size(thumb)
                 .clip(CircleShape)
-                .background(KiroPurple),
+                .background(Color.White),
         )
     }
 }

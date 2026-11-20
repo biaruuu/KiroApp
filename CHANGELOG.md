@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.57.0]
+
+### Changed
+- Minimalist player controls: a soft top-and-bottom gradient instead of a flat dark veil, slimmer
+  play and pause and skip icons, a thin white seek bar with a small white thumb (skip segments stay
+  amber), muted times and action labels.
+
 ## [1.56.0]
 
 ### Changed
