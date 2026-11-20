@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.58.0]
+
+### Changed
+- Minimalist bottom navigation: the selected tab is white and the others muted gray (no more
+  purple), slightly larger icons with smaller labels, a quieter divider and a taller, roomier bar.
+
 ## [1.57.0]
 
 ### Changed

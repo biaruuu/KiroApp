@@ -37,9 +37,9 @@ import com.biaruuu.kiro.ui.theme.KiroBackground
 import com.biaruuu.kiro.ui.theme.KiroPurple
 
 /** Hairline between the bar and the content, same as in the design. */
-private val DividerColor = Color(0xFF2B2B2F)
+private val DividerColor = Color(0xFF1E1E22)
 
-/** One destination. Idle uses the outline Fluent icon, selected uses the filled one in purple. */
+/** One destination. Idle uses the outline Fluent icon, selected uses the filled one in white, idle ones are muted gray. */
 data class NavDestination(
     val label: String,
     @DrawableRes val icon: Int,
@@ -54,7 +54,7 @@ private fun NavItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val tint = if (selected) KiroPurple else Color.White
+    val tint = if (selected) Color.White else Color(0xFF6A6A70)
     Column(
         modifier = modifier
             .selectable(
@@ -73,7 +73,7 @@ private fun NavItem(
                 painter = painterResource(if (selected) destination.iconSelected else destination.icon),
                 contentDescription = null,
                 tint = tint,
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(24.dp),
             )
             if (destination.badge) {
                 Box(
@@ -89,10 +89,10 @@ private fun NavItem(
         Text(
             text = destination.label,
             color = tint,
-            fontSize = 10.5.sp,
+            fontSize = 10.sp,
             fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
             maxLines = 1,
-            modifier = Modifier.padding(top = 2.dp),
+            modifier = Modifier.padding(top = 3.dp),
         )
     }
 }
@@ -116,7 +116,7 @@ fun KiroBottomBar(
             modifier = Modifier
                 .navigationBarsPadding()
                 .fillMaxWidth()
-                .height(50.dp),
+                .height(56.dp),
         ) {
             destinations.forEachIndexed { index, destination ->
                 NavItem(
