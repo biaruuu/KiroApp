@@ -93,9 +93,6 @@ object Achievements {
 
     fun isUnlocked(c: Context, id: String) = unlocked(c).has(id)
 
-    /** Ids of every badge earned so far. */
-    fun unlockedIds(c: Context): List<String> = unlocked(c).keys().asSequence().toList()
-
     /** Badges reached since the last call; they are remembered so each is announced once. */
     fun checkNew(c: Context): List<Def> {
         val have = unlocked(c)

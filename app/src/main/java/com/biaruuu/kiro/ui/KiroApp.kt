@@ -6,11 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -236,9 +231,6 @@ private fun KiroScaffold() {
             )
         }
     }
-    LaunchedEffect(signedInUid, myName.username, myName.avatar) {
-        if (!signedInUid.isNullOrEmpty()) com.biaruuu.kiro.data.PublicProfile.publishIfEnabled(context)
-    }
     LaunchedEffect(watchingNow, myName.username) {
         if (!signedInUid.isNullOrEmpty()) com.biaruuu.kiro.data.Presence.write(signedInUid, true)
     }
@@ -409,44 +401,6 @@ private fun KiroScaffold() {
             }
         }
     }
-    }
-    // A friend's recommendation that came with a link.
-    val recommendation by com.biaruuu.kiro.data.DeepLink.recommendation.collectAsState()
-    LaunchedEffect(recommendation) {
-        if (recommendation != null) {
-            kotlinx.coroutines.delay(12_000)
-            com.biaruuu.kiro.data.DeepLink.recommendation.value = null
-        }
-    }
-    androidx.compose.animation.AnimatedVisibility(
-        visible = recommendation != null && backStack.lastOrNull() == "d:${recommendation?.animeId}",
-        modifier = Modifier.align(Alignment.BottomCenter),
-        enter = androidx.compose.animation.slideInVertically { it } + androidx.compose.animation.fadeIn(),
-        exit = androidx.compose.animation.slideOutVertically { it } + androidx.compose.animation.fadeOut(),
-    ) {
-        val r = recommendation
-        if (r != null) {
-            Row(
-                modifier = Modifier
-                    .navigationBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 16.dp)
-                    .widthIn(max = 480.dp)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0xFF18181B))
-                    .clickable { com.biaruuu.kiro.data.DeepLink.recommendation.value = null }
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        if (r.from.isNotBlank()) "${r.from} recommends this" else "A friend recommends this",
-                        color = Color(0xFF9A9AA2), fontSize = 11.sp,
-                    )
-                    Text("\u201c${r.note}\u201d", color = Color.White, fontSize = 14.sp, lineHeight = 19.sp)
-                }
-            }
-        }
     }
     // Offline banner.
     androidx.compose.animation.AnimatedVisibility(

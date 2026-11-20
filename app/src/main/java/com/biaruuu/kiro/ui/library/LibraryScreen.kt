@@ -136,10 +136,6 @@ fun LibraryScreen(
     val history = remember(refreshKey, version, cloud) { WatchHistory.all(context) }
     val myList = remember(refreshKey, version, cloud) { MyListStore.all(context) }
     val rated = remember(refreshKey, version, cloud) { MyListStore.allRated(context) }
-    val premiereTick by com.biaruuu.kiro.data.Premieres.version.collectAsState()
-    LaunchedEffect(refreshKey, cloud) {
-        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { com.biaruuu.kiro.data.Premieres.refresh(context) }
-    }
     val byStatus = remember(refreshKey, version, cloud) {
         com.biaruuu.kiro.data.ShowStatus.ALL.map { com.biaruuu.kiro.data.ShowStatus.entries(context, it) }
     }
@@ -265,7 +261,6 @@ fun LibraryScreen(
                                 showRating = false,
                                 onOpen = onOpenAnime,
                                 onRemove = { removeTarget = RemoveTarget(page, it.id, it.title) },
-                                subLabel = { e -> if (si == 1 && premiereTick >= 0) com.biaruuu.kiro.data.Premieres.label(context, e.id) else null },
                             )
                         }
                     }
@@ -532,7 +527,6 @@ private fun PosterGrid(
     showRating: Boolean,
     onOpen: (Int) -> Unit,
     onRemove: (MyListStore.Entry) -> Unit,
-    subLabel: (MyListStore.Entry) -> String? = { null },
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(104.dp),
@@ -566,10 +560,6 @@ private fun PosterGrid(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                subLabel(e)?.let { label ->
-                    Spacer(Modifier.height(2.dp))
-                    Text(label, color = Color(0xFF9A9AA2), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
                 if (showRating && e.rating > 0) {
                     Spacer(Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {

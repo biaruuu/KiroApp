@@ -64,7 +64,7 @@ private fun clock(min: Int): String =
 
 /** A small white switch (the app's purple is not used on this page). */
 @Composable
-fun MiniSwitch(checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun MiniSwitch(checked: Boolean, onChange: (Boolean) -> Unit) {
     val track by animateColorAsState(if (checked) Color.White else Color(0xFF3A3A3E), tween(160), label = "track")
     val thumb by animateColorAsState(if (checked) Color(0xFF111111) else Color(0xFF9A9A9F), tween(160), label = "thumb")
     val x by animateDpAsState(if (checked) 18.dp else 2.dp, tween(160), label = "x")
@@ -119,7 +119,6 @@ private fun TimeChip(label: String, value: String, modifier: Modifier, onClick: 
 fun AlertsPage() {
     val context = LocalContext.current
     var on by remember { mutableStateOf(AppSettings.episodeAlerts(context)) }
-    var premiere by remember { mutableStateOf(AppSettings.premiereAlerts(context)) }
     var quiet by remember { mutableStateOf(AppSettings.quietHours(context)) }
     var qStart by remember { mutableStateOf(AppSettings.quietStart(context)) }
     var qEnd by remember { mutableStateOf(AppSettings.quietEnd(context)) }
@@ -154,12 +153,6 @@ fun AlertsPage() {
                         "A notification when a show in your list or Continue Watching airs a new episode. Checked every 30 minutes.",
                         on,
                     ) { on = it; AppSettings.setEpisodeAlerts(context, it) }
-                    Box(Modifier.fillMaxWidth().height(1.dp).background(Line))
-                    SwitchRow(
-                        "Premiere reminders",
-                        "A heads-up on the day a show in Plan to watch premieres.",
-                        premiere,
-                    ) { premiere = it; AppSettings.setPremiereAlerts(context, it) }
                     Box(Modifier.fillMaxWidth().height(1.dp).background(Line))
                     SwitchRow(
                         "Quiet hours",

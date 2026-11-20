@@ -30,9 +30,6 @@ object RetentionNotifier {
         val prefs = c.getSharedPreferences("kiro_alerts", Context.MODE_PRIVATE)
         val today = LocalDate.now()
 
-        Premieres.refresh(c)
-        Premieres.notifyToday(c)
-
         // Streak about to break: 7 pm to 10 pm, only once a day.
         if (now.hour in 19..21 && prefs.getLong("streak_day", -1L) != today.toEpochDay()) {
             val s = WatchStats.streak(c)
@@ -60,24 +57,19 @@ object RetentionNotifier {
         }
     }
 
-    internal fun post(c: Context, id: Int, title: String, text: String, animeId: Int = 0) {
+    private fun post(c: Context, id: Int, title: String, text: String) {
         I18n.ensure(c)
         val manager = c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             manager.createNotificationChannel(
                 NotificationChannel(CHANNEL, "Reminders", NotificationManager.IMPORTANCE_LOW).apply {
-                    description = "Streak reminders, premieres and your weekly recap"
+                    description = "Streak reminders and your weekly recap"
                 },
             )
         }
         val open = Intent(c, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            if (animeId > 0) {
-                putExtra(UpdateWorker.EXTRA_OPEN, "anime")
-                putExtra("anime_id", animeId)
-            } else {
-                putExtra(UpdateWorker.EXTRA_OPEN, "stats")
-            }
+            putExtra(UpdateWorker.EXTRA_OPEN, "stats")
         }
         val pending = PendingIntent.getActivity(c, id, open, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val n = NotificationCompat.Builder(c, CHANNEL)
