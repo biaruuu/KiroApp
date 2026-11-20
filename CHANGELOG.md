@@ -4,6 +4,10 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.65.0]
+### Changed
+- Subtitle style panel redesigned: flat caption preview, fonts as a quiet list shown in their own typeface, and Size, Background and Text style as single-row pills instead of long lists.
+
 ## [1.64.1]
 ### Fixed
 - Build fix for the Reanime and Anikoto providers (1.64.0 did not compile).

@@ -18,8 +18,8 @@ android {
         applicationId = "com.biaruuu.kiro"
         minSdk = 26
         targetSdk = 35
-        versionCode = 126
-        versionName = "1.64.1"
+        versionCode = 127
+        versionName = "1.65.0"
         // TMDB key: GitHub secret TMDB_API_KEY in CI, or -PTMDB_API_KEY / env var locally.
         val tmdbKey = (System.getenv("TMDB_API_KEY") ?: project.findProperty("TMDB_API_KEY") as String? ?: "").trim()
         buildConfigField("String", "TMDB_API_KEY", "\"$tmdbKey\"")

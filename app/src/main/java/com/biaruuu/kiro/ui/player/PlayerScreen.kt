@@ -1921,103 +1921,47 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
     Column(Modifier.fillMaxSize()) {
     CaptionPreview(style)
     LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
-        item { SectionLabel("FONT") }
+        item { SectionLabel("Font") }
         items(SubtitleOptions.fonts) { font ->
             val selected = style.font == font
-            if (font == SubtitleOptions.CUSTOM) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            if (customName != null) onChange(style.copy(font = font)) else pickFont.launch(arrayOf("*/*"))
-                        }
-                        .padding(horizontal = 20.dp, vertical = 10.dp),
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                customName?.let { "Custom: $it" } ?: "Custom Font (.ttf / .otf)",
-                                color = Color.White,
-                                fontSize = 14.sp,
-                                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-                            )
-                            Text(
-                                if (customName != null) "Tap to use it, or browse for another file"
-                                else "Load your own font file (.ttf / .otf)",
-                                color = MutedText,
-                                fontSize = 11.sp,
-                            )
-                        }
-                        if (selected) {
-                            Icon(
-                                painter = painterResource(R.drawable.fluent_checkmark_regular),
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(22.dp),
-                            )
-                        }
-                        Text(
-                            "Browse",
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier
-                                .padding(start = 8.dp)
-                                .clip(RoundedCornerShape(20.dp))
-                                .clickable { pickFont.launch(arrayOf("*/*")) }
-                                .padding(horizontal = 8.dp, vertical = 6.dp),
-                        )
+            val isCustom = font == SubtitleOptions.CUSTOM
+            val typeface = remember(font) { if (isCustom) null else SubtitleOptions.typeface(context, font) }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        if (isCustom && customName == null) pickFont.launch(arrayOf("*/*")) else onChange(style.copy(font = font))
                     }
-                }
-            } else {
-                val typeface = remember(font) { SubtitleOptions.typeface(context, font) }
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onChange(style.copy(font = font)) }
-                        .padding(horizontal = 20.dp, vertical = 10.dp),
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            font,
-                            color = if (selected) Color.White else Color.White,
-                            fontSize = 14.sp,
-                            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-                            modifier = Modifier.weight(1f),
-                        )
-                        if (selected) {
-                            Icon(
-                                painter = painterResource(R.drawable.fluent_checkmark_regular),
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(22.dp),
-                            )
-                        }
-                    }
+                    .padding(horizontal = 20.dp, vertical = 11.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    if (isCustom) (customName ?: "Your own font") else font,
+                    color = if (selected) Color.White else Color(0xFF9A9AA2),
+                    fontFamily = typeface?.let { FontFamily(it) },
+                    fontSize = 15.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                if (isCustom) {
                     Text(
-                        "The quick brown fox jumps over the lazy dog",
-                        color = if (selected) Color.White else Color.White.copy(alpha = 0.6f),
-                        fontFamily = trebuchet,
-                        fontSize = 13.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        if (customName == null) "Choose file" else "Change",
+                        color = Color(0xFF9A9AA2),
+                        fontSize = 12.sp,
+                        modifier = Modifier.clip(RoundedCornerShape(20.dp)).clickable { pickFont.launch(arrayOf("*/*")) }.padding(horizontal = 8.dp, vertical = 4.dp),
                     )
                 }
+                if (selected) Box(Modifier.padding(start = 8.dp).size(6.dp).clip(CircleShape).background(Color.White))
             }
         }
 
-        item { SectionLabel("SIZE") }
-        items(SubtitleOptions.sizes.indices.toList()) { i ->
-            StyleRow(SubtitleOptions.sizes[i].first, style.size == i) { onChange(style.copy(size = i)) }
-        }
-        item { SectionLabel("BACKGROUND") }
-        items(SubtitleOptions.backgrounds.indices.toList()) { i ->
-            StyleRow(SubtitleOptions.backgrounds[i].first, style.background == i) { onChange(style.copy(background = i)) }
-        }
-        item { SectionLabel("TEXT STYLE") }
-        items(SubtitleOptions.edges.indices.toList()) { i ->
-            StyleRow(SubtitleOptions.edges[i].first, style.edge == i) { onChange(style.copy(edge = i)) }
-        }
+        item { SectionLabel("Size") }
+        item { Chips(SubtitleOptions.sizes.map { it.first }, style.size) { onChange(style.copy(size = it)) } }
+        item { SectionLabel("Background") }
+        item { Chips(SubtitleOptions.backgrounds.map { it.first }, style.background) { onChange(style.copy(background = it)) } }
+        item { SectionLabel("Text style") }
+        item { Chips(SubtitleOptions.edges.map { it.first }, style.edge) { onChange(style.copy(edge = it)) } }
         item { Spacer(Modifier.height(16.dp)) }
     }
     }
@@ -2040,12 +1984,12 @@ private fun CaptionPreview(style: SubtitleStyle) {
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 12.dp)
             .height(104.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF2A2A31), Color(0xFF111114)))),
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color(0xFF18181B)),
         contentAlignment = Alignment.BottomCenter,
     ) {
         Text(
-            "Sample caption text",
+            "Sample caption",
             color = Color.White,
             fontFamily = family,
             fontSize = (SubtitleOptions.sizes[style.size].second * 0.8f).sp,
@@ -2065,32 +2009,31 @@ private fun SectionLabel(text: String) {
     Text(
         text,
         color = MutedText,
-        fontSize = 11.sp,
-        fontWeight = FontWeight.Medium,
-        letterSpacing = 1.sp,
-        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 4.dp),
+        fontSize = 12.sp,
+        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 8.dp),
     )
 }
 
+/** One-line choice: pills, the chosen one filled white. Scrolls sideways if the panel is narrow. */
 @Composable
-private fun StyleRow(label: String, selected: Boolean, onClick: () -> Unit) {
+private fun Chips(labels: List<String>, selected: Int, onPick: (Int) -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(48.dp).clickable(onClick = onClick).padding(horizontal = 20.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(
-            label,
-            color = if (selected) Color.White else Color.White,
-            fontSize = 14.sp,
-            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-            modifier = Modifier.weight(1f),
-        )
-        if (selected) {
-            Icon(
-                painter = painterResource(R.drawable.fluent_checkmark_regular),
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(22.dp),
+        labels.forEachIndexed { i, label ->
+            val on = i == selected
+            Text(
+                label,
+                color = if (on) Color.Black else Color.White,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .then(if (on) Modifier.background(Color.White) else Modifier.border(1.dp, Color(0xFF2E2E33), RoundedCornerShape(20.dp)))
+                    .clickable { onPick(i) }
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
             )
         }
     }
