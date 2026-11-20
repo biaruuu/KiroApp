@@ -20,14 +20,14 @@ import javax.crypto.spec.SecretKeySpec
  * third-party aggregator. Everything is plain HTTP; every address is opened once before it is offered.
  */
 
-private fun text(url: String, headers: Map<String, String>): String? = getBytes(url, headers)?.let { String(it, Charsets.UTF_8) }
-private fun enc(s: String) = URLEncoder.encode(s, "UTF-8")
-private fun norm(s: String?) = s.orEmpty().lowercase().replace(Regex("[^a-z0-9]"), "")
+private fun avText(url: String, headers: Map<String, String>): String? = getBytes(url, headers)?.let { String(it, Charsets.UTF_8) }
+private fun avEnc(s: String) = URLEncoder.encode(s, "UTF-8")
+private fun avNorm(s: String?) = s.orEmpty().lowercase().replace(Regex("[^a-z0-9]"), "")
 
-private fun titlesOf(r: StreamRequest) =
+private fun avTitles(r: StreamRequest) =
     listOfNotNull(r.titleRomaji, r.titleEnglish, r.title).filter { it.isNotBlank() }.distinct()
 
-private fun unentity(s: String) = s.replace("&amp;", "&").replace("&quot;", "\"").replace("&#039;", "'").replace("&#39;", "'")
+private fun avUnent(s: String) = s.replace("&amp;", "&").replace("&quot;", "\"").replace("&#039;", "'").replace("&#39;", "'")
     .replace("&lt;", "<").replace("&gt;", ">")
 
 // ------------------------------------------------------------------------------------------ Anikoto
@@ -81,7 +81,7 @@ class AnikotoProvider : StreamProvider {
     }
 
     private fun inspect(b: String, slug: String): Show? {
-        val watch = text("$b/watch/$slug", page(mapOf("Referer" to "$b/"))) ?: return null
+        val watch = avText("$b/watch/$slug", page(mapOf("Referer" to "$b/"))) ?: return null
         val id = Regex("data-id=\"(\\d+)\"").find(watch)?.groupValues?.get(1) ?: return null
         val list = ajax("$b/ajax/episode/list/$id", "$b/watch/$slug") ?: return null
         val eps = episodes(list.optString("result", ""))
@@ -91,19 +91,19 @@ class AnikotoProvider : StreamProvider {
     private fun find(req: StreamRequest, b: String): Show? {
         shows[req.animeId]?.let { return it }
         val found = LinkedHashMap<String, String>()
-        for (t in titlesOf(req).take(3)) {
-            val html = text("$b/filter?keyword=${enc(t)}", page(mapOf("Referer" to "$b/"))) ?: continue
+        for (t in avTitles(req).take(3)) {
+            val html = avText("$b/filter?keyword=${avEnc(t)}", page(mapOf("Referer" to "$b/"))) ?: continue
             for (m in Regex("<a\\b([^>]*)>([\\s\\S]*?)</a>").findAll(html)) {
                 val slug = Regex("/watch/([^\"/?#]+)").find(Regex("href=[\"']([^\"']+)[\"']").find(m.groupValues[1])?.groupValues?.get(1).orEmpty())
                     ?.groupValues?.get(1) ?: continue
-                val name = unentity(m.groupValues[2].replace(Regex("<[^>]*>"), "").trim())
+                val name = avUnent(m.groupValues[2].replace(Regex("<[^>]*>"), "").trim())
                 if (name.matches(Regex("\\d+"))) continue
                 if (slug !in found || found[slug].isNullOrEmpty()) found[slug] = name
             }
         }
-        val wanted = titlesOf(req).map { norm(it) }
+        val wanted = avTitles(req).map { avNorm(it) }
         val ordered = found.entries.sortedByDescending { e ->
-            val n = norm(e.value).ifEmpty { norm(e.key) }
+            val n = avNorm(e.value).ifEmpty { avNorm(e.key) }
             when {
                 wanted.any { it == n } -> 3
                 wanted.any { it.isNotEmpty() && (n.startsWith(it) || it.startsWith(n)) } -> 2
@@ -131,7 +131,7 @@ class AnikotoProvider : StreamProvider {
     }
 
     private fun forAudio(b: String, slug: String, ep: Ep, audio: String): List<StreamSource> {
-        val html = ajax("$b/ajax/server/list?servers=${enc(ep.ids)}", "$b/")?.optString("result", "") ?: return emptyList()
+        val html = ajax("$b/ajax/server/list?servers=${avEnc(ep.ids)}", "$b/")?.optString("result", "") ?: return emptyList()
         class Item(val linkId: String, val name: String, val type: String)
         val items = ArrayList<Item>()
         for (t in Regex("<div class=\"type\" data-type=\"([^\"]+)\">([\\s\\S]*?)</ul>\\s*</div>").findAll(html)) {
@@ -153,7 +153,7 @@ class AnikotoProvider : StreamProvider {
     }
 
     private fun server(b: String, linkId: String, name: String, audio: String): List<StreamSource> {
-        val embed = (if (linkId.startsWith("http")) linkId else ajax("$b/ajax/server?get=${enc(linkId)}", "$b/")?.optJSONObject("result")?.optString("url"))
+        val embed = (if (linkId.startsWith("http")) linkId else ajax("$b/ajax/server?get=${avEnc(linkId)}", "$b/")?.optJSONObject("result")?.optString("url"))
             ?.takeIf { it.startsWith("http") } ?: return emptyList()
         val out = ArrayList<StreamSource>()
         if ("#aHR0c" in embed) {
@@ -223,10 +223,10 @@ internal object MegaPlay {
         val uri = URI(embed)
         val origin = "${uri.scheme}://${uri.host}"
         val ua = CHROME
-        val html = text(embed, mapOf("User-Agent" to ua, "Accept" to "text/html,*/*", "Referer" to "https://hianimes.re/")) ?: return null
+        val html = avText(embed, mapOf("User-Agent" to ua, "Accept" to "text/html,*/*", "Referer" to "https://hianimes.re/")) ?: return null
         val fileId = Regex("data-id=[\"']([^\"']+)[\"']", RegexOption.IGNORE_CASE).find(html)?.groupValues?.get(1) ?: return null
         val scripts = Regex("<script[^>]+src=[\"']([^\"']+)[\"']", RegexOption.IGNORE_CASE).findAll(html).map { uri.resolve(it.groupValues[1]).toString() }
-            .map { u -> Callable { text(u, mapOf("User-Agent" to ua, "Referer" to embed)) } }.toList()
+            .map { u -> Callable { avText(u, mapOf("User-Agent" to ua, "Referer" to embed)) } }.toList()
             .let { jobs -> POOL.invokeAll(jobs, 15, java.util.concurrent.TimeUnit.SECONDS).mapNotNull { runCatching { it.get() }.getOrNull() } }
         val script = scripts.firstOrNull { Regex("getSources", RegexOption.IGNORE_CASE).containsMatchIn(it) && Regex("AES-CBC", RegexOption.IGNORE_CASE).containsMatchIn(it) } ?: return null
         val routes = strings(script).filter { Regex("^stream/getSources[\\w/-]*$", RegexOption.IGNORE_CASE).matches(it) }.sortedBy { it.length }
@@ -269,8 +269,8 @@ class ReanimeProvider : StreamProvider {
     private fun seriesFor(req: StreamRequest): String? {
         ids[req.animeId]?.let { return it }
         val found = LinkedHashMap<String, JSONObject>()
-        for (t in titlesOf(req).take(3)) {
-            val results = getJson("$base/api/v1/search?q=${enc(t)}&limit=10", api)?.optJSONArray("results") ?: continue
+        for (t in avTitles(req).take(3)) {
+            val results = getJson("$base/api/v1/search?q=${avEnc(t)}&limit=10", api)?.optJSONArray("results") ?: continue
             for (i in 0 until results.length()) {
                 val r = results.optJSONObject(i) ?: continue
                 val id = r.optString("anime_id", "")
@@ -313,7 +313,7 @@ class ReanimeProvider : StreamProvider {
     }
 
     private fun server(s: JSONObject, audio: String): StreamSource? {
-        val html = text(s.optString("dataLink"), api + ("Referer" to "$base/")) ?: return null
+        val html = avText(s.optString("dataLink"), api + ("Referer" to "$base/")) ?: return null
         val f = FlixCloud.extract(html, flix, api, "$base/") ?: return null
         val headers = streamHeaders("$flix/")
         val playable = FlixCloud.playable(f.url, f.key, headers) ?: return null
