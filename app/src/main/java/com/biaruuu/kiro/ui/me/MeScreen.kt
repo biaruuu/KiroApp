@@ -133,6 +133,7 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
             SettingsRow(R.drawable.fluent_arrow_download_regular, "Storage") { onOpen("storage") }
             SettingsRow(R.drawable.fluent_inbox_regular, "Backup and restore") { onOpen("backup") }
             SettingsRow(R.drawable.fluent_people_regular, "Watch party") { onOpen("party") }
+            if (signedIn != null) SettingsRow(R.drawable.fluent_open_regular, "Share profile") { onOpen("publicprofile") }
             SettingsRow(R.drawable.fluent_arrow_download_regular, "Download") { onOpen("download") }
             SettingsRow(R.drawable.fluent_play_circle_regular, "Play") { onOpen("play") }
             SettingsRow(R.drawable.fluent_language_regular, "Language") { onOpen("language") }

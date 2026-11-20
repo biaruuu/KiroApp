@@ -54,6 +54,9 @@ class MainActivity : ComponentActivity() {
             "downloads" -> com.biaruuu.kiro.data.DeepLink.request.value = "t:downloads"
         }
         intent?.removeExtra("kiro_shortcut")
+        if (intent?.action == android.content.Intent.ACTION_VIEW && com.biaruuu.kiro.data.DeepLink.handle(intent.data)) {
+            intent.data = null
+        }
         if (intent?.getStringExtra(com.biaruuu.kiro.data.UpdateWorker.EXTRA_OPEN) == "update") {
             com.biaruuu.kiro.data.UpdateChecker.request.value = "latest"
             intent.removeExtra(com.biaruuu.kiro.data.UpdateWorker.EXTRA_OPEN)

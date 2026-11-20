@@ -93,6 +93,35 @@ object AniListExtra {
         return out
     }
 
+    /**
+     * Premiere day (as an epoch day in the phone's time zone) of each not-yet-released anime in [ids].
+     * Shows that have already started, or have no date yet, are left out. Null when offline.
+     */
+    fun premieres(ids: List<Int>): Map<Int, Long>? {
+        val out = HashMap<Int, Long>()
+        val q = "query(\$ids:[Int]){Page(perPage:50){media(id_in:\$ids,type:ANIME){id status startDate{year month day} nextAiringEpisode{airingAt}}}}"
+        for (chunk in ids.chunked(40)) {
+            val page = post(q, JSONObject().put("ids", JSONArray(chunk)))?.optJSONObject("Page") ?: return null
+            val arr = page.optJSONArray("media") ?: continue
+            for (i in 0 until arr.length()) {
+                val m = arr.optJSONObject(i) ?: continue
+                if (m.optString("status") != "NOT_YET_RELEASED") continue
+                val zone = java.time.ZoneId.systemDefault()
+                val next = m.optJSONObject("nextAiringEpisode")
+                val day: Long? = if (next != null && next.optLong("airingAt", 0L) > 0L) {
+                    java.time.Instant.ofEpochSecond(next.getLong("airingAt")).atZone(zone).toLocalDate().toEpochDay()
+                } else {
+                    val d = m.optJSONObject("startDate")
+                    if (d != null && !d.isNull("year") && !d.isNull("month") && !d.isNull("day")) {
+                        try { java.time.LocalDate.of(d.getInt("year"), d.getInt("month"), d.getInt("day")).toEpochDay() } catch (_: Exception) { null }
+                    } else null
+                }
+                if (day != null) out[m.getInt("id")] = day
+            }
+        }
+        return out
+    }
+
     private val recCache = ConcurrentHashMap<Int, Pair<Long, List<Anime>>>()
 
     /** Anime people who liked [id] also liked, best first; empty if none or offline. */

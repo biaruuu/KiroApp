@@ -45,6 +45,10 @@ object AppSettings {
     fun episodeAlerts(c: Context): Boolean = prefs(c).getBoolean("episode_alerts", true)
     fun setEpisodeAlerts(c: Context, on: Boolean) = prefs(c).edit().putBoolean("episode_alerts", on).apply()
 
+    /** A heads-up on the day a Plan to watch show premieres. */
+    fun premiereAlerts(c: Context): Boolean = prefs(c).getBoolean("premiere_alerts", true)
+    fun setPremiereAlerts(c: Context, on: Boolean) = prefs(c).edit().putBoolean("premiere_alerts", on).apply()
+
     // ---- Notification control ----
 
     /** Anime (by id) whose new-episode alerts are switched off. */

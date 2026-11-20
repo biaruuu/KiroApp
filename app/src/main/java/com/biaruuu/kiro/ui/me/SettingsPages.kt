@@ -107,7 +107,8 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
         "backup" -> "Backup and restore"
         "stats" -> "Watch stats"
         "party" -> "Watch party"
-        else -> if (page.startsWith("release-")) "What's new" else "Version"
+        "publicprofile" -> "Share profile"
+        else -> if (page.startsWith("user-")) "Profile" else if (page.startsWith("release-")) "What's new" else "Version"
     }
     Box(modifier = modifier.background(KiroBackground), contentAlignment = Alignment.TopCenter) {
         Column(modifier = Modifier.widthIn(max = 600.dp).fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
@@ -132,7 +133,8 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
                 "backup" -> BackupPage()
                 "stats" -> WatchStatsPage()
                 "party" -> PartyPage()
-                else -> if (page.startsWith("release-")) WhatsNewPage(latest = false, onBack = onBack, version = page.removePrefix("release-")) else VersionPage()
+                "publicprofile" -> ShareProfilePage()
+                else -> if (page.startsWith("user-")) PublicProfileView(page.removePrefix("user-")) else if (page.startsWith("release-")) WhatsNewPage(latest = false, onBack = onBack, version = page.removePrefix("release-")) else VersionPage()
             }
         }
     }

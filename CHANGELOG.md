@@ -4,6 +4,18 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.59.0]
+
+### Added
+- Release countdowns: shows in Plan to watch that have not aired show "Starts in 3 days" (or
+  "Starts tomorrow", "Premieres today", or the date when it is far off) under their poster in the
+  Library and on their page. A "Premiere reminders" switch in Alerts sends a heads-up on premiere day.
+- Share profile (Me): switch on a public, read-only profile with your name, picture, bio, level,
+  streak, badges and six highest rated shows, and share its `kiro://` link. Anyone opening the link in
+  Kiro sees the page. Turning it off deletes it. Needs the updated `firestore.rules` published.
+- Recommend to a friend: Share on a show's page now asks for an optional one-line note and sends the
+  share card with a `kiro://` link. Opening it in Kiro goes to that show and shows the note.
+
 ## [1.58.0]
 
 ### Changed

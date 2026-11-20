@@ -33,7 +33,7 @@ class EpisodeAlertWorker(context: Context, params: WorkerParameters) : Coroutine
         if (!AppSettings.episodeAlerts(c)) return Result.success()
         // Quiet hours: wait. "last" stays put, so what aired meanwhile is announced afterwards.
         if (AppSettings.inQuietHours(c)) return Result.success()
-        RetentionNotifier.run(c)
+        withContext(Dispatchers.IO) { RetentionNotifier.run(c) }
         val prefs = c.getSharedPreferences("kiro_alerts", Context.MODE_PRIVATE)
         val now = System.currentTimeMillis() / 1000
         val last = prefs.getLong("last", 0L)

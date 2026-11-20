@@ -177,6 +177,7 @@ private fun DetailContent(
     var trailerIndex by remember(trailerIds) { mutableIntStateOf(0) }
     var trailerPlaying by remember(trailerIds, trailerIndex) { mutableStateOf(false) }
     var showRating by remember { mutableStateOf(false) }
+    var showRecommend by remember { mutableStateOf(false) }
     var showSeasons by remember { mutableStateOf(false) }
     var showStatus by remember { mutableStateOf(false) }
     val cloudVersion by com.biaruuu.kiro.data.CloudSync.version.collectAsState()
@@ -347,6 +348,16 @@ private fun DetailContent(
                         Spacer(Modifier.height(6.dp))
                         Text(genres, color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp, fontWeight = FontWeight.Normal)
                     }
+                    com.biaruuu.kiro.data.Premieres.label(context, anime.id)?.let { label ->
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            label,
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color.White.copy(alpha = 0.14f)).padding(horizontal = 10.dp, vertical = 4.dp),
+                        )
+                    }
                 }
             }
         }
@@ -415,14 +426,25 @@ private fun DetailContent(
                         tint = Color.White,
                     ) { showRating = true }
                     ActionButton(label = "Share", icon = R.drawable.fluent_open_regular, tint = Color.White) {
-                        // A picture card (poster, score, your rating) plus the text, for social apps.
+                        showRecommend = true
+                    }
+                    if (showRecommend) RecommendDialog(anime.displayTitle, onDismiss = { showRecommend = false }) { note ->
+                        showRecommend = false
+                        // A picture card (poster, score, your rating) plus the text and a link that opens it in Kiro.
                         com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Making your share card...", Toast.LENGTH_SHORT).show()
                         downloadScope.launch {
                             val file = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                                 ShareCard.create(context, anime, rating)
                             }
+                            val me = com.biaruuu.kiro.data.ProfileRepository.profile.value.username
+                            val text = buildString {
+                                append(if (note.isNotBlank()) (if (me.isNotBlank()) "$me recommends ${anime.displayTitle}" else "Recommended: ${anime.displayTitle}") else anime.displayTitle)
+                                if (note.isNotBlank()) append("\n\u201c$note\u201d")
+                                append("\n\nOpen in Kiro: ").append(com.biaruuu.kiro.data.DeepLink.animeLink(anime.id, me, note))
+                                append("\nMore info: https://anilist.co/anime/${anime.id}")
+                            }
                             val send = Intent(Intent.ACTION_SEND).apply {
-                                putExtra(Intent.EXTRA_TEXT, shareText(anime))
+                                putExtra(Intent.EXTRA_TEXT, text)
                                 if (file != null) {
                                     val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
                                     type = "image/png"
