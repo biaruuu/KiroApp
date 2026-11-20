@@ -90,8 +90,8 @@ import kotlinx.coroutines.launch
 
 private val Muted = Color(0xFF9A9A9F)
 private val HintGray = Color(0xFF5E5E63)
-private val ButtonGray = Color(0xFF2E2E30)
-private val BoxBorder = Color(0xFF3A3A3E)
+private val ButtonGray = Color(0xFF222226)
+private val BoxBorder = Color(0xFF2A2A2E)
 private val ErrorRed = Color(0xFFFF6B6B)
 
 /**
@@ -154,7 +154,7 @@ private fun GuestConfirm(onBack: () -> Unit) {
                     color = Color.White,
                     fontSize = 20.sp,
                     lineHeight = 28.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Medium,
                 )
                 Spacer(Modifier.height(14.dp))
                 Text(
@@ -177,13 +177,13 @@ private fun GuestConfirm(onBack: () -> Unit) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(ButtonGray)
+                        .height(52.dp)
+                        .clip(RoundedCornerShape(26.dp))
+                        .border(1.dp, Color(0xFF3A3A3F), RoundedCornerShape(26.dp))
                         .clickable(onClick = onBack),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("Go back", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    Text("Go back", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -215,34 +215,36 @@ private fun WelcomeScreen(onEmail: () -> Unit, onGuest: () -> Unit, onTerms: () 
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(Modifier.weight(1f))
-            Text("KIRO", color = KiroPurple, fontSize = 52.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
-            Spacer(Modifier.height(10.dp))
+            Text("KIRO", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Medium, letterSpacing = 10.sp)
+            Spacer(Modifier.height(12.dp))
             Text(
                 "Discover your favorite anime and\ncustomize your library.",
-                color = Color(0xFFB4B4BA),
+                color = Color(0xFF9A9AA2),
                 fontSize = 14.sp,
                 lineHeight = 21.sp,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(36.dp))
+            Spacer(Modifier.height(32.dp))
 
             Box(Modifier.fillMaxWidth()) {
                 WideButton(
                     label = "Continue with Email",
                     icon = R.drawable.fluent_mail_filled,
-                    iconTint = Color.White,
-                    container = KiroPurple,
+                    iconTint = Color.Black,
+                    container = Color.White,
+                    contentColor = Color.Black,
                     onClick = onEmail,
                 )
                 if (lastLogin == "email") LastLoginBubble(Modifier.align(Alignment.TopCenter))
             }
-            Box(Modifier.padding(horizontal = 8.dp, vertical = 22.dp).fillMaxWidth().height(1.dp).background(BoxBorder))
+            Spacer(Modifier.height(12.dp))
             Box(Modifier.fillMaxWidth()) {
                 WideButton(
                     label = "Continue with Google",
                     icon = R.drawable.google_g_logo,
                     iconTint = null,
-                    container = ButtonGray,
+                    container = Color.Transparent,
+                    outlined = true,
                     busy = busy,
                     onClick = {
                         if (!busy) {
@@ -259,13 +261,13 @@ private fun WelcomeScreen(onEmail: () -> Unit, onGuest: () -> Unit, onTerms: () 
                 )
                 if (lastLogin == "google") LastLoginBubble(Modifier.align(Alignment.TopCenter))
             }
-            Spacer(Modifier.height(16.dp))
-            WideButton(
-                label = "Continue as Guest",
-                icon = R.drawable.fluent_emoji_regular,
-                iconTint = Color.White,
-                container = ButtonGray,
-                onClick = onGuest,
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Continue as guest",
+                color = Color(0xFF9A9AA2),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.clip(RoundedCornerShape(20.dp)).clickable(onClick = onGuest).padding(horizontal = 20.dp, vertical = 12.dp),
             )
             error?.let {
                 Spacer(Modifier.height(12.dp))
@@ -286,7 +288,7 @@ private fun WelcomeScreen(onEmail: () -> Unit, onGuest: () -> Unit, onTerms: () 
             }
             androidx.compose.foundation.text.ClickableText(
                 text = legal,
-                style = TextStyle(color = Color(0xFF77777C), fontSize = 12.sp, lineHeight = 17.sp, textAlign = TextAlign.Center),
+                style = TextStyle(color = Color(0xFF5E5E63), fontSize = 12.sp, lineHeight = 17.sp, textAlign = TextAlign.Center),
                 modifier = Modifier.padding(horizontal = 4.dp),
                 onClick = { offset ->
                     legal.getStringAnnotations("page", offset, offset).firstOrNull()?.let {
@@ -330,7 +332,7 @@ private fun LoginBackdrop() {
     }
 
     androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize().background(KiroBackground)) {
-        val areaHeight = maxHeight * 0.62f
+        val areaHeight = maxHeight * 0.58f
         Box(Modifier.fillMaxWidth().height(areaHeight).statusBarsPadding().clipToBounds()) {
             androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
                 val coverWidth = maxOf(maxWidth, maxHeight * (16f / 9f)) * 1.05f
@@ -367,8 +369,8 @@ private fun LoginBackdrop() {
                 Box(
                     Modifier.fillMaxSize().background(
                         Brush.verticalGradient(
-                            0f to Color.Black.copy(alpha = 0.25f),
-                            0.55f to Color.Black.copy(alpha = 0.20f),
+                            0f to Color.Black.copy(alpha = 0.35f),
+                            0.5f to Color.Black.copy(alpha = 0.35f),
                             1f to KiroBackground,
                         ),
                     ),
@@ -386,9 +388,9 @@ private fun LastLoginBubble(modifier: Modifier = Modifier) {
         Text(
             "Last login",
             color = Color.Black,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.background(Color.White, RoundedCornerShape(5.dp)).padding(horizontal = 9.dp, vertical = 5.dp),
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.background(Color.White, RoundedCornerShape(10.dp)).padding(horizontal = 10.dp, vertical = 4.dp),
         )
         Canvas(Modifier.size(width = 14.dp, height = 7.dp)) {
             val p = Path().apply {
@@ -410,13 +412,16 @@ private fun WideButton(
     container: Color,
     onClick: () -> Unit,
     busy: Boolean = false,
+    contentColor: Color = Color.White,
+    outlined: Boolean = false,
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(48.dp)
-            .clip(RoundedCornerShape(4.dp))
+            .height(52.dp)
+            .clip(RoundedCornerShape(26.dp))
             .background(container)
+            .then(if (outlined) Modifier.border(1.dp, Color(0xFF3A3A3F), RoundedCornerShape(26.dp)) else Modifier)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -435,9 +440,9 @@ private fun WideButton(
             )
         }
         if (busy) {
-            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+            CircularProgressIndicator(color = contentColor, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
         } else {
-            Text(label, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(label, color = contentColor, fontSize = 15.sp, fontWeight = FontWeight.Medium)
         }
     }
 }
@@ -558,9 +563,9 @@ private fun EmailFlow(onBack: () -> Unit) {
                     }
                     Text(
                         if (signUp) "Already have an account? Log in" else "New to Kiro? Create account",
-                        color = KiroPurple,
+                        color = Color.White,
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Medium,
                         modifier = Modifier.clickable {
                             signUp = !signUp
                             error = null
@@ -595,7 +600,7 @@ internal fun UnderlineField(
     val focus = remember { FocusRequester() }
     var focused by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { focus.requestFocus() }
-    val style = TextStyle(color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = AppFont)
+    val style = TextStyle(color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, fontFamily = AppFont)
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
             BasicTextField(
@@ -603,21 +608,21 @@ internal fun UnderlineField(
                 onValueChange = onChange,
                 singleLine = singleLine,
                 textStyle = style,
-                cursorBrush = SolidColor(KiroPurple),
+                cursorBrush = SolidColor(Color.White),
                 visualTransformation = transformation,
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
                 keyboardActions = KeyboardActions(onNext = { onImeAction() }, onDone = { onImeAction() }),
                 modifier = Modifier.weight(1f).focusRequester(focus).onFocusChanged { focused = it.isFocused },
                 decorationBox = { inner ->
                     Box(Modifier.padding(vertical = 12.dp)) {
-                        if (value.isEmpty()) Text(hint, color = HintGray, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        if (value.isEmpty()) Text(hint, color = HintGray, fontSize = 16.sp, fontWeight = FontWeight.Normal)
                         inner()
                     }
                 },
             )
             trailing?.invoke()
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(if (focused) KiroPurple else BoxBorder))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(if (focused) Color.White else Color(0xFF3A3A3F)))
     }
 }
 
@@ -626,8 +631,7 @@ internal fun CheckBox(text: String, ok: Boolean, icon: Boolean = true) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, BoxBorder, RoundedCornerShape(4.dp))
-            .background(Color(0xFF151515), RoundedCornerShape(4.dp))
+            .background(Color(0xFF18181B), RoundedCornerShape(12.dp))
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -635,12 +639,12 @@ internal fun CheckBox(text: String, ok: Boolean, icon: Boolean = true) {
             Icon(
                 painter = painterResource(R.drawable.fluent_checkmark_regular),
                 contentDescription = null,
-                tint = if (ok) KiroPurple else HintGray,
-                modifier = Modifier.size(20.dp),
+                tint = if (ok) Color.White else HintGray,
+                modifier = Modifier.size(18.dp),
             )
             Spacer(Modifier.size(8.dp))
         }
-        Text(text, color = Color(0xFFB4B4BA), fontSize = 13.sp)
+        Text(text, color = Color(0xFF9A9AA2), fontSize = 13.sp)
     }
 }
 
@@ -655,9 +659,9 @@ internal fun PrimaryButton(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp)
-            .clip(RoundedCornerShape(4.dp))
-            .background(if (enabled) KiroPurple else ButtonGray)
+            .height(52.dp)
+            .clip(RoundedCornerShape(26.dp))
+            .background(if (enabled) Color.White else ButtonGray)
             .clickable(
                 enabled = enabled && !busy,
                 interactionSource = remember { MutableInteractionSource() },
@@ -667,9 +671,9 @@ internal fun PrimaryButton(
         contentAlignment = Alignment.Center,
     ) {
         if (busy) {
-            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+            CircularProgressIndicator(color = if (enabled) Color.Black else Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
         } else {
-            Text(label, color = if (enabled) Color.White else HintGray, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(label, color = if (enabled) Color.Black else HintGray, fontSize = 15.sp, fontWeight = FontWeight.Medium)
         }
     }
 }
@@ -715,7 +719,7 @@ private fun VerifyScreen(email: String) {
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(6.dp))
-                Text(email, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                Text(email, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(6.dp))
                 Text("Open it, then come back here.", color = Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(18.dp))
@@ -727,9 +731,9 @@ private fun VerifyScreen(email: String) {
                 Spacer(Modifier.height(28.dp))
                 Text(
                     if (cooldown > 0) "Resend email ($cooldown)" else "Resend email",
-                    color = if (cooldown > 0) HintGray else KiroPurple,
+                    color = if (cooldown > 0) HintGray else Color.White,
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Medium,
                     modifier = Modifier
                         .clickable(enabled = cooldown == 0) {
                             cooldown = 30

@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.61.0]
+
+### Changed
+- Minimalist login: a light wordmark, a white pill for Continue with Email, an outlined pill for
+  Google and a quiet text link for guest. Email, password, verify and profile setup screens use
+  white accents, thin underlines, flat hint cards and pill buttons instead of purple.
+
 ## [1.60.0]
 
 ### Removed

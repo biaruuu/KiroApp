@@ -104,7 +104,7 @@ fun ProfileGate(uid: String, fallbackName: String, content: @Composable () -> Un
         profile.loaded -> OnboardingFlow(fallbackName)
         timedOut -> content() // offline and nothing cached: don't trap the user
         else -> Box(Modifier.fillMaxSize().background(KiroBackground), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = KiroPurple, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
+            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
         }
     }
 }
@@ -155,7 +155,7 @@ private fun OnboardingFlow(suggestion: String) {
                     },
                     color = Color.White,
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Medium,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
@@ -244,7 +244,7 @@ private fun OnboardingFlow(suggestion: String) {
 fun Avatar(avatar: String, name: String, size: Dp, modifier: Modifier = Modifier) {
     val bitmap = remember(avatar) { decodeAvatar(avatar) }
     Box(
-        modifier = modifier.size(size).clip(CircleShape).background(KiroPurple),
+        modifier = modifier.size(size).clip(CircleShape).background(Color(0xFF2A2A2E)),
         contentAlignment = Alignment.Center,
     ) {
         if (bitmap != null) {
@@ -423,7 +423,7 @@ private fun AvatarCropDialog(uri: Uri, onCancel: () -> Unit, onCropped: (String)
                 } else if (failed) {
                     Text("Couldn't open this photo.", color = Muted, fontSize = 14.sp)
                 } else {
-                    CircularProgressIndicator(color = KiroPurple, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
+                    CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
                 }
             }
             PrimaryButton(
