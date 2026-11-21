@@ -4,6 +4,10 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.69.1]
+### Removed
+- The Library revamp from 1.69.0 is reverted; the Library looks as it did before.
+
 ## [1.68.1]
 ### Changed
 - The skip mark is text only (-10, +10, +20...), without the arrow icon.
