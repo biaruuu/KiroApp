@@ -10,6 +10,8 @@
 //! - `title_similarity` : 0-100 score of how alike two anime titles are (used to pick the right
 //!   TMDB match for a trailer)
 
+mod enhancer;
+
 use jni::objects::{JClass, JString};
 use jni::sys::{jint, jlong, jstring};
 use jni::JNIEnv;
@@ -383,6 +385,58 @@ pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_rankStreamsNative<'
         Err(_) => String::new(),
     };
     to_jstring(&mut env, &rank_streams(&spec))
+}
+
+#[no_mangle]
+pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_gpuScoreNative<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    renderer: JString<'local>,
+) -> jint {
+    let r: String = match env.get_string(&renderer) {
+        Ok(s) => s.into(),
+        Err(_) => String::new(),
+    };
+    enhancer::gpu_score(&r)
+}
+
+#[no_mangle]
+pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_enhancerCeilingNative<'local>(
+    _env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ram_mb: jint,
+    cores: jint,
+    sdk: jint,
+    gpu: jint,
+) -> jint {
+    enhancer::hardware_ceiling(ram_mb, cores, sdk, gpu)
+}
+
+#[no_mangle]
+pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_enhancerStartTierNative<'local>(
+    _env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    ceiling: jint,
+    video_height: jint,
+    fps10: jint,
+    battery_saver: jint,
+    thermal: jint,
+    user_mode: jint,
+) -> jint {
+    enhancer::start_tier(ceiling, video_height, fps10, battery_saver != 0, thermal, user_mode)
+}
+
+#[no_mangle]
+pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_governorNextNative<'local>(
+    _env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    cur: jint,
+    ceiling: jint,
+    drop_permille: jint,
+    calm_secs: jint,
+    downgrades: jint,
+) -> jint {
+    enhancer::governor_next(cur, ceiling, drop_permille, calm_secs, downgrades)
 }
 
 #[cfg(test)]

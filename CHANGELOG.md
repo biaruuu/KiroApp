@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.70.0]
+### Added
+- Anime enhancer in the player menu: sharpens and darkens line art on the GPU, based on Anime4K by bloc97 (MIT). Modes: Off, Auto (default), Light, Balanced, Quality.
+- Auto reads your phone's GPU, memory and Android version, then picks the strongest level it can run. While you watch it checks for dropped frames every few seconds and lowers the level at once if playback stutters, and it only raises it again after a long smooth stretch.
+- It steps aside for HDR, videos above 1080p, Battery Saver and a hot phone. If the shaders fail on a GPU, it switches itself off and the video keeps playing.
+- The planning logic (GPU score, strength limits, frame-drop governor) lives in the Rust core with Kotlin fallbacks.
+
 ## [1.69.1]
 ### Removed
 - The Library revamp from 1.69.0 is reverted; the Library looks as it did before.

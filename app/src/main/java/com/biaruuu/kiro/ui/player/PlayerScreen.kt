@@ -117,7 +117,7 @@ private val MutedText = Color(0xFF8E8E93)
 
 private const val NO_SOURCE = "This episode isn't available right now"
 
-private enum class Panel { Menu, Tracks, Episodes, Speed, Quality, SubStyle, Boost, Hdr, AutoSkip, Party, Members }
+private enum class Panel { Menu, Tracks, Episodes, Speed, Quality, SubStyle, Boost, Hdr, Enhancer, AutoSkip, Party, Members }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -200,6 +200,8 @@ fun PlayerScreen(
             .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(com.biaruuu.kiro.data.Downloads.dataSourceFactory(context)))
             .build()
     }
+    val enhancer = remember(exo) { com.biaruuu.kiro.enhancer.EnhancerController(context, exo) }
+    var enhancerMode by remember { mutableIntStateOf(enhancer.mode) }
     // Choices from last time: playback speed and subtitles.
     LaunchedEffect(exo) { exo.setPlaybackSpeed(com.biaruuu.kiro.data.AppSettings.playSpeed(context)) }
     // The player listener lives for the whole screen, so it must read the latest values.
@@ -558,6 +560,10 @@ fun PlayerScreen(
         }
     }
 
+    // Anime line sharpener: picks its own strength for this phone and backs off if frames drop.
+    LaunchedEffect(enhancer) { enhancer.start() }
+    LaunchedEffect(enhancer, hdrOn) { enhancer.setHdr(hdrOn) }
+
     // Keep the caption look in sync with the saved style.
     LaunchedEffect(playerView, subStyle) {
         playerView?.subtitleView?.applyKiroStyle(context, subStyle)
@@ -581,6 +587,7 @@ fun PlayerScreen(
             override fun onPlayerError(e: PlaybackException) {
                 // An error from an episode we already left must not mark the new one as broken.
                 if (resolving) return
+                if (enhancer.isEnhancerError(e)) return // the sharpener turns itself off; not the source's fault
                 val http = (e.cause as? androidx.media3.datasource.HttpDataSource.InvalidResponseCodeException)?.responseCode
                 failLog = failLog + "${latestSources.getOrNull(latestIndex)?.providerName ?: "?"}: ${e.errorCodeName}" +
                     (if (http != null) " (HTTP $http)" else "")
@@ -601,6 +608,7 @@ fun PlayerScreen(
         onDispose {
             saveProgress()
             exo.removeListener(listener)
+            enhancer.release()
             exo.release()
         }
     }
@@ -1098,6 +1106,7 @@ fun PlayerScreen(
                     Panel.SubStyle -> "Subtitle style"
                     Panel.Boost -> "Audio boost"
                     Panel.Hdr -> "HDR & Dolby Vision"
+                    Panel.Enhancer -> "Anime enhancer"
                     Panel.AutoSkip -> "Auto Skip Intro/Outro"
                     Panel.Tracks -> "Audio & Subtitles"
                     Panel.Episodes -> "Episodes"
@@ -1123,6 +1132,12 @@ fun PlayerScreen(
                             ) { panel = Panel.SubStyle }
                         }
                         item { MenuRow("Audio boost", if (boostDb == 0) "Off" else "+$boostDb dB") { panel = Panel.Boost } }
+                        item {
+                            MenuRow(
+                                "Anime enhancer",
+                                when (enhancerMode) { 0 -> "Off"; 1 -> "Auto"; 2 -> "Light"; 3 -> "Balanced"; else -> "Quality" },
+                            ) { panel = Panel.Enhancer }
+                        }
                         item { MenuRow("HDR & Dolby Vision", if (hdrOn) "On" else "Auto") { panel = Panel.Hdr } }
                         item { MenuRow("Playback speed", if (speed == 1f) "Normal" else "${speed}x") { panel = Panel.Speed } }
                         item {
@@ -1263,6 +1278,25 @@ fun PlayerScreen(
                         item {
                             Text(
                                 "When on, Kiro skips the intro, outro and recap for you after a short countdown. Only parts that are confirmed for this exact episode are skipped; nothing is guessed.",
+                                color = Color(0xFF6A6A70), fontSize = 12.sp, lineHeight = 18.sp,
+                                modifier = Modifier.padding(20.dp),
+                            )
+                        }
+                    }
+                    Panel.Enhancer -> LazyColumn {
+                        items(listOf(1, 0, 2, 3, 4)) { m ->
+                            PanelRow(
+                                label = when (m) { 0 -> "Off"; 1 -> "Auto (recommended)"; 2 -> "Light"; 3 -> "Balanced"; else -> "Quality" },
+                                selected = enhancerMode == m,
+                            ) {
+                                enhancerMode = m
+                                enhancer.setMode(m)
+                                panel = null
+                            }
+                        }
+                        item {
+                            Text(
+                                "Sharpens and darkens line art on your phone's GPU, using Anime4K. Auto picks the strength your phone can handle and lowers it by itself if playback starts to stutter. It pauses for HDR, 4K and Battery Saver.",
                                 color = Color(0xFF6A6A70), fontSize = 12.sp, lineHeight = 18.sp,
                                 modifier = Modifier.padding(20.dp),
                             )
