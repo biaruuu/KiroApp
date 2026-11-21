@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.68.0]
+### Added
+- Player: a -10 / +10 mark (icon and seconds) fades in on the side you double-tap or skip, and adds up when you repeat (+20, +30).
+- Player Episodes shelf: each card now shows the episode description.
+
 ## [1.67.1]
 ### Fixed
 - Build fix for the new Episodes shelf (1.67.0 did not compile).

@@ -677,8 +677,28 @@ fun PlayerScreen(
 
     BackHandler(enabled = panel != null) { panel = null }
 
+    // The "-10 / +10" mark that fades in on the side that was skipped; repeats add up (+20, +30...).
+    var skipDir by remember { mutableIntStateOf(0) }
+    var skipTotal by remember { mutableIntStateOf(0) }
+    var skipStamp by remember { mutableLongStateOf(0L) }
+    var skipShown by remember { mutableStateOf(false) }
+    LaunchedEffect(skipStamp) {
+        if (skipShown) {
+            delay(800)
+            skipShown = false
+        }
+    }
+    fun flashSkip(dir: Int) {
+        val now = System.currentTimeMillis()
+        skipTotal = if (skipShown && dir == skipDir && now - skipStamp < 1000L) skipTotal + 10 else 10
+        skipDir = dir
+        skipStamp = now
+        skipShown = true
+    }
+
     fun seekBy(deltaMs: Long) {
         if (guestBlocked()) return
+        flashSkip(if (deltaMs < 0) -1 else 1)
         val target = (exo.currentPosition + deltaMs).coerceIn(0L, if (duration > 0) duration else Long.MAX_VALUE)
         exo.seekTo(target)
         position = target
@@ -715,6 +735,33 @@ fun PlayerScreen(
                     )
                 },
         )
+
+        // Skip mark: icon and "+10" on the left or right half, fading out by itself.
+        Row(Modifier.fillMaxSize()) {
+            for (side in intArrayOf(-1, 1)) {
+                Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = skipShown && skipDir == side,
+                        enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(100)),
+                        exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(250)),
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                painter = painterResource(if (side < 0) R.drawable.fluent_skip_back_10_regular else R.drawable.fluent_skip_forward_10_regular),
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(40.dp),
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                (if (side < 0) "-" else "+") + skipTotal,
+                                color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                            )
+                        }
+                    }
+                }
+            }
+        }
 
         // The spinner is drawn here only while the controls are hidden; with the controls up it
         // sits inside them (below), so the dimming layer never turns it grey.
@@ -1616,6 +1663,7 @@ private fun EpisodeShelf(
         val state = androidx.compose.foundation.lazy.rememberLazyListState(
             initialFirstVisibleItemIndex = episodes.indexOfFirst { it.number == current }.coerceAtLeast(0),
         )
+        val descLines = if (maxWidth >= 700.dp) 4 else 3
         Column(Modifier.align(Alignment.Center).fillMaxWidth()) {
             Text(
                 heading,
@@ -1660,6 +1708,15 @@ private fun EpisodeShelf(
                         )
                         if (ep.durationMinutes > 0) {
                             Text("${ep.durationMinutes}m", color = Color(0xFF9A9AA2), fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
+                        }
+                        val plot = ep.overview
+                        if (!plot.isNullOrBlank()) {
+                            Text(
+                                plot.replace(Regex("<[^>]*>"), "").trim(),
+                                color = Color(0xFF9A9AA2), fontSize = 12.sp, lineHeight = 17.sp,
+                                maxLines = descLines, overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(top = 6.dp),
+                            )
                         }
                     }
                 }
