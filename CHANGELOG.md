@@ -4,6 +4,10 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.69.0]
+### Changed
+- Library revamp: tabs are now pills (the chosen one white) instead of an underline, quieter count and sort row, wider gutters and spacing, bigger posters that adapt to the screen, a thin progress line on Recently Watched with the title and episode beneath it, ratings as small muted text, and empty tabs show a single calm line.
+
 ## [1.68.1]
 ### Changed
 - The skip mark is text only (-10, +10, +20...), without the arrow icon.
