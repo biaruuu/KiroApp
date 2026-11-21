@@ -24,6 +24,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import com.biaruuu.kiro.data.EpisodeInfo
 import com.biaruuu.kiro.data.WatchHistory
 import androidx.compose.foundation.layout.aspectRatio
