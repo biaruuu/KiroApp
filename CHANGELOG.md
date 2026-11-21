@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.80.0]
+### Changed
+- Watch party is now truly realtime: when the host plays, pauses, skips or changes the episode, everyone in the room follows within a fraction of a second. It runs on a dedicated live server instead of waiting on database updates.
+- If the live server is still waking up, the room keeps working through the old connection and switches over by itself once it is ready.
+- If the live server restarts in the middle of a party, the host reconnects and everyone follows automatically. Nobody has to rejoin.
+
 ## [1.79.0]
 ### Added
 - Chat now shows iOS-style emoji on every phone, using the Emoji library (vanniktech/Emoji). Emoji from your keyboard or the new picker are drawn with Apple's artwork in the message box, in chat and in the on-player message line.

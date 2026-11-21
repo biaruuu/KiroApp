@@ -276,7 +276,7 @@ object PartySocket {
             "pong" -> {
                 val t = o.optLong("t")
                 val rtt = System.currentTimeMillis() - t
-                if (t > 0 && rtt in 0..1500) clockOffset = o.optLong("serverTime") - (t + rtt / 2)
+                if (t > 0 && rtt in 0L..1500L) clockOffset = o.optLong("serverTime") - (t + rtt / 2)
             }
             "room_created" -> {
                 val id = o.optString("roomId")
