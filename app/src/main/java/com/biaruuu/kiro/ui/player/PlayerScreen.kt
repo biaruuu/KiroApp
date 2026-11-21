@@ -1036,7 +1036,22 @@ fun PlayerScreen(
                 languages = sources.map { audioLanguage(it) }.distinct().sortedBy { if (it == "Japanese") 0 else 1 },
                 currentLanguage = sources.getOrNull(sourceIndex)?.let { audioLanguage(it) } ?: "Japanese",
                 onPickLanguage = { language -> switchAudio(language); panel = null },
-            ) { panel = null } else SidePanel(
+            ) { panel = null } else if (open == Panel.Episodes) EpisodeShelf(
+                heading = ui.base?.displayTitle.orEmpty(),
+                episodes = episodes,
+                current = current,
+                watched = watchedEps,
+                onClose = { panel = null },
+            ) { ep ->
+                if (guestBlocked()) {
+                    // Guests follow the host.
+                } else if (ep.number in watchedEps && ep.number != current) {
+                    rewatchEp = ep.number
+                } else {
+                    playEpisode(ep.number)
+                    panel = null
+                }
+            } else SidePanel(
                 title = when (open) {
                     Panel.Menu -> ""
                     Panel.Quality -> "Quality"
@@ -1574,6 +1589,87 @@ private fun SidePanel(title: String, onClose: () -> Unit, wide: Boolean = false,
                 content()
             }
         }
+    }
+}
+
+/**
+ * Episodes shelf over the paused picture: the show's name, then a row of episode cards (picture,
+ * "1. Title", length). The one playing has a white outline. Cards size themselves to the screen.
+ */
+@Composable
+private fun EpisodeShelf(
+    heading: String,
+    episodes: List<EpisodeInfo>,
+    current: Int,
+    watched: Set<Int>,
+    onClose: () -> Unit,
+    onPick: (EpisodeInfo) -> Unit,
+) {
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.8f))
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClose),
+    ) {
+        val card = (maxWidth / (if (maxWidth >= 700.dp) 3.4f else 2.3f)).coerceIn(150.dp, 300.dp)
+        val state = androidx.compose.foundation.lazy.rememberLazyListState(
+            initialFirstVisibleItemIndex = episodes.indexOfFirst { it.number == current }.coerceAtLeast(0),
+        )
+        Column(Modifier.align(Alignment.Center).fillMaxWidth()) {
+            Text(
+                heading,
+                color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 24.dp, end = 64.dp, bottom = 16.dp),
+            )
+            androidx.compose.foundation.lazy.LazyRow(
+                state = state,
+                contentPadding = PaddingValues(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                items(episodes, key = { it.number }) { ep ->
+                    val playing = ep.number == current
+                    Column(
+                        modifier = Modifier
+                            .width(card)
+                            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onPick(ep) },
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(16f / 9f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFF18181B))
+                                .then(if (playing) Modifier.border(2.dp, Color.White, RoundedCornerShape(8.dp)) else Modifier),
+                        ) {
+                            if (!ep.thumbnailUrl.isNullOrEmpty()) {
+                                coil.compose.AsyncImage(
+                                    model = ep.thumbnailUrl, contentDescription = null,
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize().padding(if (playing) 3.dp else 0.dp).clip(RoundedCornerShape(if (playing) 6.dp else 8.dp)),
+                                )
+                            }
+                            if (ep.number in watched) com.biaruuu.kiro.ui.components.WatchedBadge(Modifier.align(Alignment.TopStart))
+                        }
+                        Text(
+                            ep.heading,
+                            color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 10.dp),
+                        )
+                        if (ep.durationMinutes > 0) {
+                            Text("${ep.durationMinutes}m", color = Color(0xFF9A9AA2), fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
+                        }
+                    }
+                }
+            }
+        }
+        Icon(
+            painter = painterResource(R.drawable.fluent_dismiss_regular),
+            contentDescription = "Close",
+            tint = Color.White,
+            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).size(24.dp).clip(CircleShape).clickable(onClick = onClose),
+        )
     }
 }
 

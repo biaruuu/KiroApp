@@ -4,6 +4,10 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.67.0]
+### Changed
+- Player Episodes: a full-screen shelf over the picture with the show name and a row of episode cards (picture, number and title, length). The playing episode has a white outline, and card size adapts to the screen.
+
 ## [1.66.4]
 ### Fixed
 - Last "Tagalog" source label renamed to Filipino.

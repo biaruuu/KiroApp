@@ -1,6 +1,6 @@
 [package]
 name = "kiro_core"
-version = "1.66.4"
+version = "1.67.0"
 edition = "2021"
 description = "Native helpers for the Kiro anime streaming app"
 license = "MIT"
