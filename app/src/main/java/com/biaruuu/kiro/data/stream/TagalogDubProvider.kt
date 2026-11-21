@@ -16,6 +16,6 @@ class TagalogDubProvider : StreamProvider {
         val checked = try { source(getName(), "Filipino", e.url, headers, "dub", emptyList(), e.quality) } catch (_: Exception) { null }
         if (checked != null) return listOf(checked)
         val hls = e.url.substringBefore('?').endsWith(".m3u8")
-        return listOf(StreamSource("${getName()} · Tagalog", e.url, e.quality, hls, emptyList(), "dub").withLatency(2500).withHeaders(headers))
+        return listOf(StreamSource("${getName()} · Filipino", e.url, e.quality, hls, emptyList(), "dub").withLatency(2500).withHeaders(headers))
     }
 }
