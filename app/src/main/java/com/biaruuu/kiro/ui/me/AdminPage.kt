@@ -232,7 +232,7 @@ fun AdminPage() {
         if (rulesError != null) {
             Text(
                 "Firestore refused access: ${rulesError}. Publish the latest firestore.rules in the Firebase Console, then reopen Kiro.",
-                color = Red, fontSize = 12.sp, lineHeight = 17.sp,
+                color = AdmRed, fontSize = 12.sp, lineHeight = 17.sp,
                 modifier = Modifier.fillMaxWidth().background(Color(0xFF2A1618)).padding(12.dp),
             )
         }
@@ -241,7 +241,7 @@ fun AdminPage() {
             AdmTabFrame {
                 androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
                     val cols = if (maxWidth >= 520.dp) 2 else 1
-                    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = ListPad, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = AdmListPad, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         item {
                             AdmSectionTitle("Admin", "Pick a tool.")
                             Spacer(Modifier.height(4.dp))
