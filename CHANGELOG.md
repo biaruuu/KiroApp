@@ -4,6 +4,18 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.76.0]
+### Added
+- Watch party rooms with live chat and voice. Create a room from Me > Watch party (no video needed), share the code, and talk and type together in real time.
+- Voice chat is a direct phone-to-phone WebRTC call, so there is no server in the middle adding delay. Join, mute and leave from the room or from the player. The first time, Kiro asks for the microphone.
+- The room stays open while you browse the rest of Kiro: a small pill at the top shows the code and how many are in, and tap it to open the room. When the host starts an episode, everyone gets a Join button.
+- In the player, a new "Chat & voice" panel, and a friend's new message shows for a few seconds at the bottom of the screen.
+- New minimalist Room page: members with voice indicators, what the host is watching, voice controls and chat.
+
+### Changed
+- Leaving the player no longer ends your watch party; use Leave or End in the room.
+- Publish the updated `firestore.rules` for chat and voice to work.
+
 ## [1.75.0]
 ### Changed
 - New text fields across the app: a rounded box with the label inside that floats up when you type. Used for log in and sign up, username and bio, feedback, and every admin form.

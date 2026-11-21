@@ -117,7 +117,7 @@ private val MutedText = Color(0xFF8E8E93)
 
 private const val NO_SOURCE = "This episode isn't available right now"
 
-private enum class Panel { Menu, Tracks, Episodes, Speed, Quality, SubStyle, Boost, Hdr, AutoSkip, Party, Members }
+private enum class Panel { Menu, Tracks, Episodes, Speed, Quality, SubStyle, Boost, Hdr, AutoSkip, Party, Members, Chat }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -342,7 +342,6 @@ fun PlayerScreen(
     LaunchedEffect(partyCode) {
         if (partyCode != null) com.biaruuu.kiro.data.WatchParty.enter(context, partyCode)
     }
-    DisposableEffect(Unit) { onDispose { com.biaruuu.kiro.data.WatchParty.leave() } }
     LaunchedEffect(partyMessage) {
         partyMessage?.let {
             com.biaruuu.kiro.ui.i18n.I18nToast.make(context, it, Toast.LENGTH_LONG).show()
@@ -1069,6 +1068,11 @@ fun PlayerScreen(
             ) { panel = Panel.Members }
         }
 
+        // A friend's new message shows for a few seconds without opening the chat.
+        if (party != null && !inPip && panel == null) {
+            com.biaruuu.kiro.ui.party.PartyToast(Modifier.align(Alignment.BottomStart).padding(start = 20.dp, bottom = 96.dp).fillMaxWidth(0.5f))
+        }
+
         // ---- Side panels ----
         panel?.let { open ->
             if (open == Panel.Tracks) TracksDialog(
@@ -1104,6 +1108,7 @@ fun PlayerScreen(
                     Panel.Speed -> "Playback speed"
                     Panel.Party -> "Watch party"
                     Panel.Members -> "In this party"
+                    Panel.Chat -> "Chat & voice"
                 },
                 onClose = { panel = null },
                 wide = open == Panel.Episodes,
@@ -1127,6 +1132,7 @@ fun PlayerScreen(
                         item { MenuRow("Playback speed", if (speed == 1f) "Normal" else "${speed}x") { panel = Panel.Speed } }
                         item {
                             MenuRow("Watch party", party?.code ?: "") { panel = Panel.Party }
+                            if (party != null) MenuRow("Chat & voice", "") { panel = Panel.Chat }
                         }
                     }
                     Panel.Quality -> {
@@ -1155,6 +1161,10 @@ fun PlayerScreen(
                         SubtitleStyleStore.save(context, new)
                     }
                     Panel.Tracks -> Unit
+                    Panel.Chat -> Column(Modifier.fillMaxSize()) {
+                        com.biaruuu.kiro.ui.party.VoiceControls(Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+                        com.biaruuu.kiro.ui.party.PartyChatPane(Modifier.weight(1f).fillMaxWidth())
+                    }
                     Panel.Members -> androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxWidth()) {
                         items(partyMembers, key = { it.uid }) { m ->
                             Row(

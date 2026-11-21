@@ -27,7 +27,10 @@ object WatchParty {
     val session = MutableStateFlow<Session?>(null)
     val remote = MutableStateFlow<Remote?>(null)
     /** Everyone in the party, host first, with the profile look each one chose. */
-    class Member(val uid: String, val name: String, val avatar: String, val decoration: String, val nameFont: String, val host: Boolean)
+    class Member(
+        val uid: String, val name: String, val avatar: String, val decoration: String, val nameFont: String, val host: Boolean,
+        val voice: Boolean = false, val muted: Boolean = false,
+    )
 
     val members = MutableStateFlow<List<Member>>(emptyList())
 
@@ -141,6 +144,7 @@ object WatchParty {
                     Member(
                         d.id, d.getString("name") ?: return@mapNotNull null, d.getString("avatar").orEmpty(),
                         d.getString("decoration").orEmpty(), d.getString("nameFont").orEmpty(), d.getBoolean("host") ?: false,
+                        d.getBoolean("voice") ?: false, d.getBoolean("muted") ?: false,
                     )
                 }?.sortedWith(compareByDescending<Member> { it.host }.thenBy { it.name.lowercase() }) ?: emptyList()
             }
@@ -156,6 +160,14 @@ object WatchParty {
                 "sentAt" to System.currentTimeMillis(),
             ),
         )
+    }
+
+    /** Tells the room whether this phone is in the voice call and whether its mic is muted. */
+    fun setVoice(on: Boolean, muted: Boolean) {
+        val s = session.value ?: return
+        val me = uid() ?: return
+        db().collection("parties").document(s.code).collection("members").document(me)
+            .update(mapOf("voice" to on, "muted" to muted))
     }
 
     private fun stopListening() {

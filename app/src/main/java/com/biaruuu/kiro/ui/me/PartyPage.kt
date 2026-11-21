@@ -18,6 +18,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import com.biaruuu.kiro.ui.i18n.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -86,9 +87,31 @@ fun PartyPage() {
                             busy = false
                             if (r == null) {
                                 com.biaruuu.kiro.ui.i18n.I18nToast.make(context, err ?: "Couldn't join", Toast.LENGTH_LONG).show()
-                            } else {
+                            } else if (r.animeId > 0) {
                                 // The player opens on the host's episode and starts following.
                                 DeepLink.request.value = "p:${r.animeId}:${r.episode}:$code"
+                            } else {
+                                // Nothing is playing yet: join the room and browse while you wait.
+                                WatchParty.enter(context, code)
+                                DeepLink.request.value = "s:partyroom"
+                            }
+                        }
+                    }
+                    .padding(vertical = 14.dp),
+            )
+            Spacer(Modifier.height(12.dp))
+            val inRoom by WatchParty.session.collectAsState()
+            Text(
+                if (inRoom != null) "Open my room" else "Create a room",
+                color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Color(0xFF222226))
+                    .clickable {
+                        if (inRoom != null) {
+                            DeepLink.request.value = "s:partyroom"
+                        } else {
+                            WatchParty.host(context, 0, 0, "") { _, err ->
+                                if (err != null) com.biaruuu.kiro.ui.i18n.I18nToast.make(context, err, Toast.LENGTH_LONG).show()
+                                else DeepLink.request.value = "s:partyroom"
                             }
                         }
                     }
@@ -96,7 +119,7 @@ fun PartyPage() {
             )
             Spacer(Modifier.height(28.dp))
             Text(
-                "To host: open any episode, tap the three dots, then Watch party > Start.",
+                "A room has live chat and voice, and it stays open while you browse Kiro. To watch together, start any episode while you are in the room.",
                 color = Color(0xFF6A6A70), fontSize = 12.sp, textAlign = TextAlign.Center,
             )
         }

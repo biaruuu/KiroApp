@@ -275,6 +275,7 @@ private fun KiroScaffold() {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+    com.biaruuu.kiro.ui.party.PartyRuntime()
     Scaffold(
         containerColor = KiroBackground,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -369,6 +370,7 @@ private fun KiroScaffold() {
                 page = parts.getOrNull(1) ?: "",
                 onBack = { backStack.removeAt(backStack.lastIndex) },
                 onOpen = { backStack.add("s:$it") },
+                onWatch = { anime, ep, code -> backStack.add("p:$anime:$ep:$code") },
                 modifier = Modifier.fillMaxSize(),
             )
         } else if (id != null) {
@@ -401,6 +403,16 @@ private fun KiroScaffold() {
             }
         }
     }
+    }
+    // While you are in a watch party a small pill follows you around the app; tap it to open the room.
+    val partyNow by com.biaruuu.kiro.data.WatchParty.session.collectAsState()
+    val topRoute = backStack.lastOrNull()
+    if (partyNow != null && topRoute?.startsWith("p:") != true && topRoute != "s:partyroom") {
+        com.biaruuu.kiro.ui.party.PartyPill(
+            modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = if (online) 6.dp else 48.dp),
+            onOpen = { backStack.add("s:partyroom") },
+            onWatch = { anime, ep, code -> backStack.add("p:$anime:$ep:$code") },
+        )
     }
     // Offline banner.
     androidx.compose.animation.AnimatedVisibility(
