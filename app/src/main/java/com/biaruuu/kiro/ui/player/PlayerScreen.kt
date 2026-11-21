@@ -146,6 +146,8 @@ fun PlayerScreen(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     partyCode: String? = null,
+    /** False when the player sits inside another page (the watch party room): no rotation, normal system bars. */
+    fullscreen: Boolean = true,
 ) {
     val context = LocalContext.current
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
@@ -373,7 +375,7 @@ fun PlayerScreen(
     // ... and sends its position every 1.5 seconds while playing, so nobody drifts.
     LaunchedEffect(party?.code, partyHost, current) {
         if (!partyHost) return@LaunchedEffect
-        com.biaruuu.kiro.data.WatchParty.push(animeId, current, exo.currentPosition, exo.playWhenReady && exo.playbackState == Player.STATE_READY)
+        com.biaruuu.kiro.data.WatchParty.push(animeId, current, exo.currentPosition, exo.playWhenReady && exo.playbackState == Player.STATE_READY, ui.base?.displayTitle.orEmpty())
         while (true) {
             delay(1500)
             if (exo.isPlaying) com.biaruuu.kiro.data.WatchParty.push(animeId, latestCurrent, exo.currentPosition, true)
@@ -640,16 +642,20 @@ fun PlayerScreen(
     }
 
     // Landscape + immersive while the player is open.
-    DisposableEffect(Unit) {
+    DisposableEffect(fullscreen) {
         val activity = context.findActivity()
         val window = activity?.window
         val controller = window?.let { WindowCompat.getInsetsController(it, it.decorView) }
-        controller?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        controller?.hide(WindowInsetsCompat.Type.systemBars())
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        if (fullscreen) {
+            controller?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller?.hide(WindowInsetsCompat.Type.systemBars())
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        }
         onDispose {
-            controller?.show(WindowInsetsCompat.Type.systemBars())
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            if (fullscreen) {
+                controller?.show(WindowInsetsCompat.Type.systemBars())
+                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            }
         }
     }
 

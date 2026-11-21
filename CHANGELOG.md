@@ -4,6 +4,17 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.77.0]
+### Added
+- The watch party room is now its own page, like Hyperbeam: the Kiro player sits at the top (same look as always) with Chat and Voice tabs underneath, and a Fullscreen button. Turn the phone sideways to go fullscreen; on tablets the chat sits beside the video.
+- Room settings: Overview (room name, who is in, turn voice chat off, clear all chat messages), Members (the host can remove people and let them back in), and Nickname (a name used only in that room).
+- Invite sheet with the room code, Copy and Share. Chat has an emoji picker and an "Invite your friends" start screen.
+- Create a room with a name from Me > Watch party.
+
+### Changed
+- In a room, the host picks what to watch from anywhere in Kiro and it plays inside the room page for everyone. Guests can browse but the host chooses the episode.
+- Publish the updated `firestore.rules` (host can remove members and clear chat).
+
 ## [1.76.0]
 ### Added
 - Watch party rooms with live chat and voice. Create a room from Me > Watch party (no video needed), share the code, and talk and type together in real time.

@@ -154,6 +154,25 @@ private fun KiroScaffold() {
     ) { mutableStateListOf<String>() }
 
     val onAnimeClick: (Anime) -> Unit = { backStack.add("d:${it.id}") }
+    // In a watch party the host's choice plays in the room page, so a normal "play" is redirected there.
+    val partyToastContext = LocalContext.current
+    val openRoute: (String) -> Unit = { route ->
+        val party = com.biaruuu.kiro.data.WatchParty.session.value
+        if (route.startsWith("p:") && route.count { it == ':' } <= 2 && party != null) {
+            val parts = route.split(":")
+            if (party.host) {
+                com.biaruuu.kiro.data.WatchParty.select(parts[1].toIntOrNull() ?: 0, parts.getOrNull(2)?.toIntOrNull() ?: 1)
+                val at = backStack.indexOf("room")
+                if (at >= 0) { while (backStack.size > at + 1) backStack.removeAt(backStack.lastIndex) } else backStack.add("room")
+            } else {
+                com.biaruuu.kiro.ui.i18n.I18nToast.make(partyToastContext, "In a watch party the host picks what to watch. Leave the room to watch on your own.", android.widget.Toast.LENGTH_LONG).show()
+            }
+        } else if (route == "room" && backStack.contains("room")) {
+            while (backStack.lastOrNull() != "room") backStack.removeAt(backStack.lastIndex)
+        } else {
+            backStack.add(route)
+        }
+    }
     BackHandler(enabled = backStack.isNotEmpty()) { backStack.removeAt(backStack.lastIndex) }
 
     // After an update: show what changed once. From the update notification: show the new version.
@@ -247,7 +266,7 @@ private fun KiroScaffold() {
                     else -> tab = TAB_LIBRARY
                 }
             } else {
-                backStack.add(it)
+                openRoute(it)
             }
             com.biaruuu.kiro.data.DeepLink.request.value = null
         }
@@ -321,7 +340,7 @@ private fun KiroScaffold() {
                     listState = homeListState,
                     onAnimeClick = onAnimeClick,
                     onPlay = onAnimeClick,
-                    onContinue = { id, ep -> backStack.add("p:$id:$ep") },
+                    onContinue = { id, ep -> openRoute("p:$id:$ep") },
                     onNotifications = { backStack.add("s:notifications") },
                     hasUnread = hasUnread,
                     modifier = contentModifier,
@@ -340,7 +359,7 @@ private fun KiroScaffold() {
 
                 TAB_LIBRARY -> LibraryScreen(
                     onOpenAnime = { backStack.add("d:$it") },
-                    onContinue = { id, ep -> backStack.add("p:$id:$ep") },
+                    onContinue = { id, ep -> openRoute("p:$id:$ep") },
                     refreshKey = backStack.size,
                     onCustomize = { backStack.add("s:customize") },
                     onOpenDownloads = { backStack.add("dl:$it") },
@@ -362,7 +381,13 @@ private fun KiroScaffold() {
         },
         label = "pages",
     ) { top ->
-    if (top != null) {
+    if (top == "room") {
+        com.biaruuu.kiro.ui.party.PartyRoomScreen(
+            onBack = { backStack.removeAt(backStack.lastIndex) },
+            onBrowse = { backStack.clear(); tab = TAB_SEARCH },
+            modifier = Modifier.fillMaxSize(),
+        )
+    } else if (top != null) {
         val parts = top.split(":")
         val id = parts.getOrNull(1)?.toIntOrNull()
         if (parts[0] == "s") {
@@ -370,7 +395,6 @@ private fun KiroScaffold() {
                 page = parts.getOrNull(1) ?: "",
                 onBack = { backStack.removeAt(backStack.lastIndex) },
                 onOpen = { backStack.add("s:$it") },
-                onWatch = { anime, ep, code -> backStack.add("p:$anime:$ep:$code") },
                 modifier = Modifier.fillMaxSize(),
             )
         } else if (id != null) {
@@ -381,7 +405,7 @@ private fun KiroScaffold() {
                 "dl" -> com.biaruuu.kiro.ui.library.DownloadedEpisodesScreen(
                     animeId = id,
                     onBack = { pop() },
-                    onPlay = { anime, ep -> backStack.add("p:$anime:$ep") },
+                    onPlay = { anime, ep -> openRoute("p:$anime:$ep") },
                     onOpenAnime = { backStack.add("d:$it") },
                     modifier = overlay,
                 )
@@ -397,7 +421,7 @@ private fun KiroScaffold() {
                     onBack = { pop() },
                     onOpenAnime = { backStack.add("d:$it") },
                     onMore = { backStack.add("m:$it") },
-                    onPlay = { anime, episode -> backStack.add("p:$anime:$episode") },
+                    onPlay = { anime, episode -> openRoute("p:$anime:$episode") },
                     modifier = overlay,
                 )
             }
@@ -407,11 +431,11 @@ private fun KiroScaffold() {
     // While you are in a watch party a small pill follows you around the app; tap it to open the room.
     val partyNow by com.biaruuu.kiro.data.WatchParty.session.collectAsState()
     val topRoute = backStack.lastOrNull()
-    if (partyNow != null && topRoute?.startsWith("p:") != true && topRoute != "s:partyroom") {
+    if (partyNow != null && topRoute?.startsWith("p:") != true && topRoute != "room") {
         com.biaruuu.kiro.ui.party.PartyPill(
             modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = if (online) 6.dp else 48.dp),
-            onOpen = { backStack.add("s:partyroom") },
-            onWatch = { anime, ep, code -> backStack.add("p:$anime:$ep:$code") },
+            onOpen = { openRoute("room") },
+            onWatch = { _, _, _ -> openRoute("room") },
         )
     }
     // Offline banner.

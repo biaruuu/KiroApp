@@ -124,7 +124,7 @@ private val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
 
 /** The live message list with a box to write in. */
 @Composable
-fun PartyChatPane(modifier: Modifier = Modifier) {
+fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null) {
     val msgs by PartyChat.messages.collectAsState()
     val me = WatchParty.uid()
     var text by remember { mutableStateOf("") }
@@ -135,10 +135,23 @@ fun PartyChatPane(modifier: Modifier = Modifier) {
         PartyChat.send(text)
         text = ""
     }
+    var emojiOpen by remember { mutableStateOf(false) }
     Column(modifier.imePadding()) {
         if (msgs.isEmpty()) {
-            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text("No messages yet. Say hi!", color = PrMuted, fontSize = 13.sp)
+            Box(Modifier.weight(1f).fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    val alone = WatchParty.members.collectAsState().value.size <= 1
+                    Text(if (alone) "Invite your friends" else "No messages yet", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        if (alone) "Invite others so you can watch and chat together." else "Say hi to everyone.",
+                        color = PrMuted, fontSize = 13.sp, textAlign = TextAlign.Center,
+                    )
+                    if (alone && onInvite != null) {
+                        Spacer(Modifier.height(14.dp))
+                        SoftButton("Invite friends", filled = true, onClick = onInvite)
+                    }
+                }
             }
         } else {
             LazyColumn(
@@ -166,10 +179,27 @@ fun PartyChatPane(modifier: Modifier = Modifier) {
                 }
             }
         }
+        if (emojiOpen) {
+            val set = listOf("😂", "😍", "🔥", "👍", "😭", "🥹", "😮", "👏", "💀", "❤️", "🎉", "🙏")
+            androidx.compose.foundation.lazy.LazyRow(
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                items(set) { e ->
+                    Text(e, fontSize = 24.sp, modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable { if (text.length < 499) text += e }.padding(8.dp))
+                }
+            }
+        }
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            androidx.compose.material3.Icon(
+                painter = androidx.compose.ui.res.painterResource(com.biaruuu.kiro.R.drawable.fluent_emoji_regular),
+                contentDescription = "Emoji", tint = if (emojiOpen) Color.White else PrMuted,
+                modifier = Modifier.size(36.dp).clip(CircleShape).clickable { emojiOpen = !emojiOpen }.padding(7.dp),
+            )
+            Spacer(Modifier.width(4.dp))
             Box(
                 Modifier.weight(1f).clip(RoundedCornerShape(24.dp)).background(PrCard).border(1.dp, PrHair, RoundedCornerShape(24.dp))
                     .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -220,93 +250,6 @@ fun PartyToast(modifier: Modifier = Modifier) {
         Text(m.name, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.width(8.dp))
         Text(m.text, color = Color(0xFFE0E0E4), fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-    }
-}
-
-/** The room page: who is here, what the host is watching, voice and chat. */
-@Composable
-fun PartyRoom(onWatch: (animeId: Int, episode: Int, code: String) -> Unit) {
-    val context = LocalContext.current
-    val party by WatchParty.session.collectAsState()
-    val members by WatchParty.members.collectAsState()
-    val remote by WatchParty.remote.collectAsState()
-    val p = party
-    if (p == null) {
-        Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-            Text("You're not in a room. Start or join one from Me > Watch party.", color = PrMuted, fontSize = 14.sp, textAlign = TextAlign.Center)
-        }
-        return
-    }
-    Column(Modifier.fillMaxSize()) {
-        // Code and actions
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(if (p.host) "You are hosting" else "In a room", color = PrMuted, fontSize = 12.sp)
-                Text(p.code, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 4.sp)
-            }
-            SoftButton("Share") {
-                val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(android.content.Intent.EXTRA_TEXT, "Join my Kiro watch party! Open Me > Watch party and enter the code ${p.code}")
-                }
-                context.startActivity(android.content.Intent.createChooser(send, null))
-            }
-            Spacer(Modifier.width(8.dp))
-            SoftButton(if (p.host) "End" else "Leave", danger = true) { WatchParty.leave() }
-        }
-        // Members
-        LazyRow(
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            items(members, key = { it.uid }) { m ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(60.dp)) {
-                    Box {
-                        DecoratedAvatar(m.avatar, m.name, 48.dp, m.decoration)
-                        if (m.voice) {
-                            Box(
-                                Modifier.align(Alignment.BottomEnd).size(14.dp).clip(CircleShape)
-                                    .background(if (m.muted) Color(0xFFFF6B6B) else PrGreen).border(2.dp, Color(0xFF121212), CircleShape),
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Text(m.name, color = Color.White, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
-                    if (m.host) Text("Host", color = PrMuted, fontSize = 10.sp)
-                }
-            }
-        }
-        Spacer(Modifier.height(12.dp))
-        // What the host is watching
-        val r = remote
-        Column(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp).clip(RoundedCornerShape(14.dp)).background(PrCard)
-                .border(1.dp, PrHair, RoundedCornerShape(14.dp)).padding(14.dp),
-        ) {
-            if (r != null && r.animeId > 0) {
-                Text(if (p.host) "You are watching" else "${r.hostName} is watching", color = PrMuted, fontSize = 12.sp)
-                Spacer(Modifier.height(2.dp))
-                Text("${r.title.ifBlank { "An anime" }} · Episode ${r.episode}", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 2)
-                if (!p.host) {
-                    Spacer(Modifier.height(10.dp))
-                    SoftButton("Watch together", filled = true) { onWatch(r.animeId, r.episode, p.code) }
-                }
-            } else {
-                Text(
-                    if (p.host) "Browse Kiro and start any episode. Everyone in the room can join you from here, and the chat and voice stay with you."
-                    else "Waiting for the host to start an episode. Feel free to browse Kiro meanwhile. The room stays open.",
-                    color = PrMuted, fontSize = 13.sp, lineHeight = 19.sp,
-                )
-            }
-        }
-        Spacer(Modifier.height(12.dp))
-        VoiceControls(Modifier.padding(horizontal = 16.dp))
-        Spacer(Modifier.height(6.dp))
-        Box(Modifier.fillMaxWidth().height(1.dp).background(PrHair))
-        PartyChatPane(Modifier.weight(1f).fillMaxWidth())
     }
 }
 

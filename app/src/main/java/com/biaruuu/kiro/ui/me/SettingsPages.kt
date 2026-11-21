@@ -85,7 +85,7 @@ private val DisabledText = Color(0xFF5E5E63)
 
 /** A full-screen settings page opened from the Me tab. */
 @Composable
-fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier, onOpen: (String) -> Unit = {}, onWatch: (Int, Int, String) -> Unit = { _, _, _ -> }) {
+fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier, onOpen: (String) -> Unit = {}) {
     var sub by remember { mutableStateOf<String?>(null) }
     BackHandler(enabled = page == "account" && sub != null) { sub = null }
     val title = when (page) {
@@ -107,7 +107,6 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
         "backup" -> "Backup and restore"
         "stats" -> "Watch stats"
         "party" -> "Watch party"
-        "partyroom" -> "Room"
         else -> if (page.startsWith("release-")) "What's new" else "Version"
     }
     Box(modifier = modifier.background(KiroBackground), contentAlignment = Alignment.TopCenter) {
@@ -133,7 +132,6 @@ fun SettingsPage(page: String, onBack: () -> Unit, modifier: Modifier = Modifier
                 "backup" -> BackupPage()
                 "stats" -> WatchStatsPage()
                 "party" -> PartyPage()
-                "partyroom" -> com.biaruuu.kiro.ui.party.PartyRoom(onWatch)
                 else -> if (page.startsWith("release-")) WhatsNewPage(latest = false, onBack = onBack, version = page.removePrefix("release-")) else VersionPage()
             }
         }

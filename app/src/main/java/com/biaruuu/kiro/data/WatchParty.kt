@@ -34,6 +34,14 @@ object WatchParty {
 
     val members = MutableStateFlow<List<Member>>(emptyList())
 
+    /** Room-wide settings the host controls. [banned] maps a removed person's uid to their name. */
+    class Room(val name: String = "", val voiceOff: Boolean = false, val banned: Map<String, String> = emptyMap(), val hostName: String = "")
+
+    val room = MutableStateFlow(Room())
+
+    /** A name used only in this room (chat and member list). Empty means the profile name. */
+    private var nickname: String = ""
+
     /** One-shot message for the player to show (for example "The host ended the party"). */
     val message = MutableStateFlow<String?>(null)
 
@@ -42,7 +50,7 @@ object WatchParty {
 
     private fun db() = FirebaseFirestore.getInstance()
     internal fun uid() = (AuthRepository.state.value as? AuthState.SignedIn)?.uid
-    internal fun myName() = ProfileRepository.profile.value.username.ifBlank { "Guest" }
+    internal fun myName() = nickname.ifBlank { ProfileRepository.profile.value.username.ifBlank { "Guest" } }
 
     private fun writeMember(code: String, me: String, host: Boolean) {
         val p = ProfileRepository.profile.value
@@ -67,13 +75,14 @@ object WatchParty {
     }
 
     /** Starts a party for the episode being watched; [onDone] gets the code, or an error message. */
-    fun host(c: Context, animeId: Int, episode: Int, title: String, onDone: (String?, String?) -> Unit) {
+    fun host(c: Context, animeId: Int, episode: Int, title: String, roomName: String = "", onDone: (String?, String?) -> Unit) {
         val me = uid() ?: return onDone(null, "Log in to start a watch party")
         val code = newCode()
         val data = hashMapOf<String, Any>(
             "hostUid" to me, "hostName" to myName(), "animeId" to animeId, "episode" to episode,
             "title" to title, "positionMs" to 0L, "playing" to false, "createdAt" to System.currentTimeMillis(),
-            "sentAt" to System.currentTimeMillis(),
+            "sentAt" to System.currentTimeMillis(), "roomName" to roomName.trim(), "voiceOff" to false,
+            "banned" to emptyMap<String, String>(),
         )
         db().collection("parties").document(code).set(data)
             .addOnSuccessListener {
@@ -81,6 +90,7 @@ object WatchParty {
                 writeMember(code, me, true)
                 Achievements.bump(c, "hosted")
                 listenMembers(code)
+                listenParty(code, me)
                 onDone(code, null)
             }
             .addOnFailureListener { onDone(null, friendly(it)) }
@@ -92,7 +102,10 @@ object WatchParty {
         db().collection("parties").document(code.trim().uppercase()).get()
             .addOnSuccessListener { snap ->
                 val r = if (snap.exists()) toRemote(snap.data) else null
-                if (r == null) onDone(null, "No watch party with that code") else onDone(r, null)
+                val banned = (snap.get("banned") as? Map<*, *>)?.containsKey(uid()) == true
+                if (r == null) onDone(null, "No watch party with that code")
+                else if (banned) onDone(null, "The host removed you from that room")
+                else onDone(r, null)
             }
             .addOnFailureListener { onDone(null, friendly(it)) }
     }
@@ -121,19 +134,33 @@ object WatchParty {
         remote.value = null
         Achievements.bump(c, "joined")
         writeMember(code, me, false)
+        listenParty(code, me)
+        listenMembers(code)
+    }
+
+    /** Follows the party document: the host's playback state and the room settings, live. */
+    private fun listenParty(code: String, me: String) {
+        partyReg?.remove()
         partyReg = db().collection("parties").document(code).addSnapshotListener { snap, err ->
             if (err != null || snap == null) return@addSnapshotListener
             if (!snap.exists()) {
-                if (!snap.metadata.isFromCache) {
+                if (!snap.metadata.isFromCache && session.value?.host == false) {
                     message.value = "The host ended the watch party"
                     stopListening()
                     session.value = null
                 }
                 return@addSnapshotListener
             }
+            @Suppress("UNCHECKED_CAST")
+            val banned = (snap.get("banned") as? Map<String, Any>)?.mapValues { it.value.toString() }.orEmpty()
+            room.value = Room(snap.getString("roomName").orEmpty(), snap.getBoolean("voiceOff") == true, banned, snap.getString("hostName").orEmpty())
+            if (session.value?.host == false && banned.containsKey(me)) {
+                message.value = "You were removed from the room"
+                leave()
+                return@addSnapshotListener
+            }
             toRemote(snap.data)?.let { remote.value = it }
         }
-        listenMembers(code)
     }
 
     private fun listenMembers(code: String) {
@@ -151,16 +178,70 @@ object WatchParty {
     }
 
     /** The host shares where they are; guests catch up to it. [playing] means actually running, not buffering. */
-    fun push(animeId: Int, episode: Int, positionMs: Long, playing: Boolean) {
+    fun push(animeId: Int, episode: Int, positionMs: Long, playing: Boolean, title: String = "") {
+        val s = session.value ?: return
+        if (!s.host) return
+        val fields = hashMapOf<String, Any>(
+            "animeId" to animeId, "episode" to episode, "positionMs" to positionMs, "playing" to playing,
+            "sentAt" to System.currentTimeMillis(),
+        )
+        if (title.isNotBlank()) fields["title"] = title
+        db().collection("parties").document(s.code).update(fields)
+    }
+
+    /** The host picks what everyone watches (the player then keeps it updated). */
+    fun select(animeId: Int, episode: Int) {
         val s = session.value ?: return
         if (!s.host) return
         db().collection("parties").document(s.code).update(
-            mapOf(
-                "animeId" to animeId, "episode" to episode, "positionMs" to positionMs, "playing" to playing,
-                "sentAt" to System.currentTimeMillis(),
-            ),
+            mapOf("animeId" to animeId, "episode" to episode, "positionMs" to 0L, "playing" to false, "title" to "", "sentAt" to System.currentTimeMillis()),
         )
     }
+
+    fun setRoomName(name: String) {
+        val s = session.value ?: return
+        if (s.host) db().collection("parties").document(s.code).update("roomName", name.trim().take(40))
+    }
+
+    fun setVoiceOff(off: Boolean) {
+        val s = session.value ?: return
+        if (s.host) db().collection("parties").document(s.code).update("voiceOff", off)
+    }
+
+    /** Removes someone from the room and keeps them out until the host allows them back. */
+    fun ban(uid: String, name: String) {
+        val s = session.value ?: return
+        if (!s.host || uid == me()) return
+        db().collection("parties").document(s.code).update("banned.$uid", name)
+        db().collection("parties").document(s.code).collection("members").document(uid).delete()
+    }
+
+    fun unban(uid: String) {
+        val s = session.value ?: return
+        if (s.host) db().collection("parties").document(s.code).update("banned.$uid", com.google.firebase.firestore.FieldValue.delete())
+    }
+
+    /** Deletes every chat message in the room (host only). */
+    fun clearChat() {
+        val s = session.value ?: return
+        if (!s.host) return
+        val col = db().collection("parties").document(s.code).collection("messages")
+        col.get().addOnSuccessListener { snap ->
+            val batch = db().batch()
+            snap.documents.forEach { batch.delete(it.reference) }
+            batch.commit()
+        }
+    }
+
+    /** Changes the name shown in this room only. */
+    fun setNickname(nick: String) {
+        nickname = nick.trim().take(24)
+        val s = session.value ?: return
+        val me = uid() ?: return
+        db().collection("parties").document(s.code).collection("members").document(me).update("name", myName())
+    }
+
+    private fun me() = uid()
 
     /** Tells the room whether this phone is in the voice call and whether its mic is muted. */
     fun setVoice(on: Boolean, muted: Boolean) {
@@ -176,6 +257,8 @@ object WatchParty {
         partyReg = null
         membersReg = null
         members.value = emptyList()
+        room.value = Room()
+        nickname = ""
     }
 
     /** The host ends the party for everyone; a guest just leaves. */
