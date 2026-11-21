@@ -173,7 +173,9 @@ fun LibraryScreen(
             name = shownName,
             modifier = Modifier.clickable(enabled = authState is com.biaruuu.kiro.data.auth.AuthState.SignedIn, onClick = onCustomize),
         )
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Hairline))
         LibraryTabs(pager = pager, onSelect = { scope.launch { pager.animateScrollToPage(it) } })
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Hairline))
 
         // Swiping or tapping a tab slides between the four pages.
         HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
@@ -185,10 +187,10 @@ fun LibraryScreen(
                             EmptyState(R.drawable.fluent_inbox_regular, "Start watching to build your library!")
                         } else {
                             LazyVerticalGrid(
-                                columns = GridCells.Adaptive(170.dp),
-                                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 32.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(22.dp),
+                                columns = GridCells.Adaptive(160.dp),
+                                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(18.dp),
                                 modifier = Modifier.fillMaxSize(),
                             ) {
                                 items(history, key = { it.animeId }) { e ->
@@ -334,54 +336,94 @@ fun LibraryScreen(
 
 @Composable
 private fun LibraryTabs(pager: PagerState, onSelect: (Int) -> Unit) {
+    val density = LocalDensity.current
+    val scroll = rememberScrollState()
+    val lefts = remember { mutableStateListOf<Float>().apply { repeat(Tabs.size) { add(0f) } } }
+    val widths = remember { mutableStateListOf<Float>().apply { repeat(Tabs.size) { add(0f) } } }
+    var viewport by remember { mutableIntStateOf(0) }
+
+    // The white line slides between the two tabs while the page is being dragged.
     val cur = pager.currentPage
-    val state = androidx.compose.foundation.lazy.rememberLazyListState()
+    val frac = pager.currentPageOffsetFraction
+    val target = (if (frac > 0f) cur + 1 else if (frac < 0f) cur - 1 else cur).coerceIn(0, Tabs.lastIndex)
+    val p = abs(frac).coerceIn(0f, 1f)
+    val lineX = lerp(lefts[cur], lefts[target], p)
+    val lineW = lerp(widths[cur], widths[target], p)
+
     // Keep the chosen tab in view.
-    LaunchedEffect(cur) { state.animateScrollToItem((cur - 1).coerceAtLeast(0)) }
-    androidx.compose.foundation.lazy.LazyRow(
-        state = state,
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        items(Tabs.size) { index ->
-            val on = cur == index
-            val bg by animateColorAsState(if (on) Color.White else Color.Transparent, label = "tab-bg")
-            val fg by animateColorAsState(if (on) Color.Black else Color(0xFFB4B4BA), label = "tab-fg")
-            Text(
-                Tabs[index],
-                color = fg, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(bg)
-                    .then(if (on) Modifier else Modifier.border(1.dp, Color(0xFF2E2E33), RoundedCornerShape(20.dp)))
-                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onSelect(index) }
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-            )
+    LaunchedEffect(cur, viewport, widths[cur]) {
+        if (viewport > 0 && widths[cur] > 0f) {
+            scroll.animateScrollTo((lefts[cur] + widths[cur] / 2f - viewport / 2f).roundToInt().coerceAtLeast(0))
         }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(44.dp)
+            .onSizeChanged { viewport = it.width }
+            .horizontalScroll(scroll),
+    ) {
+        Row(modifier = Modifier.fillMaxHeight()) {
+            Spacer(Modifier.width(16.dp))
+            Tabs.forEachIndexed { index, label ->
+                val color by animateColorAsState(
+                    if (cur == index) Color.White else Color(0xFF8C8C91),
+                    label = "tab-color",
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .onGloballyPositioned {
+                            lefts[index] = it.positionInParent().x
+                            widths[index] = it.size.width.toFloat()
+                        }
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { onSelect(index) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(label, color = color, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                }
+                Spacer(Modifier.width(if (index == Tabs.lastIndex) 16.dp else 24.dp))
+            }
+        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .offset { IntOffset(lineX.roundToInt(), 0) }
+                .width(with(density) { lineW.toDp() })
+                .height(2.dp)
+                .background(Color.White),
+        )
     }
 }
 
 @Composable
 private fun CountBar(count: String, sortLabel: String?, onSortClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(40.dp).padding(horizontal = 20.dp),
+        modifier = Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(count, color = Muted, fontSize = 12.sp)
+        Text(count, color = Muted, fontSize = 13.sp)
         if (sortLabel != null) {
             Row(
-                modifier = Modifier.clip(RoundedCornerShape(16.dp)).clickable(onClick = onSortClick).padding(horizontal = 8.dp, vertical = 6.dp),
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onSortClick,
+                ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(sortLabel, color = Color.White, fontSize = 12.sp)
-                Spacer(Modifier.width(2.dp))
+                Text(sortLabel, color = Muted, fontSize = 13.sp)
+                Spacer(Modifier.width(4.dp))
                 Icon(
                     painter = painterResource(R.drawable.fluent_chevron_down_regular),
                     contentDescription = "Sort",
-                    tint = Color.White,
-                    modifier = Modifier.size(16.dp),
+                    tint = Muted,
+                    modifier = Modifier.size(20.dp),
                 )
             }
         }
@@ -410,24 +452,71 @@ private fun WatchedCard(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.matchParentSize(),
             )
-            // Progress: a thin white line along the bottom edge.
-            Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(2.dp).background(Color.White.copy(alpha = 0.25f))) {
-                Box(Modifier.fillMaxWidth(entry.progress().coerceIn(0.04f, 1f)).height(2.dp).background(Color.White))
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.65f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.fluent_play_filled),
+                    contentDescription = "Continue",
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            // Progress: white track with the purple part watched, inset like the reference.
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(Color.White.copy(alpha = 0.92f)),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth(entry.progress().coerceIn(0.04f, 1f))
+                        .height(4.dp)
+                        .background(KiroAccent),
+                )
             }
         }
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.Top) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(entry.title, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("Episode ${entry.episode}", color = Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 1.dp))
-            }
-            Icon(
-                painter = painterResource(R.drawable.fluent_info_regular),
-                contentDescription = "Details",
-                tint = Muted,
-                modifier = Modifier.padding(start = 6.dp).size(32.dp).clip(CircleShape).clickable(onClick = onInfo).padding(7.dp),
+            Text(
+                entry.title,
+                color = Color.White,
+                fontSize = 13.sp,
+                lineHeight = 20.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
             )
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .offset(y = (-4).dp)
+                    .clickable(onClick = onInfo),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.fluent_info_regular),
+                    contentDescription = "Details",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
         }
+        Text(
+            "Episode ${entry.episode}",
+            color = Color.White,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+        )
     }
 }
 
@@ -440,10 +529,10 @@ private fun PosterGrid(
     onRemove: (MyListStore.Entry) -> Unit,
 ) {
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(110.dp),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 32.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
+        columns = GridCells.Adaptive(104.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
         items(entries, key = { it.id }) { e ->
@@ -462,20 +551,27 @@ private fun PosterGrid(
                         modifier = Modifier.matchParentSize(),
                     )
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(6.dp))
                 Text(
                     e.title,
                     color = Color.White,
                     fontSize = 13.sp,
-                    lineHeight = 18.sp,
+                    lineHeight = 21.sp,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 if (showRating && e.rating > 0) {
-                    Text(
-                        "\u2605 " + String.format(java.util.Locale.US, "%.1f", e.rating / 2f),
-                        color = Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp),
-                    )
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painter = painterResource(R.drawable.fluent_star_filled),
+                            contentDescription = null,
+                            tint = KiroAccent,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(String.format(java.util.Locale.US, "%.1f", e.rating / 2f), color = KiroAccent, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    }
                 }
             }
         }
@@ -484,11 +580,20 @@ private fun PosterGrid(
 
 @Composable
 private fun EmptyState(@DrawableRes icon: Int, message: String) {
-    Box(
-        modifier = Modifier.fillMaxSize().padding(bottom = 80.dp, start = 40.dp, end = 40.dp),
-        contentAlignment = Alignment.Center,
+    Column(
+        // Bottom padding = the count bar's height, so the group is centred in the whole page.
+        modifier = Modifier.fillMaxSize().padding(bottom = 52.dp, start = 32.dp, end = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
-        Text(message, color = Muted, fontSize = 14.sp, lineHeight = 20.sp, textAlign = TextAlign.Center)
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            tint = EmptyTint,
+            modifier = Modifier.size(32.dp),
+        )
+        Spacer(Modifier.height(12.dp))
+        Text(message, color = EmptyTint, fontSize = 14.sp, textAlign = TextAlign.Center)
     }
 }
 
@@ -577,10 +682,10 @@ private fun DownloadPosterGrid(
 ) {
     val groups = remember(downloads) { downloads.groupBy { it.animeId }.values.toList() }
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(110.dp),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 32.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
+        columns = GridCells.Adaptive(104.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
         items(groups, key = { it.first().animeId }) { episodes ->
@@ -613,8 +718,8 @@ private fun DownloadPosterGrid(
                         Text("${episodes.size} ep", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                     }
                 }
-                Spacer(Modifier.height(8.dp))
-                Text(first.title, color = Color.White, fontSize = 13.sp, lineHeight = 18.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(6.dp))
+                Text(first.title, color = Color.White, fontSize = 13.sp, lineHeight = 21.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
     }
