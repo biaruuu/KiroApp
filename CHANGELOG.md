@@ -4,6 +4,10 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.74.0]
+### Changed
+- Admin panel now opens on a home screen with one card per tool (Online, Letters, Reports, Announce, Designs, Filipino dub). Each tool opens as its own page with a back button, and the cards lay out in two columns on wide screens.
+
 ## [1.73.0]
 ### Changed
 - Admin panel redesigned in the minimalist style: pill tabs with counts for Letters and Reports, cards with hairline borders, and a centred column that stays readable on tablets.

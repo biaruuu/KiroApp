@@ -217,47 +217,76 @@ fun AdminPage() {
         onDispose { a.remove(); b.remove() }
     }
 
-    var tab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Online", "Letters", "Reports", "Announce", "Designs", "Filipino")
+    // A home with one card per tool; each opens its own page.
+    var section by remember { mutableStateOf<Int?>(null) }
+    androidx.activity.compose.BackHandler(enabled = section != null) { section = null }
+    val tools = listOf(
+        Triple("Online", "Who is using Kiro and what they are watching", 0),
+        Triple("Letters", "Messages users sent from the app", letterCount),
+        Triple("Reports", "Broken episode reports from the player", reportCount),
+        Triple("Announce", "Send news to every user's Notifications", 0),
+        Triple("Designs", "Publish avatar decorations", 0),
+        Triple("Filipino dub", "Add Filipino dub episodes", 0),
+    )
     Column(modifier = Modifier.fillMaxSize()) {
         if (rulesError != null) {
             Text(
                 "Firestore refused access: ${rulesError}. Publish the latest firestore.rules in the Firebase Console, then reopen Kiro.",
-                color = AdmRed, fontSize = 12.sp, lineHeight = 17.sp,
+                color = Red, fontSize = 12.sp, lineHeight = 17.sp,
                 modifier = Modifier.fillMaxWidth().background(Color(0xFF2A1618)).padding(12.dp),
             )
         }
-        Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            tabs.forEachIndexed { i, label ->
-                val n = when (i) { 1 -> letterCount; 2 -> reportCount; else -> 0 }
-                val on = tab == i
-                Row(
-                    modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (on) Color.White else AdmChip)
-                        .clickable { tab = i }.padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(label, color = if (on) Color.Black else Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    if (n > 0) {
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            if (n > 99) "99+" else n.toString(), color = if (on) Color.White else Color.Black, fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(if (on) Color.Black else Color.White).padding(horizontal = 6.dp, vertical = 1.dp),
-                        )
+        val current = section
+        if (current == null) {
+            AdmTabFrame {
+                androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
+                    val cols = if (maxWidth >= 520.dp) 2 else 1
+                    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = ListPad, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        item {
+                            AdmSectionTitle("Admin", "Pick a tool.")
+                            Spacer(Modifier.height(4.dp))
+                        }
+                        items(tools.indices.toList().chunked(cols)) { row ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                row.forEach { i ->
+                                    val (name, hint, n) = tools[i]
+                                    AdmCard(Modifier.weight(1f).clickable { section = i }) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(name, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                                            if (n > 0) AdmTag(if (n > 99) "99+" else n.toString(), strong = true)
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("›", color = Muted, fontSize = 18.sp)
+                                        }
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(hint, color = Muted, fontSize = 12.sp, lineHeight = 17.sp)
+                                    }
+                                }
+                                if (row.size < cols) Spacer(Modifier.weight((cols - row.size).toFloat()))
+                            }
+                        }
                     }
                 }
             }
-        }
-        AdmTabFrame {
-            when (tab) {
-                0 -> OnlineTab()
-                1 -> LettersTab()
-                2 -> ReportsTab()
-                3 -> AnnounceTab()
-                4 -> DesignsTab()
-                else -> TagalogTab()
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "‹", color = Color.White, fontSize = 26.sp,
+                    modifier = Modifier.clip(CircleShape).clickable { section = null }.padding(horizontal = 14.dp, vertical = 2.dp),
+                )
+                Text(tools[current].first, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+            }
+            AdmTabFrame {
+                when (current) {
+                    0 -> OnlineTab()
+                    1 -> LettersTab()
+                    2 -> ReportsTab()
+                    3 -> AnnounceTab()
+                    4 -> DesignsTab()
+                    else -> TagalogTab()
+                }
             }
         }
     }
