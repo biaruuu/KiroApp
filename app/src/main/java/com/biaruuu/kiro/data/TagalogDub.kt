@@ -65,10 +65,26 @@ object TagalogDub {
         FirebaseFirestore.getInstance().collection(COLLECTION).document(id).delete()
     }
 
-    /** Blocking lookup for the stream providers (they already run off the main thread). */
-    fun lookup(animeId: Int, episode: Int): Entry? = try {
-        val snap = Tasks.await(FirebaseFirestore.getInstance().collection(COLLECTION).document(docId(animeId, episode)).get(), 10, TimeUnit.SECONDS)
-        if (snap.exists()) parse(snap) else null
+    private fun norm(s: String?) = s.orEmpty().lowercase().replace(Regex("[^a-z0-9]"), "")
+
+    /**
+     * Blocking lookup for the stream providers (they already run off the main thread). The exact
+     * AniList id wins; failing that, an entry for the same episode whose saved title matches one of
+     * [titles] is used (so a dub added under another entry of the same show still plays).
+     */
+    fun lookup(animeId: Int, episode: Int, titles: List<String> = emptyList()): Entry? = try {
+        val col = FirebaseFirestore.getInstance().collection(COLLECTION)
+        val exact = Tasks.await(col.document(docId(animeId, episode)).get(), 10, TimeUnit.SECONDS)
+        if (exact.exists()) parse(exact) else {
+            val wanted = titles.map { norm(it) }.filter { it.length >= 4 }
+            if (wanted.isEmpty()) null else {
+                val snap = Tasks.await(col.whereEqualTo("episode", episode).get(), 10, TimeUnit.SECONDS)
+                snap.documents.mapNotNull { parse(it) }.firstOrNull { e ->
+                    val t = norm(e.title)
+                    t.isNotEmpty() && wanted.any { it == t || t.startsWith(it) || it.startsWith(t) }
+                }
+            }
+        }
     } catch (_: Exception) {
         null
     }

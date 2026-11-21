@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.66.2]
+### Fixed
+- Audio & Subtitles now lists every audio language of the episode (Japanese, English, Tagalog) instead of only Japanese and English, so the Tagalog dub can be chosen.
+- The Tagalog dub is also found when it was added under another entry of the same show (matched by title and episode).
+
 ## [1.66.1]
 ### Fixed
 - Tagalog dub episodes now show up in Audio & Subtitles: they are no longer cut off by the provider time limit or dropped by a slow check on the video host.

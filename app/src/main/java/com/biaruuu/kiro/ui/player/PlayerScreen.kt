@@ -416,10 +416,10 @@ fun PlayerScreen(
     }
 
     // Sub and dub come as separate streams; this jumps to the best one of the other kind.
-    fun switchAudio(dub: Boolean) {
-        val idx = latestSources.indexOfFirst { it.isDub == dub }
+    fun switchAudio(language: String) {
+        val idx = latestSources.indexOfFirst { audioLanguage(it) == language }
         if (idx < 0 || idx == latestIndex) return
-        prefs.edit().putBoolean("audio_dub", dub).apply()
+        prefs.edit().putBoolean("audio_dub", language != "Japanese").apply()
         pendingSeek = exo.currentPosition
         sourceIndex = idx
     }
@@ -461,7 +461,8 @@ fun PlayerScreen(
         sources = found
         // Start in the language chosen last time, when this episode has it.
         if (prefs.getBoolean("audio_dub", false)) {
-            val dubIdx = found.indexOfFirst { it.isDub }
+            val dubIdx = found.indexOfFirst { it.isDub && audioLanguage(it) == "English" }
+                .takeIf { it >= 0 } ?: found.indexOfFirst { it.isDub }
             if (dubIdx > 0) sourceIndex = dubIdx
         }
         resolving = false
@@ -1032,10 +1033,9 @@ fun PlayerScreen(
         panel?.let { open ->
             if (open == Panel.Tracks) TracksDialog(
                 exo, tracks,
-                hasSub = sources.any { !it.isDub },
-                hasDub = sources.any { it.isDub },
-                dubNow = sources.getOrNull(sourceIndex)?.isDub == true,
-                onPickDub = { dub -> switchAudio(dub); panel = null },
+                languages = sources.map { audioLanguage(it) }.distinct().sortedBy { if (it == "Japanese") 0 else 1 },
+                currentLanguage = sources.getOrNull(sourceIndex)?.let { audioLanguage(it) } ?: "Japanese",
+                onPickLanguage = { language -> switchAudio(language); panel = null },
             ) { panel = null } else SidePanel(
                 title = when (open) {
                     Panel.Menu -> ""
@@ -1701,10 +1701,9 @@ private fun PanelRow(label: String, selected: Boolean, onClick: () -> Unit) {
 private fun TracksDialog(
     exo: ExoPlayer,
     tracks: Tracks,
-    hasSub: Boolean,
-    hasDub: Boolean,
-    dubNow: Boolean,
-    onPickDub: (Boolean) -> Unit,
+    languages: List<String>,
+    currentLanguage: String,
+    onPickLanguage: (String) -> Unit,
     onClose: () -> Unit,
 ) {
     class Choice(val label: String, val group: Tracks.Group?, val index: Int, val selected: Boolean)
@@ -1734,9 +1733,8 @@ private fun TracksDialog(
     val subs = remember(tracks) { build(C.TRACK_TYPE_TEXT, true) }
     // When the episode has a Japanese and an English stream, the Audio list is just those two
     // languages (English is the dub, Japanese the original); choosing one switches stream.
-    val twoLanguages = hasSub && hasDub
-    val languages = listOf("Japanese", "English")
-    var pickLanguage by remember { mutableIntStateOf(if (dubNow) 1 else 0) }
+    val twoLanguages = languages.size > 1 || languages.firstOrNull().let { it != null && it != "Japanese" }
+    var pickLanguage by remember { mutableIntStateOf(languages.indexOf(currentLanguage).coerceAtLeast(0)) }
     var pickAudio by remember(tracks) { mutableIntStateOf(audio.indexOfFirst { it.selected }.coerceAtLeast(0)) }
     var pickSub by remember(tracks) { mutableIntStateOf(subs.indexOfFirst { it.selected }.coerceAtLeast(0)) }
 
@@ -1793,8 +1791,8 @@ private fun TracksDialog(
                             .clip(RoundedCornerShape(24.dp))
                             .background(Color.White)
                             .clickable {
-                                if (twoLanguages && (pickLanguage == 1) != dubNow) {
-                                    onPickDub(pickLanguage == 1)
+                                if (twoLanguages && languages.getOrNull(pickLanguage) != currentLanguage) {
+                                    onPickLanguage(languages[pickLanguage])
                                     return@clickable
                                 }
                                 val params = exo.trackSelectionParameters.buildUpon()
@@ -1966,6 +1964,13 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
     }
     }
     }
+}
+
+/** Japanese for the original, Tagalog for the developer's own dub, English for every other dub. */
+private fun audioLanguage(s: com.biaruuu.kiro.data.stream.StreamSource): String = when {
+    !s.isDub -> "Japanese"
+    s.providerName.startsWith("Tagalog") -> "Tagalog"
+    else -> "English"
 }
 
 /** A live sample of the captions, pinned above the options so every change shows at once. */
