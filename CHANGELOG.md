@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.73.0]
+### Changed
+- Admin panel redesigned in the minimalist style: pill tabs with counts for Letters and Reports, cards with hairline borders, and a centred column that stays readable on tablets.
+- Online tab shows Online / Watching / Known users at a glance, with users grouped into Watching now, Browsing and Recently active.
+- Letters can be filtered by topic, reports show the episode, provider and quality as tags, and the Filipino tab is a clear two-step form.
+- Delete, Mark done and similar actions now ask for confirmation first.
+
 ## [1.72.0]
 ### Removed
 - The Anime enhancer, line sharpener and upscaler are removed from the player.
