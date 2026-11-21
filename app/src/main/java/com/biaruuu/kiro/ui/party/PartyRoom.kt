@@ -9,6 +9,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -136,6 +139,7 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
         text = ""
     }
     var emojiOpen by remember { mutableStateOf(false) }
+    val hostUid = WatchParty.members.collectAsState().value.firstOrNull { it.host }?.uid
     Column(modifier.imePadding()) {
         if (msgs.isEmpty()) {
             Box(Modifier.weight(1f).fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
@@ -170,6 +174,13 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                                     fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.weight(1f, fill = false),
                                 )
+                                if (m.uid == hostUid) {
+                                    Spacer(Modifier.width(5.dp))
+                                    androidx.compose.material3.Icon(
+                                        painterResource(com.biaruuu.kiro.R.drawable.fluent_crown_filled), contentDescription = "Host",
+                                        tint = Color.Unspecified, modifier = Modifier.size(14.dp),
+                                    )
+                                }
                                 Spacer(Modifier.width(8.dp))
                                 Text(timeFormat.format(Date(m.at)), color = PrMuted, fontSize = 11.sp)
                             }
@@ -190,36 +201,32 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                 }
             }
         }
+        Box(Modifier.fillMaxWidth().height(1.dp).background(PrHair))
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+            modifier = Modifier.fillMaxWidth().background(PrCard).navigationBarsPadding().padding(horizontal = 8.dp).heightIn(min = 60.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             androidx.compose.material3.Icon(
                 painter = androidx.compose.ui.res.painterResource(com.biaruuu.kiro.R.drawable.fluent_emoji_regular),
                 contentDescription = "Emoji", tint = if (emojiOpen) Color.White else PrMuted,
-                modifier = Modifier.size(36.dp).clip(CircleShape).clickable { emojiOpen = !emojiOpen }.padding(7.dp),
+                modifier = Modifier.size(44.dp).clip(CircleShape).clickable { emojiOpen = !emojiOpen }.padding(10.dp),
             )
-            Spacer(Modifier.width(4.dp))
-            Box(
-                Modifier.weight(1f).clip(RoundedCornerShape(24.dp)).background(PrCard).border(1.dp, PrHair, RoundedCornerShape(24.dp))
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-            ) {
-                if (text.isEmpty()) Text("Message", color = PrMuted, fontSize = 14.sp)
+            Box(Modifier.weight(1f).padding(horizontal = 4.dp, vertical = 10.dp)) {
+                if (text.isEmpty()) Text("Type a message", color = PrMuted, fontSize = 15.sp)
                 BasicTextField(
-                    value = text, onValueChange = { if (it.length <= 500) text = it }, singleLine = true,
-                    textStyle = TextStyle(color = Color.White, fontSize = 14.sp),
+                    value = text, onValueChange = { if (it.length <= 500) text = it }, maxLines = 4,
+                    textStyle = TextStyle(color = Color.White, fontSize = 15.sp),
                     cursorBrush = SolidColor(Color.White),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                     keyboardActions = KeyboardActions(onSend = { send() }),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            Spacer(Modifier.width(8.dp))
             val ready = text.isNotBlank()
-            Text(
-                "Send", color = if (ready) Color.Black else Color(0xFF6A6A70), fontSize = 13.sp, fontWeight = FontWeight.Medium,
-                modifier = Modifier.clip(RoundedCornerShape(24.dp)).background(if (ready) Color.White else PrChip)
-                    .clickable(enabled = ready) { send() }.padding(horizontal = 16.dp, vertical = 12.dp),
+            androidx.compose.material3.Icon(
+                painter = androidx.compose.ui.res.painterResource(com.biaruuu.kiro.R.drawable.fluent_send_regular),
+                contentDescription = "Send", tint = if (ready) Color.White else Color(0xFF55555B),
+                modifier = Modifier.size(44.dp).clip(CircleShape).clickable(enabled = ready) { send() }.padding(10.dp),
             )
         }
     }

@@ -146,10 +146,16 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
                         modifier = Modifier.size(44.dp).clip(RoundedCornerShape(22.dp)).clickable(onClick = onBack).padding(10.dp),
                     )
                     Column(Modifier.weight(1f).padding(horizontal = 4.dp)) {
-                        Text(
-                            room.name.ifBlank { "Watch party" }, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                room.name.ifBlank { "Watch party" }, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                            )
+                            if (p.host) {
+                                Spacer(Modifier.width(6.dp))
+                                Icon(painterResource(R.drawable.fluent_crown_filled), contentDescription = "You are the host", tint = Color.Unspecified, modifier = Modifier.size(18.dp))
+                            }
+                        }
                         Text("${p.code} · ${members.size} in room", color = RmMuted, fontSize = 12.sp)
                     }
                     RmButton("Invite", filled = true) { sheet = Sheet.Invite }
@@ -239,20 +245,34 @@ private fun RoomPanel(
 ) {
     val room by WatchParty.room.collectAsState()
     Column(modifier.background(RmBg)) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
-        ) {
-            listOf("Chat", "Voice").forEachIndexed { i, label ->
+        Row(Modifier.fillMaxWidth().height(52.dp)) {
+            val tabs = listOf(R.drawable.fluent_chat_regular to "Chat", R.drawable.fluent_phone_regular to "Voice")
+            tabs.forEachIndexed { i, (icon, label) ->
                 val on = tab == i
-                Text(
-                    label, color = if (on) Color.Black else Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium,
-                    modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (on) Color.White else RmChip)
-                        .clickable { onTab(i) }.padding(horizontal = 16.dp, vertical = 8.dp),
-                )
+                Box(
+                    Modifier.weight(1f).fillMaxHeight().background(if (on) RmCard else RmBg).clickable { onTab(i) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(2.dp).background(if (on) Color.White else Color.Transparent))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(painterResource(icon), contentDescription = label, tint = if (on) Color.White else RmMuted, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(label, color = if (on) Color.White else RmMuted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
             }
-            Spacer(Modifier.weight(1f))
-            if (hasVideo) RmButton("Fullscreen", onClick = onFullscreen)
+            if (hasVideo) {
+                Box(
+                    Modifier.weight(1f).fillMaxHeight().background(RmBg).clickable(onClick = onFullscreen),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(painterResource(R.drawable.fluent_fullscreen_regular), contentDescription = "Fullscreen", tint = RmMuted, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Fullscreen", color = RmMuted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
+            }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(RmHair))
         if (tab == 0) {
@@ -285,8 +305,13 @@ private fun VoicePane(voiceOff: Boolean, modifier: Modifier) {
                 DecoratedAvatar(m.avatar, m.name, 36.dp, m.decoration)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(m.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    if (m.host) Text("Host", color = RmMuted, fontSize = 11.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(m.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                        if (m.host) {
+                            Spacer(Modifier.width(6.dp))
+                            Icon(painterResource(R.drawable.fluent_crown_filled), contentDescription = "Host", tint = Color.Unspecified, modifier = Modifier.size(16.dp))
+                        }
+                    }
                 }
                 Text(
                     if (!m.voice) "Not in voice" else if (m.muted) "Muted" else "Talking",
@@ -387,7 +412,13 @@ private fun SheetContent(
                     DecoratedAvatar(m.avatar, m.name, 40.dp, m.decoration)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(m.name, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(m.name, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                            if (m.host) {
+                                Spacer(Modifier.width(6.dp))
+                                Icon(painterResource(R.drawable.fluent_crown_filled), contentDescription = "Host", tint = Color.Unspecified, modifier = Modifier.size(16.dp))
+                            }
+                        }
                         Text(if (m.host) "Host" else if (m.voice) "In voice" else "Watching", color = RmMuted, fontSize = 12.sp)
                     }
                     if (p.host && !m.host) {

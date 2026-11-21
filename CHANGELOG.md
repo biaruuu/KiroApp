@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.78.0]
+### Changed
+- Watch party room: Chat and Voice are now wide tabs with icons (plus a Fullscreen tab), like Hyperbeam, instead of pill buttons.
+- The message box is a clean bar at the bottom: emoji, "Type a message" and a send icon.
+- The host has a crown next to their name in the room header, chat and member lists.
+- Removed the avatar chip from the video player in a watch party.
+- The player's controls shrink to fit the small portrait player in the room page.
+
 ## [1.77.0]
 ### Added
 - The watch party room is now its own page, like Hyperbeam: the Kiro player sits at the top (same look as always) with Chat and Voice tabs underneath, and a Fullscreen button. Turn the phone sideways to go fullscreen; on tablets the chat sits beside the video.

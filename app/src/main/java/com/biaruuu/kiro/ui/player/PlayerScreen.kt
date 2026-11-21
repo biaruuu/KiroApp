@@ -1066,14 +1066,6 @@ fun PlayerScreen(
             }
         }
 
-        // A chip with the avatars of everyone in the watch party; tap it to see who they are.
-        if (party != null && partyMembers.isNotEmpty() && !inPip && panel == null) {
-            PartyChip(
-                partyMembers,
-                Modifier.align(Alignment.TopEnd).padding(top = 64.dp, end = 20.dp),
-            ) { panel = Panel.Members }
-        }
-
         // A friend's new message shows for a few seconds without opening the chat.
         if (party != null && !inPip && panel == null) {
             com.biaruuu.kiro.ui.party.PartyToast(Modifier.align(Alignment.BottomStart).padding(start = 20.dp, bottom = 96.dp).fillMaxWidth(0.5f))
@@ -1390,11 +1382,12 @@ private fun Controls(
             ),
         ),
     ) {
-        val sidePad = 24.dp
+        val compact = maxHeight < 280.dp
+        val sidePad = if (compact) 14.dp else 24.dp
 
         // Top bar: close, title, more.
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = sidePad).padding(top = 18.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = sidePad).padding(top = if (compact) 10.dp else 18.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -1431,22 +1424,22 @@ private fun Controls(
                 painter = painterResource(R.drawable.fluent_skip_back_10_regular),
                 contentDescription = "Back 10 seconds",
                 tint = Color.White,
-                modifier = Modifier.size(34.dp).clip(CircleShape).clickable(onClick = onBack10),
+                modifier = Modifier.size(if (compact) 28.dp else 34.dp).clip(CircleShape).clickable(onClick = onBack10),
             )
             Box(
-                modifier = Modifier.size(56.dp).clip(CircleShape).clickable(onClick = onTogglePlay),
+                modifier = Modifier.size(if (compact) 44.dp else 56.dp).clip(CircleShape).clickable(onClick = onTogglePlay),
                 contentAlignment = Alignment.Center,
             ) {
                 if (buffering) {
-                    com.biaruuu.kiro.ui.components.KiroSpinner(size = 48.dp)
+                    com.biaruuu.kiro.ui.components.KiroSpinner(size = if (compact) 36.dp else 48.dp)
                 } else {
                     if (isPlaying) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             repeat(2) {
                                 Box(
                                     modifier = Modifier
-                                        .width(8.dp)
-                                        .height(32.dp)
+                                        .width(if (compact) 6.dp else 8.dp)
+                                        .height(if (compact) 24.dp else 32.dp)
                                         .clip(RoundedCornerShape(4.dp))
                                         .background(Color.White),
                                 )
@@ -1457,7 +1450,7 @@ private fun Controls(
                             painter = painterResource(R.drawable.fluent_play_filled),
                             contentDescription = "Play",
                             tint = Color.White,
-                            modifier = Modifier.size(44.dp),
+                            modifier = Modifier.size(if (compact) 34.dp else 44.dp),
                         )
                     }
                 }
@@ -1466,13 +1459,13 @@ private fun Controls(
                 painter = painterResource(R.drawable.fluent_skip_forward_10_regular),
                 contentDescription = "Forward 10 seconds",
                 tint = Color.White,
-                modifier = Modifier.size(34.dp).clip(CircleShape).clickable(onClick = onForward10),
+                modifier = Modifier.size(if (compact) 28.dp else 34.dp).clip(CircleShape).clickable(onClick = onForward10),
             )
         }
 
         // Bottom: times + seek bar, then the four actions.
         Column(
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = 14.dp),
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = if (compact) 6.dp else 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Row(
@@ -1480,7 +1473,7 @@ private fun Controls(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(formatTime(position), color = Color.White.copy(alpha = 0.75f), fontSize = 11.sp, fontWeight = FontWeight.Medium)
-                Spacer(Modifier.width(14.dp))
+                Spacer(Modifier.width(if (compact) 8.dp else 14.dp))
                 SeekBar(
                     position = position,
                     duration = duration,
@@ -1490,14 +1483,14 @@ private fun Controls(
                     onSeekEnd = onSeekEnd,
                     modifier = Modifier.weight(1f),
                 )
-                Spacer(Modifier.width(14.dp))
+                Spacer(Modifier.width(if (compact) 8.dp else 14.dp))
                 Text(formatTime(duration), color = Color.White.copy(alpha = 0.75f), fontSize = 11.sp, fontWeight = FontWeight.Medium)
             }
-            Spacer(Modifier.height(4.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(28.dp), verticalAlignment = Alignment.CenterVertically) {
-                Action(R.drawable.fluent_closed_caption_regular, "Audio & Subtitles", true, onTracks)
+            Spacer(Modifier.height(if (compact) 0.dp else 4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 28.dp), verticalAlignment = Alignment.CenterVertically) {
+                Action(R.drawable.fluent_closed_caption_regular, if (compact) "Subtitles" else "Audio & Subtitles", true, onTracks)
                 Action(R.drawable.fluent_video_clip_multiple_regular, "Episodes", true, onEpisodes)
-                Action(R.drawable.fluent_next_regular, "Next Episode", hasNext, onNext)
+                Action(R.drawable.fluent_next_regular, if (compact) "Next" else "Next Episode", hasNext, onNext)
                 Action(R.drawable.fluent_lock_open_regular, "Lock", true, onLock)
             }
         }
@@ -2223,25 +2216,3 @@ private fun PartyButton(label: String, filled: Boolean, onClick: () -> Unit) {
     )
 }
 
-@Composable
-private fun PartyChip(members: List<com.biaruuu.kiro.data.WatchParty.Member>, modifier: Modifier, onClick: () -> Unit) {
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(Color.Black.copy(alpha = 0.6f))
-            .clickable(onClick = onClick)
-            .padding(start = 6.dp, end = 12.dp, top = 5.dp, bottom = 5.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy((-9).dp)) {
-            members.take(3).forEach { m ->
-                com.biaruuu.kiro.ui.components.DecoratedAvatar(m.avatar, m.name, 26.dp, m.decoration)
-            }
-        }
-        Spacer(Modifier.width(10.dp))
-        Text(
-            if (members.size > 3) "+${members.size - 3}" else "${members.size}",
-            color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium,
-        )
-    }
-}
