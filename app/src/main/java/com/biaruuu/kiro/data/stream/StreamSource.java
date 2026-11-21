@@ -61,6 +61,11 @@ public final class StreamSource {
         return new StreamSource(providerName, url, height, hls, subtitles, audio, ms, headers);
     }
 
+    @NonNull
+    public StreamSource withSubtitles(@NonNull List<SubtitleTrack> tracks) {
+        return new StreamSource(providerName, url, height, hls, tracks, audio, latencyMs, headers);
+    }
+
     /** Request headers (Referer, Origin, User-Agent) the address needs; empty for most. */
     @NonNull
     public java.util.Map<String, String> getHeaders() {

@@ -79,6 +79,9 @@ public final class StreamResolver {
         for (StreamProvider p : providers) {
             pending.add(done.submit(() -> p.resolve(request)));
         }
+        // The developer's own Tagalog dub is never cut short by the grace period: it is the
+        // only copy of that audio, and its host (archive.org) can be slow to answer.
+        Future<List<StreamSource>> own = pending.get(0);
         List<StreamSource> candidates = new ArrayList<>();
         long deadline = System.currentTimeMillis() + PROVIDER_TIMEOUT_S * 1000L;
         int remaining = pending.size();
@@ -95,10 +98,13 @@ public final class StreamResolver {
                 remaining--;
                 try {
                     List<StreamSource> got = f.get();
-                    if (!got.isEmpty() && candidates.isEmpty()) {
+                    if (!got.isEmpty() && candidates.isEmpty() && own.isDone()) {
                         deadline = Math.min(deadline, System.currentTimeMillis() + PROVIDER_GRACE_MS);
                     }
                     candidates.addAll(got);
+                    if (!candidates.isEmpty() && own.isDone() && deadline - System.currentTimeMillis() > PROVIDER_GRACE_MS) {
+                        deadline = System.currentTimeMillis() + PROVIDER_GRACE_MS;
+                    }
                 } catch (Exception ignored) {
                     // A provider that fails is simply skipped.
                 }
@@ -106,6 +112,31 @@ public final class StreamResolver {
         } finally {
             for (Future<List<StreamSource>> f : pending) {
                 f.cancel(true);
+            }
+        }
+
+        // Tagalog dub carries no captions of its own: lend it English ones from the other sources.
+        List<SubtitleTrack> english = new ArrayList<>();
+        for (StreamSource c : candidates) {
+            if (c.getProviderName().startsWith("Tagalog")) {
+                continue;
+            }
+            for (SubtitleTrack t : c.getSubtitles()) {
+                String l = (t.getLanguage() + " " + t.getLabel()).toLowerCase(java.util.Locale.ROOT);
+                if ((l.contains("english") || l.matches(".*\\ben\\b.*")) && !l.contains("forced")) {
+                    english.add(t);
+                }
+            }
+            if (english.size() >= 3) {
+                break;
+            }
+        }
+        if (!english.isEmpty()) {
+            for (int i = 0; i < candidates.size(); i++) {
+                StreamSource c = candidates.get(i);
+                if (c.getProviderName().startsWith("Tagalog") && c.getSubtitles().isEmpty()) {
+                    candidates.set(i, c.withSubtitles(english));
+                }
             }
         }
 
@@ -181,6 +212,6 @@ public final class StreamResolver {
      * so a slow probe only ranks them last instead of dropping them. Other addresses are dropped.
      */
     private static StreamSource trusted(StreamSource source) {
-        return source.getProviderName().startsWith("Anivault") ? source.withLatency(4000) : null;
+        return source.getProviderName().startsWith("Anivault") || source.getProviderName().startsWith("Tagalog") ? source.withLatency(4000) : null;
     }
 }

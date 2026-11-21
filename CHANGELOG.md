@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.66.1]
+### Fixed
+- Tagalog dub episodes now show up in Audio & Subtitles: they are no longer cut off by the provider time limit or dropped by a slow check on the video host.
+### Added
+- Tagalog dub gets English captions borrowed from the other sources.
+
 ## [1.66.0]
 ### Added
 - Tagalog dub library: a new Tagalog tab in the admin panel to add dub episodes (search AniList, episode number, video link). They are saved in Firestore and play as a "Tagalog Dub" source for that anime and episode. Publish the updated firestore.rules.
