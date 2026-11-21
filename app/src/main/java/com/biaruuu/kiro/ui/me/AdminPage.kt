@@ -98,7 +98,7 @@ fun AdminPage() {
             )
         }
         Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
-            listOf("Online", "Letters", "Reports", "Announce", "Designs", "Tagalog").forEachIndexed { i, label ->
+            listOf("Online", "Letters", "Reports", "Announce", "Designs", "Filipino").forEachIndexed { i, label ->
                 Column(
                     modifier = Modifier.clickable { tab = i }.padding(top = 10.dp, start = 12.dp, end = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -488,8 +488,8 @@ private fun TagalogTab() {
 
     LazyColumn(modifier = Modifier.fillMaxSize().imePadding(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
-            Text("Add a Tagalog dub episode", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-            Text("Played as a \"Tagalog Dub\" source for that anime and episode. Use a direct video link (.m3u8 or .mp4) that opens without signing in.", color = Muted, fontSize = 12.sp, lineHeight = 17.sp)
+            Text("Add a Filipino dub episode", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+            Text("Played as a \"Filipino Dub\" source for that anime and episode. Use a direct video link (.m3u8 or .mp4) that opens without signing in.", color = Muted, fontSize = 12.sp, lineHeight = 17.sp)
             Spacer(Modifier.height(12.dp))
             val c = chosen
             if (c == null) {

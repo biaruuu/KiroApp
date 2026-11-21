@@ -1966,10 +1966,10 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
     }
 }
 
-/** Japanese for the original, Tagalog for the developer's own dub, English for every other dub. */
+/** Japanese for the original, Filipino for the developer's own dub, English for every other dub. */
 private fun audioLanguage(s: com.biaruuu.kiro.data.stream.StreamSource): String = when {
     !s.isDub -> "Japanese"
-    s.providerName.startsWith("Tagalog") -> "Tagalog"
+    s.providerName.startsWith("Filipino") -> "Filipino"
     else -> "English"
 }
 

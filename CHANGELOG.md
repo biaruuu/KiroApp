@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.66.3]
+### Changed
+- The Tagalog dub is now called Filipino (audio list, source name and admin tab).
+### Removed
+- Borrowed English captions on the Filipino dub.
+
 ## [1.66.2]
 ### Fixed
 - Audio & Subtitles now lists every audio language of the episode (Japanese, English, Tagalog) instead of only Japanese and English, so the Tagalog dub can be chosen.

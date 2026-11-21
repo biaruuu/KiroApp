@@ -115,31 +115,6 @@ public final class StreamResolver {
             }
         }
 
-        // Tagalog dub carries no captions of its own: lend it English ones from the other sources.
-        List<SubtitleTrack> english = new ArrayList<>();
-        for (StreamSource c : candidates) {
-            if (c.getProviderName().startsWith("Tagalog")) {
-                continue;
-            }
-            for (SubtitleTrack t : c.getSubtitles()) {
-                String l = (t.getLanguage() + " " + t.getLabel()).toLowerCase(java.util.Locale.ROOT);
-                if ((l.contains("english") || l.matches(".*\\ben\\b.*")) && !l.contains("forced")) {
-                    english.add(t);
-                }
-            }
-            if (english.size() >= 3) {
-                break;
-            }
-        }
-        if (!english.isEmpty()) {
-            for (int i = 0; i < candidates.size(); i++) {
-                StreamSource c = candidates.get(i);
-                if (c.getProviderName().startsWith("Tagalog") && c.getSubtitles().isEmpty()) {
-                    candidates.set(i, c.withSubtitles(english));
-                }
-            }
-        }
-
         // 2. Measure every address at once.
         List<Callable<StreamSource>> probes = new ArrayList<>();
         for (StreamSource s : candidates) {
@@ -212,6 +187,6 @@ public final class StreamResolver {
      * so a slow probe only ranks them last instead of dropping them. Other addresses are dropped.
      */
     private static StreamSource trusted(StreamSource source) {
-        return source.getProviderName().startsWith("Anivault") || source.getProviderName().startsWith("Tagalog") ? source.withLatency(4000) : null;
+        return source.getProviderName().startsWith("Anivault") || source.getProviderName().startsWith("Filipino") ? source.withLatency(4000) : null;
     }
 }
