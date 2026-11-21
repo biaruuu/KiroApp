@@ -4,6 +4,10 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.72.0]
+### Removed
+- The Anime enhancer, line sharpener and upscaler are removed from the player.
+
 ## [1.71.0]
 ### Added
 - Kiro upscaler for the Anime enhancer: on Balanced and Quality (and Auto when the phone can take it) small videos are enlarged to fit your screen before the line sharpening. It uses an edge-preserving bicubic filter with halo protection, running on the GPU.
