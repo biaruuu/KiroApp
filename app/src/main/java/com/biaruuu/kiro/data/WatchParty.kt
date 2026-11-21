@@ -48,6 +48,11 @@ object WatchParty {
     private var partyReg: ListenerRegistration? = null
     private var membersReg: ListenerRegistration? = null
 
+    // What the host last wrote to Firestore (so it is not written every 1.5 s while the socket works).
+    private var lastFsPlaying = false
+    private var lastFsEpisode = -1
+    private var lastFsAt = 0L
+
     private fun db() = FirebaseFirestore.getInstance()
     internal fun uid() = (AuthRepository.state.value as? AuthState.SignedIn)?.uid
     internal fun myName() = nickname.ifBlank { ProfileRepository.profile.value.username.ifBlank { "Guest" } }
@@ -91,6 +96,10 @@ object WatchParty {
                 Achievements.bump(c, "hosted")
                 listenMembers(code)
                 listenParty(code, me)
+                // Realtime playback goes over the socket; guests find its room code in `wsRoom`.
+                PartySocket.startHost(me, myName(), animeId, episode, title) { wsId ->
+                    db().collection("parties").document(code).update("wsRoom", wsId)
+                }
                 onDone(code, null)
             }
             .addOnFailureListener { onDone(null, friendly(it)) }
@@ -133,6 +142,7 @@ object WatchParty {
         session.value = Session(code, false)
         remote.value = null
         Achievements.bump(c, "joined")
+        PartySocket.warmUp()
         writeMember(code, me, false)
         listenParty(code, me)
         listenMembers(code)
@@ -159,7 +169,10 @@ object WatchParty {
                 leave()
                 return@addSnapshotListener
             }
-            toRemote(snap.data)?.let { remote.value = it }
+            // Guests follow the host over the realtime socket; Firestore only fills in while it is not connected.
+            val wsRoom = snap.getString("wsRoom").orEmpty()
+            if (session.value?.host == false && wsRoom.isNotBlank()) PartySocket.startGuest(wsRoom, me, myName())
+            toRemote(snap.data)?.let { if (session.value?.host == true || !PartySocket.open.value) remote.value = it }
         }
     }
 
@@ -181,6 +194,14 @@ object WatchParty {
     fun push(animeId: Int, episode: Int, positionMs: Long, playing: Boolean, title: String = "") {
         val s = session.value ?: return
         if (!s.host) return
+        val viaSocket = PartySocket.push(animeId, episode, positionMs, playing, title)
+        // Firestore is the backup (and what a late joiner reads before the socket connects), so
+        // while the socket works it is only written on a change or every 10 seconds.
+        val nowMs = System.currentTimeMillis()
+        if (viaSocket && playing == lastFsPlaying && episode == lastFsEpisode && nowMs - lastFsAt < 10_000L) return
+        lastFsPlaying = playing
+        lastFsEpisode = episode
+        lastFsAt = nowMs
         val fields = hashMapOf<String, Any>(
             "animeId" to animeId, "episode" to episode, "positionMs" to positionMs, "playing" to playing,
             "sentAt" to System.currentTimeMillis(),
@@ -193,6 +214,10 @@ object WatchParty {
     fun select(animeId: Int, episode: Int) {
         val s = session.value ?: return
         if (!s.host) return
+        PartySocket.select(animeId, episode)
+        lastFsEpisode = episode
+        lastFsAt = System.currentTimeMillis()
+        lastFsPlaying = false
         db().collection("parties").document(s.code).update(
             mapOf("animeId" to animeId, "episode" to episode, "positionMs" to 0L, "playing" to false, "title" to "", "sentAt" to System.currentTimeMillis()),
         )
@@ -252,6 +277,9 @@ object WatchParty {
     }
 
     private fun stopListening() {
+        PartySocket.stop()
+        lastFsEpisode = -1
+        lastFsAt = 0L
         partyReg?.remove()
         membersReg?.remove()
         partyReg = null
