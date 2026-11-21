@@ -272,28 +272,17 @@ fun ContactPage(onDone: () -> Unit) {
                     }
                 }
                 Spacer(Modifier.height(20.dp))
-                Text("Your message", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                Spacer(Modifier.height(10.dp))
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
-                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
-                        .background(Color(0xFF18181B))
-                        .padding(14.dp),
-                ) {
-                    androidx.compose.foundation.text.BasicTextField(
-                        value = message,
-                        onValueChange = { if (it.length <= 1000) message = it },
-                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 15.sp, lineHeight = 22.sp),
-                        cursorBrush = androidx.compose.ui.graphics.SolidColor(KiroAccent),
-                        modifier = Modifier.fillMaxSize(),
-                        decorationBox = { inner ->
-                            if (message.isEmpty()) Text("Tell us what's wrong or what you'd like to see", color = Muted, fontSize = 15.sp)
-                            inner()
-                        },
-                    )
-                }
+                com.biaruuu.kiro.ui.auth.UnderlineField(
+                    value = message,
+                    onChange = { if (it.length <= 1000) message = it },
+                    hint = "Your message",
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Text,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Default,
+                    onImeAction = {},
+                    singleLine = false,
+                    autoFocus = false,
+                    minHeight = 160.dp,
+                )
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth()) {
                     Text("Sending as ${profile.username.ifBlank { signedIn.name }}", color = Muted, fontSize = 12.sp, modifier = Modifier.weight(1f))

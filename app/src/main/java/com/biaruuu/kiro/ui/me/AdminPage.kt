@@ -495,12 +495,12 @@ private fun AnnounceTab() {
                 Spacer(Modifier.height(10.dp))
                 UnderlineField(
                     value = title, onChange = { if (it.length <= 80) title = it }, hint = "Title",
-                    keyboardType = KeyboardType.Text, imeAction = ImeAction.Next, onImeAction = {},
+                    keyboardType = KeyboardType.Text, imeAction = ImeAction.Next, onImeAction = {}, autoFocus = false,
                 )
                 Spacer(Modifier.height(10.dp))
                 UnderlineField(
                     value = body, onChange = { if (it.length <= 1000) body = it }, hint = "Message",
-                    keyboardType = KeyboardType.Text, imeAction = ImeAction.Default, onImeAction = {}, singleLine = false,
+                    keyboardType = KeyboardType.Text, imeAction = ImeAction.Default, onImeAction = {}, autoFocus = false, singleLine = false,
                 )
                 Text("${body.length}/1000", color = Muted, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
                 Spacer(Modifier.height(12.dp))
@@ -588,7 +588,7 @@ private fun DesignsTab() {
                 Spacer(Modifier.height(10.dp))
                 UnderlineField(
                     value = name, onChange = { if (it.length <= 30) name = it }, hint = "Name",
-                    keyboardType = KeyboardType.Text, imeAction = ImeAction.Done, onImeAction = {},
+                    keyboardType = KeyboardType.Text, imeAction = ImeAction.Done, onImeAction = {}, autoFocus = false,
                 )
                 Spacer(Modifier.height(14.dp))
                 val bytes = picked
@@ -685,7 +685,7 @@ private fun TagalogTab() {
                 if (c == null) {
                     UnderlineField(
                         value = query, onChange = { query = it }, hint = "Search AniList by title",
-                        keyboardType = KeyboardType.Text, imeAction = ImeAction.Search, onImeAction = {},
+                        keyboardType = KeyboardType.Text, imeAction = ImeAction.Search, onImeAction = {}, autoFocus = false,
                     )
                 } else {
                     Row(
@@ -708,17 +708,17 @@ private fun TagalogTab() {
                     AdmLabel("2 · Episode and video")
                     UnderlineField(
                         value = episode, onChange = { if (it.length <= 4 && it.all(Char::isDigit)) episode = it }, hint = "Episode number",
-                        keyboardType = KeyboardType.Number, imeAction = ImeAction.Next, onImeAction = {},
+                        keyboardType = KeyboardType.Number, imeAction = ImeAction.Next, onImeAction = {}, autoFocus = false,
                     )
                     Spacer(Modifier.height(10.dp))
                     UnderlineField(
                         value = url, onChange = { url = it.trim() }, hint = "Video link (.m3u8 or .mp4)",
-                        keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next, onImeAction = {},
+                        keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next, onImeAction = {}, autoFocus = false,
                     )
                     Spacer(Modifier.height(10.dp))
                     UnderlineField(
                         value = referer, onChange = { referer = it.trim() }, hint = "Referer (only if the host needs one)",
-                        keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done, onImeAction = {},
+                        keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done, onImeAction = {}, autoFocus = false,
                     )
                     AdmLabel("Quality")
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {

@@ -171,11 +171,10 @@ private fun OnboardingFlow(suggestion: String) {
                 Spacer(Modifier.height(24.dp))
                 when (step) {
                     0 -> {
-                        Text("Username", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                         UnderlineField(
                             value = username,
                             onChange = { if (it.length <= ProfileRepository.MAX_USERNAME) username = it.trim() },
-                            hint = "Enter username",
+                            hint = "Username",
                             keyboardType = KeyboardType.Ascii,
                             imeAction = ImeAction.Next,
                             onImeAction = { if (nameOk) step = 1 },
@@ -184,11 +183,10 @@ private fun OnboardingFlow(suggestion: String) {
                         CheckBox("3-20 characters: letters, numbers, _ or .", nameOk)
                     }
                     1 -> {
-                        Text("Bio", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                         UnderlineField(
                             value = bio,
                             onChange = { if (it.length <= ProfileRepository.MAX_BIO) bio = it },
-                            hint = "Write something about you",
+                            hint = "Bio",
                             keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Default,
                             onImeAction = {},

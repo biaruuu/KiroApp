@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -500,11 +501,11 @@ private fun EmailFlow(onBack: () -> Unit) {
             )
             Column(modifier = Modifier.weight(1f).fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 16.dp)) {
                 if (step == 0) {
-                    Text("Email", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     UnderlineField(
                         value = email,
                         onChange = { email = it },
-                        hint = "Enter email",
+                        hint = "Email",
+                        error = if (email.isNotBlank() && !emailOk) "Invalid email format" else null,
                         keyboardType = KeyboardType.Email,
                         imeAction = ImeAction.Next,
                         onImeAction = { submit() },
@@ -514,11 +515,10 @@ private fun EmailFlow(onBack: () -> Unit) {
                 } else {
                     Text(email.trim(), color = Muted, fontSize = 13.sp)
                     Spacer(Modifier.height(14.dp))
-                    Text("Password", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     UnderlineField(
                         value = password,
                         onChange = { password = it },
-                        hint = "Enter password",
+                        hint = "Password",
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done,
                         onImeAction = { submit() },
@@ -585,6 +585,12 @@ private fun EmailFlow(onBack: () -> Unit) {
     }
 }
 
+/**
+ * The app's text field: a rounded box whose label sits inside while empty and floats to the top
+ * once you type or focus it. A red border and a short message appear under it for an error, but only
+ * after the person has left the field, so it never scolds while they are still typing.
+ * (Kept under its old name so every form picks up the new look.)
+ */
 @Composable
 internal fun UnderlineField(
     value: String,
@@ -596,33 +602,73 @@ internal fun UnderlineField(
     transformation: VisualTransformation = VisualTransformation.None,
     trailing: (@Composable () -> Unit)? = null,
     singleLine: Boolean = true,
+    error: String? = null,
+    autoFocus: Boolean = true,
+    minHeight: androidx.compose.ui.unit.Dp = 58.dp,
 ) {
     val focus = remember { FocusRequester() }
     var focused by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { focus.requestFocus() }
+    var touched by remember { mutableStateOf(false) }
+    if (autoFocus) LaunchedEffect(Unit) { focus.requestFocus() }
+    val floated = focused || value.isNotEmpty()
+    val progress by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (floated) 1f else 0f,
+        animationSpec = androidx.compose.animation.core.tween(140),
+        label = "fieldLabel",
+    )
+    val showError = error != null && touched && !focused
+    val border = when {
+        showError -> Color(0xFFFF6B6B)
+        focused -> Color.White
+        else -> Color(0xFF2E2E33)
+    }
     val style = TextStyle(color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, fontFamily = AppFont)
-    Column {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            BasicTextField(
-                value = value,
-                onValueChange = onChange,
-                singleLine = singleLine,
-                textStyle = style,
-                cursorBrush = SolidColor(Color.White),
-                visualTransformation = transformation,
-                keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
-                keyboardActions = KeyboardActions(onNext = { onImeAction() }, onDone = { onImeAction() }),
-                modifier = Modifier.weight(1f).focusRequester(focus).onFocusChanged { focused = it.isFocused },
-                decorationBox = { inner ->
-                    Box(Modifier.padding(vertical = 12.dp)) {
-                        if (value.isEmpty()) Text(hint, color = HintGray, fontSize = 16.sp, fontWeight = FontWeight.Normal)
-                        inner()
-                    }
-                },
-            )
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = minHeight)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0xFF18181B))
+                .border(if (focused || showError) 1.5.dp else 1.dp, border, RoundedCornerShape(12.dp))
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { focus.requestFocus() }
+                .padding(start = 16.dp, end = if (trailing != null) 8.dp else 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.weight(1f)) {
+                // Label: big and centred while empty, small and at the top once there is text.
+                Text(
+                    hint,
+                    color = if (showError) Color(0xFFFF8A8A) else if (focused) Color.White else HintGray,
+                    fontSize = (16f - 4f * progress).sp,
+                    fontWeight = FontWeight.Normal,
+                    maxLines = 1,
+                    modifier = Modifier.align(Alignment.TopStart).offset(y = (19f - 11f * progress).dp),
+                )
+                BasicTextField(
+                    value = value,
+                    onValueChange = onChange,
+                    singleLine = singleLine,
+                    textStyle = style,
+                    cursorBrush = SolidColor(Color.White),
+                    visualTransformation = transformation,
+                    keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
+                    keyboardActions = KeyboardActions(onNext = { onImeAction() }, onDone = { onImeAction() }),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 26.dp, bottom = 9.dp)
+                        .focusRequester(focus)
+                        .onFocusChanged {
+                            if (focused && !it.isFocused) touched = true
+                            focused = it.isFocused
+                        },
+                )
+            }
             trailing?.invoke()
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(if (focused) Color.White else Color(0xFF3A3A3F)))
+        if (showError) {
+            Text(error!!, color = Color(0xFFFF6B6B), fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, top = 6.dp))
+        }
     }
 }
 

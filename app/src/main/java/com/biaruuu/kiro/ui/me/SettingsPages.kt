@@ -474,11 +474,10 @@ private fun EditUsername(current: String, done: () -> Unit) {
     val ok = ProfileRepository.validUsername(name)
     Column(modifier = Modifier.fillMaxSize().imePadding().padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 16.dp)) {
         Column(modifier = Modifier.weight(1f)) {
-            Text("Username", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
             UnderlineField(
                 value = name,
                 onChange = { if (it.length <= ProfileRepository.MAX_USERNAME) name = it.trim() },
-                hint = "Enter username",
+                hint = "Username",
                 keyboardType = KeyboardType.Ascii,
                 imeAction = ImeAction.Done,
                 onImeAction = {
@@ -508,11 +507,10 @@ private fun EditBio(current: String, done: () -> Unit) {
     var bio by remember { mutableStateOf(current) }
     Column(modifier = Modifier.fillMaxSize().imePadding().padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 16.dp)) {
         Column(modifier = Modifier.weight(1f)) {
-            Text("Bio", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
             UnderlineField(
                 value = bio,
                 onChange = { if (it.length <= ProfileRepository.MAX_BIO) bio = it },
-                hint = "Write something about you",
+                hint = "Bio",
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Default,
                 onImeAction = {},

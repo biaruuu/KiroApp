@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.75.0]
+### Changed
+- New text fields across the app: a rounded box with the label inside that floats up when you type. Used for log in and sign up, username and bio, feedback, and every admin form.
+- Errors show as a red border with a short message under the field, only after you leave it (for example "Invalid email format").
+- Admin fields no longer pop the keyboard open on their own.
+
 ## [1.74.0]
 ### Changed
 - Admin panel now opens on a home screen with one card per tool (Online, Letters, Reports, Announce, Designs, Filipino dub). Each tool opens as its own page with a back button, and the cards lay out in two columns on wide screens.
