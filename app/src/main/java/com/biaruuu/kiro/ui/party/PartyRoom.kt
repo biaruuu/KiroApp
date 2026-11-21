@@ -136,9 +136,12 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
     fun send() {
         if (text.isBlank()) return
         PartyChat.send(text)
+        field?.setText("")
         text = ""
     }
     var emojiOpen by remember { mutableStateOf(false) }
+    var field by remember { mutableStateOf<android.widget.EditText?>(null) }
+    val keyboard = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     val hostUid = WatchParty.members.collectAsState().value.firstOrNull { it.host }?.uid
     Column(modifier.imePadding()) {
         if (msgs.isEmpty()) {
@@ -184,42 +187,29 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                                 Spacer(Modifier.width(8.dp))
                                 Text(timeFormat.format(Date(m.at)), color = PrMuted, fontSize = 11.sp)
                             }
-                            Text(m.text, color = Color(0xFFD0D0D4), fontSize = 14.sp, lineHeight = 20.sp)
+                            EmojiText(m.text, Color(0xFFD0D0D4), 14f)
                         }
                     }
                 }
             }
         }
-        if (emojiOpen) {
-            val set = listOf("😂", "😍", "🔥", "👍", "😭", "🥹", "😮", "👏", "💀", "❤️", "🎉", "🙏")
-            androidx.compose.foundation.lazy.LazyRow(
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                items(set) { e ->
-                    Text(e, fontSize = 24.sp, modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable { if (text.length < 499) text += e }.padding(8.dp))
-                }
-            }
-        }
         Box(Modifier.fillMaxWidth().height(1.dp).background(PrHair))
         Row(
-            modifier = Modifier.fillMaxWidth().background(PrCard).navigationBarsPadding().padding(horizontal = 8.dp).heightIn(min = 60.dp),
+            modifier = Modifier.fillMaxWidth().background(PrCard).then(if (emojiOpen) Modifier else Modifier.navigationBarsPadding()).padding(horizontal = 8.dp).heightIn(min = 60.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             androidx.compose.material3.Icon(
                 painter = androidx.compose.ui.res.painterResource(com.biaruuu.kiro.R.drawable.fluent_emoji_regular),
                 contentDescription = "Emoji", tint = if (emojiOpen) Color.White else PrMuted,
-                modifier = Modifier.size(44.dp).clip(CircleShape).clickable { emojiOpen = !emojiOpen }.padding(10.dp),
+                modifier = Modifier.size(44.dp).clip(CircleShape).clickable {
+                    emojiOpen = !emojiOpen
+                    if (emojiOpen) keyboard?.hide() else field?.requestFocus()
+                }.padding(10.dp),
             )
             Box(Modifier.weight(1f).padding(horizontal = 4.dp, vertical = 10.dp)) {
-                if (text.isEmpty()) Text("Type a message", color = PrMuted, fontSize = 15.sp)
-                BasicTextField(
-                    value = text, onValueChange = { if (it.length <= 500) text = it }, maxLines = 4,
-                    textStyle = TextStyle(color = Color.White, fontSize = 15.sp),
-                    cursorBrush = SolidColor(Color.White),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                    keyboardActions = KeyboardActions(onSend = { send() }),
-                    modifier = Modifier.fillMaxWidth(),
+                EmojiInput(
+                    hint = "Type a message", textColor = Color.White, hintColor = PrMuted, modifier = Modifier.fillMaxWidth(),
+                    onReady = { field = it }, onChange = { text = it }, onSend = { send() },
                 )
             }
             val ready = text.isNotBlank()
@@ -228,6 +218,13 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                 contentDescription = "Send", tint = if (ready) Color.White else Color(0xFF55555B),
                 modifier = Modifier.size(44.dp).clip(CircleShape).clickable(enabled = ready) { send() }.padding(10.dp),
             )
+        }
+        if (emojiOpen) {
+            EmojiPickerPanel(height = 260.dp, modifier = Modifier.navigationBarsPadding(), onPick = { e ->
+                val f = field ?: return@EmojiPickerPanel
+                val at = f.selectionStart.coerceAtLeast(0)
+                if (f.text.length + e.length <= 500) f.text.insert(at, e)
+            })
         }
     }
 }
@@ -256,7 +253,7 @@ fun PartyToast(modifier: Modifier = Modifier) {
     ) {
         Text(m.name, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.width(8.dp))
-        Text(m.text, color = Color(0xFFE0E0E4), fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+        EmojiText(m.text, Color(0xFFE0E0E4), 12f, Modifier.weight(1f, fill = false), maxLines = 2)
     }
 }
 

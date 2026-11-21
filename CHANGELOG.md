@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.79.0]
+### Added
+- Chat now shows iOS-style emoji on every phone, using the Emoji library (vanniktech/Emoji). Emoji from your keyboard or the new picker are drawn with Apple's artwork in the message box, in chat and in the on-player message line.
+- New emoji picker in watch party chat: category tabs and a scrolling grid instead of a single row.
+
 ## [1.78.0]
 ### Changed
 - Watch party room: Chat and Voice are now wide tabs with icons (plus a Fullscreen tab), like Hyperbeam, instead of pill buttons.

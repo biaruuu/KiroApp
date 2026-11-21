@@ -23,6 +23,8 @@ public class KiroApplication extends Application implements ImageLoaderFactory {
     @Override
     public void onCreate() {
         super.onCreate();
+        // iOS-style emoji everywhere in chat, even on Android (vanniktech/Emoji).
+        com.biaruuu.kiro.ui.party.EmojiSetupKt.installIosEmoji();
         com.biaruuu.kiro.data.ApiDiskCache.init(this);
         // The streaming API sleeps when idle; wake it now so the first episode starts fast.
         com.biaruuu.kiro.data.stream.AnivaultProvider.warmUp();
