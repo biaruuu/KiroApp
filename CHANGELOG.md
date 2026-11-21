@@ -4,6 +4,10 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.68.1]
+### Changed
+- The skip mark is text only (-10, +10, +20...), without the arrow icon.
+
 ## [1.68.0]
 ### Added
 - Player: a -10 / +10 mark (icon and seconds) fades in on the side you double-tap or skip, and adds up when you repeat (+20, +30).

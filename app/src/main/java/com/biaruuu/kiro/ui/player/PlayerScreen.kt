@@ -736,7 +736,7 @@ fun PlayerScreen(
                 },
         )
 
-        // Skip mark: icon and "+10" on the left or right half, fading out by itself.
+        // Skip mark: just "+10" (or "-10") on the left or right half, fading out by itself.
         Row(Modifier.fillMaxSize()) {
             for (side in intArrayOf(-1, 1)) {
                 Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
@@ -745,19 +745,11 @@ fun PlayerScreen(
                         enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(100)),
                         exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(250)),
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                painter = painterResource(if (side < 0) R.drawable.fluent_skip_back_10_regular else R.drawable.fluent_skip_forward_10_regular),
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(40.dp),
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                (if (side < 0) "-" else "+") + skipTotal,
-                                color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium,
-                            )
-                        }
+                        Text(
+                            (if (side < 0) "-" else "+") + skipTotal,
+                            color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Medium,
+                            style = TextStyle(shadow = androidx.compose.ui.graphics.Shadow(Color(0x99000000), androidx.compose.ui.geometry.Offset(0f, 1f), 6f)),
+                        )
                     }
                 }
             }
