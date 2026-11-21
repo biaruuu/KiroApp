@@ -130,6 +130,7 @@ private val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
 fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null) {
     val msgs by PartyChat.messages.collectAsState()
     val me = WatchParty.uid()
+    var field by remember { mutableStateOf<android.widget.EditText?>(null) }
     var text by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     LaunchedEffect(msgs.size) { if (msgs.isNotEmpty()) listState.scrollToItem(msgs.lastIndex) }
@@ -140,7 +141,6 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
         text = ""
     }
     var emojiOpen by remember { mutableStateOf(false) }
-    var field by remember { mutableStateOf<android.widget.EditText?>(null) }
     val keyboard = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     val hostUid = WatchParty.members.collectAsState().value.firstOrNull { it.host }?.uid
     Column(modifier.imePadding()) {
