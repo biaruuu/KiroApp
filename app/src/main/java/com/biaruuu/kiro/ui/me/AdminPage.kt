@@ -98,7 +98,7 @@ private fun AdmLabel(text: String) {
 }
 
 @Composable
-private fun AdmAdminCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+private fun AdmCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Column(
         modifier = modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Card)
             .border(1.dp, AdmHair, RoundedCornerShape(14.dp)).padding(14.dp),
@@ -250,7 +250,7 @@ fun AdminPage() {
                 }
             }
         }
-        TabFrame {
+        AdmTabFrame {
             when (tab) {
                 0 -> OnlineTab()
                 1 -> LettersTab()
@@ -322,7 +322,7 @@ private fun OnlineTab() {
 
 @Composable
 private fun UserRow(u: PresenceUser, online: Boolean, now: Long) {
-    AdminCard {
+    AdmCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(9.dp).clip(CircleShape).background(if (online) Green else Color(0xFF55555A)))
             Spacer(Modifier.width(12.dp))
@@ -370,7 +370,7 @@ private fun LettersTab() {
             }
         }
         items(shown, key = { it.id }) { l ->
-            AdminCard {
+            AdmCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(l.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, modifier = Modifier.weight(1f, fill = false))
                     if (l.topic.isNotEmpty()) { Spacer(Modifier.width(8.dp)); AdmTag(l.topic, strong = true) }
@@ -415,7 +415,7 @@ private fun ReportsTab() {
     LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = AdmListPad, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { AdmSectionTitle("Broken episodes", "Reports from the player. Mark one done once it is fixed.", reports.size) }
         items(reports, key = { it.id }) { r ->
-            AdminCard {
+            AdmCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(r.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 2, modifier = Modifier.weight(1f))
                     Spacer(Modifier.width(8.dp))
@@ -461,7 +461,7 @@ private fun AnnounceTab() {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
-            AdminCard {
+            AdmCard {
                 AdmSectionTitle(if (editing == null) "New announcement" else "Edit announcement", "Appears in every user's Notifications, right away for anyone with Kiro open.")
                 Spacer(Modifier.height(10.dp))
                 UnderlineField(
@@ -507,7 +507,7 @@ private fun AnnounceTab() {
             item { Text("Nothing sent yet.", color = Muted, fontSize = 13.sp) }
         }
         items(announcements, key = { it.id }) { a ->
-            AdminCard {
+            AdmCard {
                 Text(a.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(3.dp))
                 Text(a.body, color = AdmSoft, fontSize = 13.sp, lineHeight = 18.sp, maxLines = 4)
@@ -550,7 +550,7 @@ private fun DesignsTab() {
 
     LazyColumn(modifier = Modifier.fillMaxSize().imePadding(), contentPadding = AdmListPad, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
-            AdminCard {
+            AdmCard {
                 AdmSectionTitle("Publish a design", "Up to 5 MB. Shows up for every user right away. Animated PNG, GIF and WebP all play.")
                 Spacer(Modifier.height(12.dp))
                 androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -601,7 +601,7 @@ private fun DesignsTab() {
             item { Text("Nothing published yet.", color = Muted, fontSize = 13.sp) }
         }
         items(published, key = { it.id }) { d ->
-            AdminCard {
+            AdmCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     com.biaruuu.kiro.ui.components.AnimatedAsset(d, Modifier.size(52.dp))
                     Spacer(Modifier.width(12.dp))
@@ -648,7 +648,7 @@ private fun TagalogTab() {
 
     LazyColumn(modifier = Modifier.fillMaxSize().imePadding(), contentPadding = AdmListPad, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
-            AdminCard {
+            AdmCard {
                 AdmSectionTitle("Add a Filipino dub episode", "Played as a \"Filipino Dub\" source for that anime and episode. Use a direct video link (.m3u8 or .mp4) that opens without signing in.")
                 Spacer(Modifier.height(12.dp))
                 AdmLabel("1 · Anime")
@@ -723,7 +723,7 @@ private fun TagalogTab() {
         }
         if (chosen == null) {
             items(results, key = { "r:" + it.id }) { a ->
-                AdmAdminCard(Modifier.clickable { chosen = a; results = emptyList() }) {
+                AdmCard(Modifier.clickable { chosen = a; results = emptyList() }) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         coil.compose.AsyncImage(
                             model = a.posterUrl, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop,
@@ -746,7 +746,7 @@ private fun TagalogTab() {
             item { Text("Nothing published yet.", color = Muted, fontSize = 13.sp) }
         }
         items(entries, key = { it.id }) { e ->
-            AdminCard {
+            AdmCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(e.title.ifBlank { "AniList ${e.anilistId}" }, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
