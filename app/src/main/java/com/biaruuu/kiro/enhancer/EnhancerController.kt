@@ -29,6 +29,7 @@ class EnhancerController(private val context: Context, private val exo: ExoPlaye
     private var attached = false
     private var hdr = false
     private var videoHeight = 0
+    private var videoWidth = 0
     private var disabledForSession = false
     private var downgrades = 0
     private var calmSecs = 0
@@ -44,6 +45,7 @@ class EnhancerController(private val context: Context, private val exo: ExoPlaye
     private val player = object : Player.Listener {
         override fun onVideoSizeChanged(videoSize: VideoSize) {
             videoHeight = videoSize.height
+            videoWidth = videoSize.width
             refresh()
         }
 
@@ -116,6 +118,13 @@ class EnhancerController(private val context: Context, private val exo: ExoPlaye
         var t = startTier()
         // A phone that already struggled this session does not jump back to full strength.
         if (downgrades > 0 && attached) t = minOf(t, state.tier)
+        // Enlarge small videos before sharpening, but only where a bigger picture really shows.
+        val screen = maxOf(context.resources.displayMetrics.widthPixels, context.resources.displayMetrics.heightPixels)
+        var scale = if (videoWidth > 0) NativeCore.upscaleFactor(t, videoWidth, screen) else 10
+        // Upscaling is only worth its cost at balanced and above.
+        if (t in 1..1 && scale > 10) scale = 10
+        if (attached && scale != state.scale10) detach() // the output size changes, so start the effect fresh
+        state.scale10 = scale
         state.tier = t
         if (t > 0 && !attached) attach() else if (t == 0 && attached) detach()
     }
@@ -153,7 +162,9 @@ class EnhancerController(private val context: Context, private val exo: ExoPlaye
             calmSecs = if (permille <= 5) calmSecs + 5 else 0
             // Heat and battery saver can change mid-episode, so the ceiling is checked again.
             val ceiling = startTier()
-            val next = NativeCore.governorNext(cur, ceiling, permille, calmSecs, downgrades)
+            var next = NativeCore.governorNext(cur, ceiling, permille, calmSecs, downgrades)
+            // An enlarged picture costs a lot at every level, so below balanced it is simply switched off.
+            if (state.scale10 > 10 && next == 1) next = 0
             if (next < cur) { downgrades++; calmSecs = 0 }
             else if (next > cur) calmSecs = 0
             if (next != cur) {

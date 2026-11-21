@@ -133,6 +133,29 @@ pub fn governor_next(cur: i32, ceiling: i32, drop_permille: i32, calm_secs: i32,
     cur
 }
 
+/// How much to enlarge the picture before sharpening, times 10 (10 = none, 15, 20).
+/// Only balanced and quality tiers upscale, and only when the video is clearly smaller than the
+/// screen. `screen_w` is the long side of the display, `video_w` the decoded width.
+pub fn upscale_factor10(tier: i32, video_w: i32, screen_w: i32) -> i32 {
+    if tier < 2 || video_w <= 0 || screen_w <= 0 {
+        return 10;
+    }
+    // Wanted enlargement, times 100.
+    let want = screen_w as i64 * 100 / video_w as i64;
+    let mut f = if tier >= 3 && want >= 180 {
+        20
+    } else if want >= 130 {
+        15
+    } else {
+        10
+    };
+    // Never produce more than 2560 px wide: that costs more than it shows.
+    while f > 10 && video_w as i64 * f as i64 / 10 > 2560 {
+        f -= 5;
+    }
+    f
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -169,6 +192,19 @@ mod tests {
         assert_eq!(start_tier(3, 720, 240, false, 3, 0), 0);
         assert_eq!(start_tier(3, 720, 240, false, 2, 0), 1);
         assert_eq!(start_tier(1, 720, 240, false, 0, 3), 3);
+    }
+
+    #[test]
+    fn upscale_only_when_it_helps() {
+        assert_eq!(upscale_factor10(1, 640, 2400), 10);
+        assert_eq!(upscale_factor10(2, 1920, 2400), 10);
+        assert_eq!(upscale_factor10(2, 1280, 2400), 15);
+        assert_eq!(upscale_factor10(2, 854, 2400), 15);
+        assert_eq!(upscale_factor10(3, 854, 2400), 20);
+        assert_eq!(upscale_factor10(3, 1280, 2400), 20);
+        assert_eq!(upscale_factor10(3, 1300, 2400), 15);
+        assert_eq!(upscale_factor10(3, 1400, 3000), 15);
+        assert_eq!(upscale_factor10(3, 0, 2400), 10);
     }
 
     #[test]

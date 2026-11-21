@@ -60,6 +60,19 @@ object NativeCore {
     @JvmStatic external fun enhancerStartTierNative(ceiling: Int, videoHeight: Int, fps10: Int, batterySaver: Int, thermal: Int, userMode: Int): Int
     @JvmStatic external fun governorNextNative(cur: Int, ceiling: Int, dropPermille: Int, calmSecs: Int, downgrades: Int): Int
 
+    @JvmStatic external fun upscaleFactorNative(tier: Int, videoW: Int, screenW: Int): Int
+
+    /** Enlargement before sharpening, times 10 (10 = none, 15, 20). */
+    @JvmStatic
+    fun upscaleFactor(tier: Int, videoW: Int, screenW: Int): Int =
+        nat({ upscaleFactorNative(tier, videoW, screenW) }) {
+            if (tier < 2 || videoW <= 0 || screenW <= 0) return@nat 10
+            val want = screenW.toLong() * 100 / videoW
+            var f = if (tier >= 3 && want >= 180) 20 else if (want >= 130) 15 else 10
+            while (f > 10 && videoW.toLong() * f / 10 > 2560) f -= 5
+            f
+        }
+
     private inline fun <T> nat(native: () -> T, fallback: () -> T): T {
         if (nativeAvailable) {
             try { return native() } catch (_: Throwable) { }

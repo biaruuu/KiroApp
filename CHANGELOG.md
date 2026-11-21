@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.71.0]
+### Added
+- Kiro upscaler for the Anime enhancer: on Balanced and Quality (and Auto when the phone can take it) small videos are enlarged to fit your screen before the line sharpening. It uses an edge-preserving bicubic filter with halo protection, running on the GPU.
+- Auto decides the enlargement (none, 1.5x or 2x) from your screen and the video size, never goes past 2560 px wide, and switches it off together with the enhancer if playback starts to drop frames.
+
 ## [1.70.0]
 ### Added
 - Anime enhancer in the player menu: sharpens and darkens line art on the GPU, based on Anime4K by bloc97 (MIT). Modes: Off, Auto (default), Light, Balanced, Quality.

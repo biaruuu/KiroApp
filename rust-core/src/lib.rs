@@ -439,6 +439,17 @@ pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_governorNextNative<
     enhancer::governor_next(cur, ceiling, drop_permille, calm_secs, downgrades)
 }
 
+#[no_mangle]
+pub extern "system" fn Java_com_biaruuu_kiro_core_NativeCore_upscaleFactorNative<'local>(
+    _env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    tier: jint,
+    video_w: jint,
+    screen_w: jint,
+) -> jint {
+    enhancer::upscale_factor10(tier, video_w, screen_w)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

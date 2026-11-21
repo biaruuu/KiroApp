@@ -1296,7 +1296,7 @@ fun PlayerScreen(
                         }
                         item {
                             Text(
-                                "Sharpens and darkens line art on your phone's GPU, using Anime4K. Auto picks the strength your phone can handle and lowers it by itself if playback starts to stutter. It pauses for HDR, 4K and Battery Saver.",
+                                "Sharpens and darkens line art on your phone's GPU (Anime4K), and on Balanced and Quality it also enlarges small videos with Kiro's own upscaler first. Auto picks the strength your phone can handle and lowers it by itself if playback starts to stutter. It pauses for HDR, 4K and Battery Saver.",
                                 color = Color(0xFF6A6A70), fontSize = 12.sp, lineHeight = 18.sp,
                                 modifier = Modifier.padding(20.dp),
                             )

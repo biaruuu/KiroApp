@@ -37,6 +37,35 @@ final class Anime4kProgram extends BaseGlShaderProgram {
     private static final String COPY = HEAD
           + "void main(){ gl_FragColor = vec4(texture2D(u_a, v_uv).rgb, 1.0); }\n";
 
+    /**
+     * Kiro upscaler: Catmull-Rom bicubic (nine bilinear taps) with the result clamped to the four
+     * nearest source texels, so edges get crisp without halos. u_px is one source texel, u_sz the
+     * source size. The source texture must use linear filtering.
+     */
+    private static final String UPSCALE = HEAD
+          + "uniform vec2 u_sz;\n"
+          + "vec3 T(vec2 p){ return texture2D(u_a, p).rgb; }\n"
+          + "void main(){\n"
+          + "  vec2 pos = v_uv * u_sz;\n"
+          + "  vec2 c = floor(pos - 0.5) + 0.5;\n"
+          + "  vec2 f = pos - c;\n"
+          + "  vec2 w0 = f * (-0.5 + f * (1.0 - 0.5 * f));\n"
+          + "  vec2 w1 = 1.0 + f * f * (-2.5 + 1.5 * f);\n"
+          + "  vec2 w2 = f * (0.5 + f * (2.0 - 1.5 * f));\n"
+          + "  vec2 w3 = f * f * (-0.5 + 0.5 * f);\n"
+          + "  vec2 w12 = w1 + w2;\n"
+          + "  vec2 t12 = w2 / w12;\n"
+          + "  vec2 p0 = (c - 1.0) * u_px, p3 = (c + 2.0) * u_px, p12 = (c + t12) * u_px;\n"
+          + "  vec3 r = T(vec2(p0.x,p0.y))*w0.x*w0.y + T(vec2(p12.x,p0.y))*w12.x*w0.y + T(vec2(p3.x,p0.y))*w3.x*w0.y\n"
+          + "         + T(vec2(p0.x,p12.y))*w0.x*w12.y + T(vec2(p12.x,p12.y))*w12.x*w12.y + T(vec2(p3.x,p12.y))*w3.x*w12.y\n"
+          + "         + T(vec2(p0.x,p3.y))*w0.x*w3.y + T(vec2(p12.x,p3.y))*w12.x*w3.y + T(vec2(p3.x,p3.y))*w3.x*w3.y;\n"
+          + "  vec2 q = c * u_px, q1 = (c + 1.0) * u_px;\n"
+          + "  vec3 s0 = T(q), s1 = T(vec2(q1.x,q.y)), s2 = T(vec2(q.x,q1.y)), s3 = T(q1);\n"
+          + "  vec3 mn = min(min(s0,s1), min(s2,s3));\n"
+          + "  vec3 mx = max(max(s0,s1), max(s2,s3));\n"
+          + "  gl_FragColor = vec4(clamp(r, mn, mx), 1.0);\n"
+          + "}\n";
+
     /** Tier 1: unsharp on a cross of four neighbours, clamped to the local range. */
     private static final String LIGHT = HEAD
           + "void main(){\n"
@@ -125,7 +154,7 @@ final class Anime4kProgram extends BaseGlShaderProgram {
           + "}\n";
 
     private static final class Prog {
-        int id, aPos, uA, uB, uPx;
+        int id, aPos, uA, uB, uPx, uSz;
     }
 
     private static final class Target {
@@ -135,10 +164,12 @@ final class Anime4kProgram extends BaseGlShaderProgram {
     private final Anime4kState state;
     private final FloatBuffer quad;
 
-    private Prog copy, light, dogX, dogY, dogApply, darkQ1, darkQ2, darkApply;
+    private Prog upscale, copy, light, dogX, dogY, dogApply, darkQ1, darkQ2, darkApply;
     private boolean built;
-    private Target a, b, q1, q2;
-    private int w, h;
+    private Target a, b, q1, q2, up;
+    private int w, h;   // working (output) size
+    private int iw, ih;  // decoded input size
+    private int curIn;   // input texture of the frame being drawn
 
     Anime4kProgram(Anime4kState state, boolean useHdr) throws VideoFrameProcessingException {
         super(useHdr, 1);
@@ -150,12 +181,17 @@ final class Anime4kProgram extends BaseGlShaderProgram {
 
     @Override
     public Size configure(int inputWidth, int inputHeight) {
-        if (inputWidth != w || inputHeight != h) {
+        int sc = Math.max(10, Math.min(20, state.scale10));
+        int ow = sc == 10 ? inputWidth : ((inputWidth * sc / 10) & ~1);
+        int oh = sc == 10 ? inputHeight : ((inputHeight * sc / 10) & ~1);
+        iw = inputWidth;
+        ih = inputHeight;
+        if (ow != w || oh != h) {
             freeTargets();
-            w = inputWidth;
-            h = inputHeight;
+            w = ow;
+            h = oh;
         }
-        return new Size(inputWidth, inputHeight);
+        return new Size(ow, oh);
     }
 
     @Override
@@ -166,25 +202,44 @@ final class Anime4kProgram extends BaseGlShaderProgram {
         GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, vp, 0);
         try {
             ensureBuilt();
+            curIn = inputTexId;
+            boolean scaled = w != iw || h != ih;
             int tier = state.failed ? 0 : state.tier;
+            if (scaled && upscale == null) {
+                // No upscaler on this GPU: the output is already enlarged, so just stretch the picture.
+                tier = 0;
+            }
             if (tier <= 0 || light == null) {
-                draw(copy, inputTexId, 0, fb[0], vp[2], vp[3], vp);
+                if (scaled && upscale != null) {
+                    GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, inputTexId);
+                    linear();
+                    draw(upscale, inputTexId, 0, fb[0], vp[2], vp[3], vp);
+                } else {
+                    draw(copy, inputTexId, 0, fb[0], vp[2], vp[3], vp);
+                }
                 return;
+            }
+            int src = inputTexId;
+            ensureTargets(tier >= 3);
+            if (scaled) {
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, inputTexId);
+                linear();
+                drawInto(upscale, inputTexId, 0, up, w, h);
+                src = up.tex;
             }
             if (tier == 1) {
-                draw(light, inputTexId, 0, fb[0], vp[2], vp[3], vp);
+                draw(light, src, 0, fb[0], vp[2], vp[3], vp);
                 return;
             }
-            ensureTargets(tier >= 3);
             // Deblur DoG: x, y, then apply. a and b are full size.
-            drawInto(dogX, inputTexId, 0, a, w, h);
+            drawInto(dogX, src, 0, a, w, h);
             drawInto(dogY, a.tex, 0, b, w, h);
             if (tier == 2) {
-                draw(dogApply, inputTexId, b.tex, fb[0], vp[2], vp[3], vp);
+                draw(dogApply, src, b.tex, fb[0], vp[2], vp[3], vp);
                 return;
             }
             // The first target is free again, so it holds the sharpened frame for the darken step.
-            drawInto(dogApply, inputTexId, b.tex, a, w, h);
+            drawInto(dogApply, src, b.tex, a, w, h);
             drawInto(darkQ1, a.tex, 0, q1, q1.w, q1.h);
             drawInto(darkQ2, q1.tex, 0, q2, q2.w, q2.h);
             draw(darkApply, a.tex, q2.tex, fb[0], vp[2], vp[3], vp);
@@ -201,9 +256,9 @@ final class Anime4kProgram extends BaseGlShaderProgram {
     public void release() throws VideoFrameProcessingException {
         super.release();
         freeTargets();
-        Prog[] all = {copy, light, dogX, dogY, dogApply, darkQ1, darkQ2, darkApply};
+        Prog[] all = {upscale, copy, light, dogX, dogY, dogApply, darkQ1, darkQ2, darkApply};
         for (Prog p : all) if (p != null) GLES20.glDeleteProgram(p.id);
-        copy = light = dogX = dogY = dogApply = darkQ1 = darkQ2 = darkApply = null;
+        upscale = copy = light = dogX = dogY = dogApply = darkQ1 = darkQ2 = darkApply = null;
     }
 
     // ---- drawing helpers ----
@@ -223,12 +278,20 @@ final class Anime4kProgram extends BaseGlShaderProgram {
     /** Pixel size of the texture being read, to step exactly one texel. */
     private int srcW(int tex) {
         if (q1 != null && tex == q1.tex) return q1.w;
+        if (tex == curIn) return iw;
         return w;
     }
 
     private int srcH(int tex) {
         if (q1 != null && tex == q1.tex) return q1.h;
+        if (tex == curIn) return ih;
         return h;
+    }
+
+    /** Linear filtering on the texture that is bound now. */
+    private static void linear() {
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
     }
 
     private void run(Prog p, int texA, int texB, int sw, int sh) {
@@ -247,6 +310,9 @@ final class Anime4kProgram extends BaseGlShaderProgram {
             float f = q1pass ? 2f : 1f;
             GLES20.glUniform2f(p.uPx, f / sw, f / sh);
         }
+        if (p.uSz >= 0) {
+            GLES20.glUniform2f(p.uSz, sw, sh);
+        }
         quad.position(0);
         GLES20.glEnableVertexAttribArray(p.aPos);
         GLES20.glVertexAttribPointer(p.aPos, 4, GLES20.GL_FLOAT, false, 0, quad);
@@ -260,6 +326,7 @@ final class Anime4kProgram extends BaseGlShaderProgram {
     private void ensureBuilt() {
         if (built) return;
         built = true;
+        upscale = build(UPSCALE);
         copy = build(COPY);
         light = build(LIGHT);
         dogX = build(DOG_X);
@@ -284,6 +351,9 @@ final class Anime4kProgram extends BaseGlShaderProgram {
             a = target(w, h);
             b = target(w, h);
         }
+        if (up == null && (w != iw || h != ih)) {
+            up = target(w, h);
+        }
         if (withDarken && q1 == null) {
             q1 = target(Math.max(1, w / 4), Math.max(1, h / 4));
             q2 = target(q1.w, q1.h);
@@ -291,12 +361,12 @@ final class Anime4kProgram extends BaseGlShaderProgram {
     }
 
     private void freeTargets() {
-        for (Target t : new Target[] {a, b, q1, q2}) {
+        for (Target t : new Target[] {a, b, q1, q2, up}) {
             if (t == null) continue;
             GLES20.glDeleteFramebuffers(1, new int[] {t.fbo}, 0);
             GLES20.glDeleteTextures(1, new int[] {t.tex}, 0);
         }
-        a = b = q1 = q2 = null;
+        a = b = q1 = q2 = up = null;
     }
 
     private static Target target(int tw, int th) {
@@ -351,6 +421,7 @@ final class Anime4kProgram extends BaseGlShaderProgram {
         r.uA = GLES20.glGetUniformLocation(p, "u_a");
         r.uB = GLES20.glGetUniformLocation(p, "u_b");
         r.uPx = GLES20.glGetUniformLocation(p, "u_px");
+        r.uSz = GLES20.glGetUniformLocation(p, "u_sz");
         return r;
     }
 
