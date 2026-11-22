@@ -4,10 +4,11 @@ import android.content.Context
 import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
-import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ListenerRegistration
+import org.json.JSONArray
+import org.json.JSONObject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import org.webrtc.AudioSource
 import org.webrtc.AudioTrack
 import org.webrtc.DataChannel
@@ -23,20 +24,32 @@ import org.webrtc.SessionDescription
 
 /**
  * Voice call for a watch party. Every member who joins the call connects directly to every other
- * one (WebRTC, audio only), so there is no server in the middle adding delay. The Firestore
- * collection `parties/{code}/signals` is only used to exchange the connection details at the start.
+ * one (WebRTC, audio only), so there is no server in the middle adding delay. The watch party
+ * WebSocket server (kiro-watchparty) tells everyone who is in the call, whether they are muted,
+ * deafened or speaking, and relays the connection details at the start (the audio itself never
+ * goes through the server).
  *
  * Optional: put a TURN server in the Firestore document `meta/turn` ({urls: [...], username, credential})
  * to help phones on strict mobile networks connect.
  */
 object PartyVoice {
+    /** What the room sees of one person in the call. */
+    class VState(val muted: Boolean = false, val deafened: Boolean = false, val speaking: Boolean = false)
+
     val joined = MutableStateFlow(false)
     val muted = MutableStateFlow(false)
+    val deafened = MutableStateFlow(false)
     val error = MutableStateFlow<String?>(null)
+
+    private val _states = MutableStateFlow<Map<String, VState>>(emptyMap())
+
+    /** Everyone who is in the call right now (including this phone), keyed by user id. */
+    val states: StateFlow<Map<String, VState>> = _states
 
     private class Peer(val uid: String, val pc: PeerConnection) {
         var remoteSet = false
         val pending = ArrayList<IceCandidate>()
+        val remoteTracks = ArrayList<AudioTrack>()
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -48,7 +61,6 @@ object PartyVoice {
     private var adm: JavaAudioDeviceModule? = null
     private var source: AudioSource? = null
     private var track: AudioTrack? = null
-    private var signalReg: ListenerRegistration? = null
     private var code: String? = null
     private var iceServers: List<PeerConnection.IceServer> = emptyList()
     private var oldMode = AudioManager.MODE_NORMAL
@@ -73,7 +85,9 @@ object PartyVoice {
                 )
                 initialized = true
             }
-            adm = JavaAudioDeviceModule.builder(appContext).createAudioDeviceModule()
+            adm = JavaAudioDeviceModule.builder(appContext)
+                .setSamplesReadyCallback(JavaAudioDeviceModule.SamplesReadyCallback { samples -> onMicSamples(samples.data) })
+                .createAudioDeviceModule()
             factory = PeerConnectionFactory.builder().setAudioDeviceModule(adm).createPeerConnectionFactory()
             source = factory!!.createAudioSource(MediaConstraints())
             track = factory!!.createAudioTrack("kiro-voice", source)
@@ -105,42 +119,156 @@ object PartyVoice {
                     .createIceServer()
             }
         }
-        val now = System.currentTimeMillis()
-        signalReg = db().collection("parties").document(c).collection("signals").whereEqualTo("to", me)
-            .addSnapshotListener { snap, _ ->
-                if (snap == null) return@addSnapshotListener
-                val added = snap.documentChanges.filter { it.type == DocumentChange.Type.ADDED }
-                    .sortedBy { (it.document.get("at") as? Number)?.toLong() ?: 0L }
-                for (ch in added) {
-                    val doc = ch.document
-                    val data = doc.data
-                    doc.reference.delete()
-                    // Ignore old leftovers (the limit is wide so phones with slightly different clocks still work).
-                    if (((data["at"] as? Number)?.toLong() ?: 0L) < now - 300_000L) continue
-                    main.post { handleSignal(data) }
-                }
-            }
         joined.value = true
-        WatchParty.setVoice(true, muted.value)
-        reconcile(WatchParty.members.value)
+        deafened.value = false
+        // Our own entry shows up straight away; the server's list replaces it as soon as it answers.
+        _states.value = _states.value + (me to VState(muted.value, false, false))
+        if (PartySocket.open.value) sendJoin()
+    }
+
+    /** Tells the server this phone is in the call (also after the socket reconnects). */
+    private fun sendJoin() {
+        PartySocket.sendRaw(JSONObject().put("type", "voice_join").put("muted", muted.value).put("deafened", deafened.value))
+    }
+
+    /** The socket connected (or reconnected): rejoin the call there and learn who is in it. */
+    fun onSocketOpen(voice: JSONArray?) {
+        if (voice != null) applyList(voice)
+        if (joined.value) main.post { sendJoin() }
+    }
+
+    fun serverTooOld() {
+        error.value = "The voice server is updating. Try again in a minute."
+        main.post { leave() }
+    }
+
+    /** Messages from the server: who is in the call, set-up notes from other phones, who is speaking. */
+    fun onSocket(type: String, o: JSONObject) {
+        when (type) {
+            "voice_state" -> applyList(o.optJSONArray("members"))
+            "speaking" -> {
+                val uid = o.optString("userId")
+                val on = o.optBoolean("on", false)
+                val cur = _states.value[uid] ?: return
+                if (cur.speaking != on) _states.value = _states.value + (uid to VState(cur.muted, cur.deafened, on))
+            }
+            "voice_signal" -> {
+                val from = o.optString("from")
+                val data = o.optJSONObject("data") ?: return
+                main.post { handleSignal(from, data) }
+            }
+        }
+    }
+
+    private fun applyList(arr: JSONArray?) {
+        val me = WatchParty.uid()
+        val old = _states.value
+        val next = HashMap<String, VState>()
+        if (arr != null) {
+            for (i in 0 until arr.length()) {
+                val m = arr.optJSONObject(i) ?: continue
+                val uid = m.optString("userId")
+                if (uid.isBlank()) continue
+                next[uid] = VState(m.optBoolean("muted", false), m.optBoolean("deafened", false), old[uid]?.speaking == true)
+            }
+        }
+        // We are in the call from our side the moment we press Join, before the server has confirmed it.
+        if (joined.value && me != null && !next.containsKey(me)) next[me] = VState(muted.value, deafened.value, false)
+        _states.value = next
+        if (joined.value) reconcile(next.keys.filter { it != me }.toSet())
     }
 
     fun leave() {
         if (!joined.value && factory == null) return
         joined.value = false
-        WatchParty.setVoice(false, false)
+        deafened.value = false
+        PartySocket.sendRaw(JSONObject().put("type", "voice_leave"))
+        speakingSent = false
+        WatchParty.uid()?.let { _states.value = _states.value - it }
         releaseAll()
+    }
+
+    /** The room is gone: leave the call and forget who was in it. */
+    fun clear() {
+        leave()
+        _states.value = emptyMap()
     }
 
     fun setMuted(m: Boolean) {
         muted.value = m
         track?.setEnabled(!m)
-        if (joined.value) WatchParty.setVoice(true, m)
+        if (m) setSpeaking(false)
+        sendMute()
+    }
+
+    /** Deafen: you stop hearing everyone (and, like Discord, your microphone is muted too). */
+    fun setDeafened(d: Boolean) {
+        if (d == deafened.value) return
+        deafened.value = d
+        if (d) {
+            micBeforeDeafen = muted.value
+            muted.value = true
+            track?.setEnabled(false)
+            setSpeaking(false)
+        } else {
+            muted.value = micBeforeDeafen
+            track?.setEnabled(!micBeforeDeafen)
+        }
+        main.post { peers.values.forEach { p -> p.remoteTracks.forEach { it.setEnabled(!d) } } }
+        sendMute()
+    }
+
+    private fun sendMute() {
+        if (!joined.value) return
+        val me = WatchParty.uid()
+        if (me != null) {
+            val cur = _states.value[me]
+            _states.value = _states.value + (me to VState(muted.value, deafened.value, cur?.speaking == true))
+        }
+        PartySocket.sendRaw(JSONObject().put("type", "voice_mute").put("muted", muted.value).put("deafened", deafened.value))
+    }
+
+    // ---- who is speaking: measured on this phone from the microphone, shared through the server
+    private var micBeforeDeafen = false
+    private var speakingSent = false
+    private var loudSince = 0L
+    private var lastLoud = 0L
+
+    private fun onMicSamples(data: ByteArray) {
+        if (muted.value) return
+        var sum = 0.0
+        val n = data.size / 2
+        if (n == 0) return
+        var i = 0
+        while (i + 1 < data.size) {
+            val v = ((data[i + 1].toInt() shl 8) or (data[i].toInt() and 0xFF)).toShort().toInt()
+            sum += v.toDouble() * v
+            i += 2
+        }
+        val rms = Math.sqrt(sum / n)
+        val t = android.os.SystemClock.elapsedRealtime()
+        if (rms > 700) {
+            lastLoud = t
+            if (loudSince == 0L) loudSince = t
+            if (!speakingSent && t - loudSince > 120) main.post { setSpeaking(true) }
+        } else {
+            if (t - lastLoud > 450) {
+                loudSince = 0L
+                if (speakingSent) main.post { setSpeaking(false) }
+            }
+        }
+    }
+
+    private fun setSpeaking(on: Boolean) {
+        if (speakingSent == on || !joined.value) return
+        speakingSent = on
+        val me = WatchParty.uid() ?: return
+        val cur = _states.value[me] ?: return
+        _states.value = _states.value + (me to VState(cur.muted, cur.deafened, on))
+        PartySocket.sendRaw(JSONObject().put("type", "speaking").put("on", on))
     }
 
     private fun releaseAll() {
-        signalReg?.remove()
-        signalReg = null
         peers.values.forEach { try { it.pc.close() } catch (_: Throwable) {} }
         peers.clear()
         early.clear()
@@ -156,12 +284,11 @@ object PartyVoice {
         code = null
     }
 
-    /** Connects to members who are in the call and drops the ones who left. Call when the member list changes. */
-    fun reconcile(members: List<WatchParty.Member>) {
-        if (!joined.value) return
+    /** Connects to the people in the call and drops the ones who left. */
+    private fun reconcile(inCall: Set<String>) {
         val me = WatchParty.uid() ?: return
-        val inCall = members.filter { it.voice && it.uid != me }.map { it.uid }.toSet()
         main.post {
+            if (!joined.value) return@post
             for (uid in inCall) {
                 if (!peers.containsKey(uid)) createPeer(uid, offer = me < uid)
             }
@@ -185,7 +312,7 @@ object PartyVoice {
         val pc = f.createPeerConnection(cfg, object : PeerConnection.Observer {
             override fun onIceCandidate(c: IceCandidate?) {
                 if (c == null) return
-                send(uid, mapOf("type" to "ice", "mid" to (c.sdpMid ?: ""), "idx" to c.sdpMLineIndex, "cand" to c.sdp))
+                send(uid, JSONObject().put("type", "ice").put("mid", c.sdpMid ?: "").put("idx", c.sdpMLineIndex).put("cand", c.sdp))
             }
             override fun onIceConnectionChange(s: PeerConnection.IceConnectionState?) {
                 if (s == PeerConnection.IceConnectionState.FAILED) {
@@ -193,7 +320,7 @@ object PartyVoice {
                     main.postDelayed({
                         if (joined.value && peers[uid] === created) {
                             closePeer(uid)
-                            reconcile(WatchParty.members.value)
+                            reconcile(_states.value.keys.filter { it != WatchParty.uid() }.toSet())
                         }
                     }, 1500)
                 }
@@ -206,7 +333,11 @@ object PartyVoice {
             override fun onRemoveStream(s: MediaStream?) {}
             override fun onDataChannel(d: DataChannel?) {}
             override fun onRenegotiationNeeded() {}
-            override fun onAddTrack(r: RtpReceiver?, s: Array<out MediaStream>?) {}
+            override fun onAddTrack(r: RtpReceiver?, s: Array<out MediaStream>?) {
+                val t = r?.track() as? AudioTrack ?: return
+                t.setEnabled(!deafened.value)
+                main.post { created?.remoteTracks?.add(t) }
+            }
         }) ?: return null
         pc.addTrack(t, listOf("kiro"))
         val peer = Peer(uid, pc)
@@ -218,21 +349,21 @@ object PartyVoice {
                 override fun onCreateSuccess(d: SessionDescription?) {
                     if (d == null) return
                     pc.setLocalDescription(Sdp(), d)
-                    send(uid, mapOf("type" to "offer", "sdp" to d.description))
+                    send(uid, JSONObject().put("type", "offer").put("sdp", d.description))
                 }
             }, MediaConstraints())
         }
         return peer
     }
 
-    private fun handleSignal(d: Map<String, Any>) {
-        val from = d["from"] as? String ?: return
-        val type = d["type"] as? String ?: return
+    private fun handleSignal(from: String, d: JSONObject) {
+        if (from.isBlank()) return
+        val type = d.optString("type")
         when (type) {
             "offer" -> {
                 if (!joined.value) return
                 val peer = peers[from] ?: createPeer(from, offer = false) ?: return
-                val sdp = d["sdp"] as? String ?: return
+                val sdp = d.optString("sdp").ifBlank { return }
                 peer.pc.setRemoteDescription(object : Sdp() {
                     override fun onSetSuccess() {
                         peer.remoteSet = true
@@ -242,7 +373,7 @@ object PartyVoice {
                             override fun onCreateSuccess(a: SessionDescription?) {
                                 if (a == null) return
                                 peer.pc.setLocalDescription(Sdp(), a)
-                                send(from, mapOf("type" to "answer", "sdp" to a.description))
+                                send(from, JSONObject().put("type", "answer").put("sdp", a.description))
                             }
                         }, MediaConstraints())
                     }
@@ -250,7 +381,7 @@ object PartyVoice {
             }
             "answer" -> {
                 val peer = peers[from] ?: return
-                val sdp = d["sdp"] as? String ?: return
+                val sdp = d.optString("sdp").ifBlank { return }
                 peer.pc.setRemoteDescription(object : Sdp() {
                     override fun onSetSuccess() {
                         peer.remoteSet = true
@@ -260,9 +391,7 @@ object PartyVoice {
                 }, SessionDescription(SessionDescription.Type.ANSWER, sdp))
             }
             "ice" -> {
-                val cand = IceCandidate(
-                    d["mid"] as? String ?: "", (d["idx"] as? Number)?.toInt() ?: 0, d["cand"] as? String ?: return,
-                )
+                val cand = IceCandidate(d.optString("mid"), d.optInt("idx", 0), d.optString("cand").ifBlank { return })
                 val peer = peers[from]
                 if (peer == null) early.getOrPut(from) { ArrayList() }.add(cand)
                 else if (peer.remoteSet) peer.pc.addIceCandidate(cand) else peer.pending.add(cand)
@@ -270,11 +399,8 @@ object PartyVoice {
         }
     }
 
-    private fun send(to: String, body: Map<String, Any>) {
-        val c = code ?: return
-        val me = WatchParty.uid() ?: return
-        db().collection("parties").document(c).collection("signals")
-            .add(body + mapOf("from" to me, "to" to to, "at" to System.currentTimeMillis()))
+    private fun send(to: String, body: JSONObject) {
+        PartySocket.sendRaw(JSONObject().put("type", "voice_signal").put("to", to).put("data", body))
     }
 
     private open class Sdp : SdpObserver {

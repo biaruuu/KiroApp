@@ -163,6 +163,9 @@ object PartySocket {
         ),
     )
 
+    /** Sends any message to the room (used by the voice call). False when the socket is not connected. */
+    fun sendRaw(o: JSONObject): Boolean = send(o)
+
     // ------------------------------------------------------------------ internals
 
     private fun isLive(): Boolean = synchronized(lock) { wanted && isHost && _open.value }
@@ -304,6 +307,7 @@ object PartySocket {
                 _open.value = true
                 onHostRoom?.invoke(id)
                 flushHostState()
+                PartyVoice.onSocketOpen(o.optJSONArray("voice"))
             }
             "joined" -> {
                 val serverHost = o.optJSONObject("you")?.optBoolean("isHost") == true
@@ -314,8 +318,10 @@ object PartySocket {
                 synchronized(lock) { retry = 0 }
                 _open.value = true
                 if (isHost) flushHostState() else applyState(o.optJSONObject("state"))
+                PartyVoice.onSocketOpen(o.optJSONArray("voice"))
             }
             "state" -> if (!isHost) applyState(o)
+            "voice_state", "voice_signal", "speaking" -> PartyVoice.onSocket(o.optString("type"), o)
             "left" -> {
                 val create = synchronized(lock) {
                     val p = pendingCreate
@@ -341,6 +347,10 @@ object PartySocket {
                     }
                 }
                 "not_host" -> if (isHost) lostHost()
+                "unknown_type" -> {
+                    if (o.optString("message").contains("voice")) PartyVoice.serverTooOld()
+                    Log.w(TAG, "server error: $text")
+                }
                 else -> Log.w(TAG, "server error: $text")
             }
         }

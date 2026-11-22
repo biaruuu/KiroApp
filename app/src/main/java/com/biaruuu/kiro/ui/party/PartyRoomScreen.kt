@@ -285,7 +285,8 @@ private fun RoomPanel(
                 }
             }
             Row(Modifier.fillMaxWidth().heightIn(min = 44.dp)) {
-                val inVoice = members.count { it.voice }
+                val vStates by PartyVoice.states.collectAsState()
+                val inVoice = vStates.size
                 listOf("Chat" to 0, "Voice" to 1).forEach { (label, i) ->
                     val on = tab == i
                     Box(Modifier.weight(1f).heightIn(min = 44.dp).clickable { onTab(i) }, contentAlignment = Alignment.Center) {
@@ -318,42 +319,100 @@ private fun RoomPanel(
 @Composable
 private fun VoicePane(voiceOff: Boolean, modifier: Modifier) {
     val members by WatchParty.members.collectAsState()
-    LazyColumn(modifier, contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        item {
-            Column(Modifier.fillMaxWidth().ptCard(18).padding(16.dp)) {
-                if (voiceOff) {
+    val states by PartyVoice.states.collectAsState()
+    val joined by PartyVoice.joined.collectAsState()
+    val myMuted by PartyVoice.muted.collectAsState()
+    val myDeaf by PartyVoice.deafened.collectAsState()
+    val error by PartyVoice.error.collectAsState()
+    val open by com.biaruuu.kiro.data.PartySocket.open.collectAsState()
+    val join = rememberJoinVoice()
+    val inCall = members.filter { states.containsKey(it.uid) }
+    Column(modifier) {
+        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            if (voiceOff) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
                     Text("Voice chat is off", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(4.dp))
-                    Text("The host turned voice chat off for this room.", color = RmMuted, fontSize = 12.sp, lineHeight = 17.sp)
-                } else {
-                    VoiceControls()
+                    Text("The host turned voice chat off for this room.", color = RmMuted, fontSize = 12.sp, textAlign = TextAlign.Center)
                 }
-            }
-            Spacer(Modifier.height(18.dp))
-            PtSectionLabel("In this room · ${members.size}", Modifier.padding(start = 4.dp, bottom = 6.dp))
-        }
-        items(members, key = { it.uid }) { m ->
-            val talking = m.voice && !m.muted
-            Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier.size(46.dp).border(2.dp, if (talking) RmGreen else Color.Transparent, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) { DecoratedAvatar(m.avatar, m.name, 34.dp, m.decoration) }
-                Spacer(Modifier.width(12.dp))
-                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                    Text(m.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                    if (m.host) {
-                        Spacer(Modifier.width(6.dp))
-                        Icon(painterResource(R.drawable.fluent_crown_filled), contentDescription = "Host", tint = Color.Unspecified, modifier = Modifier.size(15.dp))
+            } else if (inCall.isEmpty()) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
+                    Icon(painterResource(R.drawable.fluent_mic_regular), null, tint = PtFaint, modifier = Modifier.size(32.dp))
+                    Spacer(Modifier.height(10.dp))
+                    Text("Nobody is in voice yet", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(4.dp))
+                    Text("Join to talk with everyone in the room. Earphones help avoid echo.", color = RmMuted, fontSize = 12.sp, lineHeight = 17.sp, textAlign = TextAlign.Center)
+                }
+            } else {
+                androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+                    columns = androidx.compose.foundation.lazy.grid.GridCells.Adaptive(150.dp),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    items(inCall, key = { it.uid }) { m ->
+                        val st = states[m.uid]
+                        val talking = st?.speaking == true && st.muted.not()
+                        Box(
+                            Modifier.fillMaxWidth().aspectRatio(1.25f).clip(RoundedCornerShape(16.dp)).background(PtSurface)
+                                .border(2.dp, if (talking) RmGreen else PtLine, RoundedCornerShape(16.dp)),
+                        ) {
+                            Box(Modifier.align(Alignment.Center), contentAlignment = Alignment.Center) {
+                                DecoratedAvatar(m.avatar, m.name, 60.dp, m.decoration)
+                            }
+                            if (st != null && (st.muted || st.deafened)) {
+                                Icon(
+                                    painterResource(if (st.deafened) R.drawable.fluent_headphones_off_regular else R.drawable.fluent_mic_off_regular),
+                                    null, tint = RmRed, modifier = Modifier.align(Alignment.TopStart).padding(10.dp).size(18.dp),
+                                )
+                            }
+                            Row(Modifier.align(Alignment.BottomStart).padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(m.name, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                                if (m.host) {
+                                    Spacer(Modifier.width(5.dp))
+                                    Icon(painterResource(R.drawable.fluent_crown_filled), contentDescription = "Host", tint = Color.Unspecified, modifier = Modifier.size(14.dp))
+                                }
+                            }
+                        }
                     }
                 }
-                if (m.voice) {
-                    PtDot(if (m.muted) RmRed else RmGreen, 6)
-                    Spacer(Modifier.width(6.dp))
-                    Text(if (m.muted) "Muted" else "Talking", color = if (m.muted) RmRed else RmGreen, fontSize = 12.sp)
-                } else {
-                    Text("Not in voice", color = PtFaint, fontSize = 12.sp)
-                }
+            }
+        }
+        if (error != null) Text(error!!, color = RmRed, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(RmHair))
+        Row(
+            Modifier.fillMaxWidth().background(RmBg).padding(horizontal = 16.dp, vertical = 8.dp).heightIn(min = 56.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    if (inCall.size == 1) "1 member" else "${inCall.size} members",
+                    color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+                )
+                Text(
+                    if (!joined) "Not connected" else if (open) "Connected" else "Connecting…",
+                    color = if (joined && open) RmGreen else RmMuted, fontSize = 12.sp, maxLines = 1,
+                )
+            }
+            if (voiceOff) {
+                // nothing to control
+            } else if (!joined) {
+                PtButton("Join voice", Modifier, true, false, true) { join() }
+            } else {
+                PtIconButton(
+                    if (myMuted) R.drawable.fluent_mic_off_regular else R.drawable.fluent_mic_regular,
+                    if (myMuted) "Unmute" else "Mute", tint = if (myMuted) RmRed else Color.White,
+                ) { if (myDeaf) PartyVoice.setDeafened(false) else PartyVoice.setMuted(!myMuted) }
+                PtIconButton(
+                    if (myDeaf) R.drawable.fluent_headphones_off_regular else R.drawable.fluent_headphones_regular,
+                    if (myDeaf) "Undeafen" else "Deafen", tint = if (myDeaf) RmRed else Color.White,
+                ) { PartyVoice.setDeafened(!myDeaf) }
+                Spacer(Modifier.width(4.dp))
+                Box(
+                    Modifier.size(44.dp).clip(CircleShape).background(RmRed).clickable { PartyVoice.leave() },
+                    contentAlignment = Alignment.Center,
+                ) { Icon(painterResource(R.drawable.fluent_call_end_regular), "Leave voice", tint = Color.White, modifier = Modifier.size(22.dp)) }
             }
         }
     }
@@ -433,7 +492,7 @@ private fun SheetContent(
                 InfoRow("Code", p.code)
                 InfoRow("Host", room.hostName.ifBlank { members.firstOrNull { it.host }?.name.orEmpty() })
                 InfoRow("In room", "${members.size}")
-                InfoRow("In voice", "${members.count { it.voice }}")
+                InfoRow("In voice", "${PartyVoice.states.value.size}")
             }
             if (p.host) {
                 Spacer(Modifier.height(8.dp))
@@ -468,7 +527,7 @@ private fun SheetContent(
                                 Icon(painterResource(R.drawable.fluent_crown_filled), contentDescription = "Host", tint = Color.Unspecified, modifier = Modifier.size(16.dp))
                             }
                         }
-                        Text(if (m.host) "Host" else if (m.voice) "In voice" else "Watching", color = RmMuted, fontSize = 12.sp)
+                        Text(if (m.host) "Host" else if (PartyVoice.states.value.containsKey(m.uid)) "In voice" else "Watching", color = RmMuted, fontSize = 12.sp)
                     }
                     if (p.host && !m.host) {
                         Text(

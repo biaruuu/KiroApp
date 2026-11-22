@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.87.0]
+### Changed
+- Voice call redesigned: a grid of everyone in the call with their picture, name and crown for the host, a red mic when someone is muted, and a green ring around whoever is speaking. A bottom bar shows who is connected with mic, headphones (deafen) and a red hang-up button.
+- Voice is now real time over the watch party WebSocket server: joining, leaving, mute, deafen and "speaking" reach everyone instantly, and connection set-up no longer goes through the database. Audio still travels directly between phones.
+- Works at any size: the grid fits more tiles on tablets and wide screens.
+
 ## [1.86.0]
 ### Changed
 - Watch party polish for every screen size: tabs, rows and the "now playing" line grow with a larger text size instead of clipping, and the emoji picker fits short screens and split-screen.

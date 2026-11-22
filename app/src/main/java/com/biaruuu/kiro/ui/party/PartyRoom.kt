@@ -98,14 +98,27 @@ fun PartyRuntime() {
     }
     LaunchedEffect(party?.code) {
         PartyChat.listen(party?.code)
-        if (party == null) PartyVoice.leave()
+        if (party == null) PartyVoice.clear()
     }
-    LaunchedEffect(members) { PartyVoice.reconcile(members) }
 }
 
 @Composable
 private fun SoftButton(label: String, filled: Boolean = false, danger: Boolean = false, modifier: Modifier = Modifier, onClick: () -> Unit) =
     PtButton(label, modifier, filled, danger, true, onClick)
+
+/** Returns a function that joins the call, asking for the microphone first if needed. */
+@Composable
+fun rememberJoinVoice(): () -> Unit {
+    val context = LocalContext.current
+    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        if (ok) PartyVoice.join(context)
+        else com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Voice chat needs the microphone permission.", Toast.LENGTH_LONG).show()
+    }
+    return {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) PartyVoice.join(context)
+        else ask.launch(Manifest.permission.RECORD_AUDIO)
+    }
+}
 
 /** Join, mute and leave the voice call. Asks for the microphone the first time. */
 @Composable
