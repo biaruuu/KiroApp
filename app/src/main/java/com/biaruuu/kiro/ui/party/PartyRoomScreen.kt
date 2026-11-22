@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -72,26 +73,19 @@ import com.biaruuu.kiro.ui.i18n.Text
 import com.biaruuu.kiro.ui.me.ToggleRow
 import com.biaruuu.kiro.ui.player.PlayerScreen
 
-private val RmBg = Color(0xFF121212)
-private val RmCard = Color(0xFF18181B)
-private val RmHair = Color(0xFF26262B)
-private val RmChip = Color(0xFF222226)
-private val RmMuted = Color(0xFF9A9AA2)
-private val RmRed = Color(0xFFFF6B6B)
-private val RmGreen = Color(0xFF3DDC84)
+private val RmBg = PtBg
+private val RmCard = PtSurface
+private val RmHair = PtLine
+private val RmChip = PtRaised
+private val RmMuted = PtMuted
+private val RmRed = PtRed
+private val RmGreen = PtGreen
 
 private enum class Sheet { Settings, Overview, Members, Nickname, Invite }
 
 @Composable
-private fun RmButton(label: String, filled: Boolean = false, danger: Boolean = false, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Text(
-        label,
-        color = if (filled) Color.Black else if (danger) RmRed else Color.White,
-        fontSize = 13.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, maxLines = 1,
-        modifier = modifier.clip(RoundedCornerShape(20.dp)).background(if (filled) Color.White else RmChip)
-            .clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp),
-    )
-}
+private fun RmButton(label: String, filled: Boolean = false, danger: Boolean = false, modifier: Modifier = Modifier, onClick: () -> Unit) =
+    PtButton(label, modifier, filled, danger, true, onClick)
 
 /**
  * The watch party room, as its own page: the player on top (it keeps the normal Kiro player look and can
@@ -134,23 +128,21 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
         LaunchedEffect(full, p.host) {
             if (p.host) WatchParty.pushSettings(WatchParty.settings.value.copy(fullscreen = full))
         }
-        val headerH = 56.dp
+        val headerH = 60.dp
         val topInset = with(LocalDensity.current) { WindowInsets.statusBars.asPaddingValues().calculateTopPadding() }
-        val sideW = 380.dp
+        val sideW = (maxWidth * 0.32f).coerceIn(340.dp, 440.dp)
+        val compactHeader = maxWidth < 400.dp
         val hasVideo = remote?.animeId?.let { it > 0 } == true
 
         // ---- Page chrome: header, then the space the player will cover, then chat and voice ----
         if (!full) {
             Column(Modifier.fillMaxSize().statusBarsPadding()) {
                 Row(
-                    Modifier.fillMaxWidth().height(headerH).padding(horizontal = 4.dp),
+                    Modifier.fillMaxWidth().height(headerH).padding(start = 4.dp, end = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        painterResource(R.drawable.fluent_chevron_left_regular), contentDescription = "Back", tint = Color.White,
-                        modifier = Modifier.size(44.dp).clip(RoundedCornerShape(22.dp)).clickable(onClick = onBack).padding(10.dp),
-                    )
-                    Column(Modifier.weight(1f).padding(horizontal = 4.dp)) {
+                    PtIconButton(R.drawable.fluent_chevron_left_regular, "Back", onClick = onBack)
+                    Column(Modifier.weight(1f).padding(horizontal = 2.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 room.name.ifBlank { "Watch party" }, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold,
@@ -158,26 +150,38 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
                             )
                             if (p.host) {
                                 Spacer(Modifier.width(6.dp))
-                                Icon(painterResource(R.drawable.fluent_crown_filled), contentDescription = "You are the host", tint = Color.Unspecified, modifier = Modifier.size(18.dp))
+                                Icon(painterResource(R.drawable.fluent_crown_filled), contentDescription = "You are the host", tint = Color.Unspecified, modifier = Modifier.size(17.dp))
                             }
                         }
-                        Text("${p.code} · ${members.size} in room", color = RmMuted, fontSize = 12.sp)
+                        Spacer(Modifier.height(2.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            PtDot(PtGreen, 6)
+                            Spacer(Modifier.width(6.dp))
+                            Text("${members.size} watching", color = RmMuted, fontSize = 12.sp, maxLines = 1)
+                            Text("  ·  ", color = PtFaint, fontSize = 12.sp)
+                            Text(
+                                p.code, color = RmMuted, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp, maxLines = 1,
+                                modifier = Modifier.clip(RoundedCornerShape(6.dp)).clickable {
+                                    val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    cm.setPrimaryClip(ClipData.newPlainText("Kiro room code", p.code))
+                                    Toast.makeText(context, "Code copied", Toast.LENGTH_SHORT).show()
+                                },
+                            )
+                        }
                     }
-                    RmButton("Invite", filled = true) { sheet = Sheet.Invite }
-                    Spacer(Modifier.width(2.dp))
-                    Icon(
-                        painterResource(R.drawable.fluent_more_vertical_regular), contentDescription = "Room settings", tint = Color.White,
-                        modifier = Modifier.size(44.dp).clip(RoundedCornerShape(22.dp)).clickable { sheet = Sheet.Settings }.padding(10.dp),
-                    )
+                    if (!compactHeader) PtAvatarStack(members) { sheet = Sheet.Members }
+                    Spacer(Modifier.width(4.dp))
+                    PtButton("Invite", filled = true) { sheet = Sheet.Invite }
+                    PtIconButton(R.drawable.fluent_more_vertical_regular, "Room settings") { sheet = Sheet.Settings }
                 }
                 if (wide) {
                     Row(Modifier.weight(1f).fillMaxWidth()) {
                         Spacer(Modifier.weight(1f))
-                        RoomPanel(tab, { tab = it }, hasVideo && p.host, { manualFull = true }, { sheet = Sheet.Invite }, Modifier.width(sideW).fillMaxHeight())
+                        RoomPanel(tab, { tab = it }, hasVideo && p.host, { manualFull = true }, { sheet = Sheet.Invite }, true, Modifier.width(sideW).fillMaxHeight())
                     }
                 } else {
                     Spacer(Modifier.fillMaxWidth().aspectRatio(16f / 9f))
-                    RoomPanel(tab, { tab = it }, hasVideo && p.host, { manualFull = true }, { sheet = Sheet.Invite }, Modifier.weight(1f).fillMaxWidth())
+                    RoomPanel(tab, { tab = it }, hasVideo && p.host, { manualFull = true }, { sheet = Sheet.Invite }, false, Modifier.weight(1f).fillMaxWidth())
                 }
             }
         }
@@ -231,11 +235,12 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
                 contentAlignment = Alignment.BottomCenter,
             ) {
                 Column(
-                    Modifier.widthIn(max = 520.dp).fillMaxWidth().clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
+                    Modifier.widthIn(max = 520.dp).fillMaxWidth().clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
                         .background(RmCard).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
-                        .navigationBarsPadding().imePadding().padding(horizontal = 20.dp, vertical = 16.dp)
+                        .navigationBarsPadding().imePadding().padding(horizontal = 20.dp, vertical = 10.dp)
                         .verticalScroll(rememberScrollState()),
                 ) {
+                    Box(Modifier.align(Alignment.CenterHorizontally).padding(bottom = 10.dp).size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(2.dp)).background(PtRaised))
                     SheetContent(open, p, members, room, context, onNavigate = { sheet = it }, onClose = { sheet = null }, onLeave = { sheet = null; WatchParty.leave(); onBack() })
                 }
             }
@@ -243,47 +248,60 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
     }
 }
 
-/** The tabs under the player: chat and voice, plus a fullscreen button. */
+/** Under the player: what is playing, then the Chat and Voice tabs. [side] draws a thin line on the left (tablet layout). */
 @Composable
 private fun RoomPanel(
-    tab: Int, onTab: (Int) -> Unit, hasVideo: Boolean, onFullscreen: () -> Unit, onInvite: () -> Unit, modifier: Modifier,
+    tab: Int, onTab: (Int) -> Unit, canFullscreen: Boolean, onFullscreen: () -> Unit, onInvite: () -> Unit, side: Boolean, modifier: Modifier,
 ) {
     val room by WatchParty.room.collectAsState()
-    Column(modifier.background(RmBg)) {
-        Row(Modifier.fillMaxWidth().height(52.dp)) {
-            val tabs = listOf(R.drawable.fluent_chat_regular to "Chat", R.drawable.fluent_phone_regular to "Voice")
-            tabs.forEachIndexed { i, (icon, label) ->
-                val on = tab == i
-                Box(
-                    Modifier.weight(1f).fillMaxHeight().background(if (on) RmCard else RmBg).clickable { onTab(i) },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(2.dp).background(if (on) Color.White else Color.Transparent))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(painterResource(icon), contentDescription = label, tint = if (on) Color.White else RmMuted, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(label, color = if (on) Color.White else RmMuted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+    val remote by WatchParty.remote.collectAsState()
+    val members by WatchParty.members.collectAsState()
+    Row(modifier.background(RmBg)) {
+        if (side) Box(Modifier.width(1.dp).fillMaxHeight().background(RmHair))
+        Column(Modifier.weight(1f).fillMaxHeight()) {
+            val r = remote
+            if (r != null && r.animeId > 0) {
+                Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 6.dp).height(52.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            r.title.ifBlank { "Now playing" }, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            "Episode ${r.episode}" + room.hostName.ifBlank { r.hostName }.let { if (it.isBlank()) "" else "  ·  Hosted by $it" },
+                            color = RmMuted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    if (canFullscreen) PtIconButton(R.drawable.fluent_fullscreen_regular, "Fullscreen", tint = RmMuted, onClick = onFullscreen)
+                }
+            }
+            Row(Modifier.fillMaxWidth().height(44.dp)) {
+                val inVoice = members.count { it.voice }
+                listOf("Chat" to 0, "Voice" to 1).forEach { (label, i) ->
+                    val on = tab == i
+                    Box(Modifier.weight(1f).fillMaxHeight().clickable { onTab(i) }, contentAlignment = Alignment.Center) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(label, color = if (on) Color.White else RmMuted, fontSize = 14.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium)
+                            if (i == 1 && inVoice > 0) {
+                                Spacer(Modifier.width(6.dp))
+                                PtDot(RmGreen, 6)
+                                Spacer(Modifier.width(3.dp))
+                                Text("$inVoice", color = RmGreen, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            }
+                        }
+                        Box(
+                            Modifier.align(Alignment.BottomCenter).size(width = 28.dp, height = 2.dp).clip(RoundedCornerShape(1.dp))
+                                .background(if (on) Color.White else Color.Transparent),
+                        )
                     }
                 }
             }
-            if (hasVideo) {
-                Box(
-                    Modifier.weight(1f).fillMaxHeight().background(RmBg).clickable(onClick = onFullscreen),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(painterResource(R.drawable.fluent_fullscreen_regular), contentDescription = "Fullscreen", tint = RmMuted, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Fullscreen", color = RmMuted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    }
-                }
+            Box(Modifier.fillMaxWidth().height(1.dp).background(RmHair))
+            if (tab == 0) {
+                PartyChatPane(Modifier.weight(1f).fillMaxWidth(), onInvite = onInvite)
+            } else {
+                VoicePane(room.voiceOff, Modifier.weight(1f).fillMaxWidth())
             }
-        }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(RmHair))
-        if (tab == 0) {
-            PartyChatPane(Modifier.weight(1f).fillMaxWidth(), onInvite = onInvite)
-        } else {
-            VoicePane(room.voiceOff, Modifier.weight(1f).fillMaxWidth())
         }
     }
 }
@@ -291,37 +309,42 @@ private fun RoomPanel(
 @Composable
 private fun VoicePane(voiceOff: Boolean, modifier: Modifier) {
     val members by WatchParty.members.collectAsState()
-    LazyColumn(modifier, contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyColumn(modifier, contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         item {
-            if (voiceOff) {
-                Text("Voice chat is turned off by the host.", color = RmMuted, fontSize = 13.sp)
-            } else {
-                VoiceControls()
-                Spacer(Modifier.height(6.dp))
-                Text("Voice goes straight between phones. Use earphones to avoid echo.", color = RmMuted, fontSize = 12.sp, lineHeight = 17.sp)
+            Column(Modifier.fillMaxWidth().ptCard(18).padding(16.dp)) {
+                if (voiceOff) {
+                    Text("Voice chat is off", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(4.dp))
+                    Text("The host turned voice chat off for this room.", color = RmMuted, fontSize = 12.sp, lineHeight = 17.sp)
+                } else {
+                    VoiceControls()
+                }
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(18.dp))
+            PtSectionLabel("In this room · ${members.size}", Modifier.padding(start = 4.dp, bottom = 6.dp))
         }
         items(members, key = { it.uid }) { m ->
-            Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(RmCard).border(1.dp, RmHair, RoundedCornerShape(14.dp)).padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                DecoratedAvatar(m.avatar, m.name, 36.dp, m.decoration)
+            val talking = m.voice && !m.muted
+            Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier.size(42.dp).clip(CircleShape).border(2.dp, if (talking) RmGreen else Color.Transparent, CircleShape).padding(3.dp),
+                    contentAlignment = Alignment.Center,
+                ) { DecoratedAvatar(m.avatar, m.name, 34.dp, "") }
                 Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(m.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                        if (m.host) {
-                            Spacer(Modifier.width(6.dp))
-                            Icon(painterResource(R.drawable.fluent_crown_filled), contentDescription = "Host", tint = Color.Unspecified, modifier = Modifier.size(16.dp))
-                        }
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                    Text(m.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                    if (m.host) {
+                        Spacer(Modifier.width(6.dp))
+                        Icon(painterResource(R.drawable.fluent_crown_filled), contentDescription = "Host", tint = Color.Unspecified, modifier = Modifier.size(15.dp))
                     }
                 }
-                Text(
-                    if (!m.voice) "Not in voice" else if (m.muted) "Muted" else "Talking",
-                    color = if (!m.voice) RmMuted else if (m.muted) RmRed else RmGreen, fontSize = 12.sp,
-                )
+                if (m.voice) {
+                    PtDot(if (m.muted) RmRed else RmGreen, 6)
+                    Spacer(Modifier.width(6.dp))
+                    Text(if (m.muted) "Muted" else "Talking", color = if (m.muted) RmRed else RmGreen, fontSize = 12.sp)
+                } else {
+                    Text("Not in voice", color = PtFaint, fontSize = 12.sp)
+                }
             }
         }
     }
@@ -346,13 +369,22 @@ private fun SheetTitle(title: String, back: (() -> Unit)?, onClose: () -> Unit) 
 }
 
 @Composable
-private fun SheetRow(label: String, danger: Boolean = false, onClick: () -> Unit) {
+private fun SheetRow(label: String, hint: String = "", danger: Boolean = false, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().height(52.dp).clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick),
+        Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick).padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, color = if (danger) RmRed else Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+        if (hint.isNotBlank()) Text(hint, color = RmMuted, fontSize = 13.sp, modifier = Modifier.padding(end = 6.dp))
         if (!danger) Icon(painterResource(R.drawable.fluent_chevron_right_regular), contentDescription = null, tint = RmMuted, modifier = Modifier.size(18.dp))
+    }
+}
+
+@Composable
+private fun InfoRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 7.dp)) {
+        Text(label, color = RmMuted, fontSize = 13.sp, modifier = Modifier.weight(1f))
+        Text(value, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -365,7 +397,7 @@ private fun SheetContent(
         Sheet.Settings -> {
             SheetTitle("Room settings", null, onClose)
             SheetRow("Overview") { onNavigate(Sheet.Overview) }
-            SheetRow("Members") { onNavigate(Sheet.Members) }
+            SheetRow("Members", "${members.size}") { onNavigate(Sheet.Members) }
             SheetRow("Nickname") { onNavigate(Sheet.Nickname) }
             Box(Modifier.fillMaxWidth().height(1.dp).background(RmHair))
             SheetRow(if (p.host) "End room for everyone" else "Leave room", danger = true, onClick = onLeave)
@@ -387,10 +419,13 @@ private fun SheetContent(
             } else {
                 Text(room.name.ifBlank { "Watch party" }, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
             }
-            Spacer(Modifier.height(10.dp))
-            Text("Code ${p.code}", color = RmMuted, fontSize = 13.sp)
-            Text("Host ${room.hostName.ifBlank { members.firstOrNull { it.host }?.name.orEmpty() }}", color = RmMuted, fontSize = 13.sp)
-            Text("${members.size} in this room · ${members.count { it.voice }} in voice", color = RmMuted, fontSize = 13.sp)
+            Spacer(Modifier.height(12.dp))
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(RmBg).padding(horizontal = 14.dp, vertical = 6.dp)) {
+                InfoRow("Code", p.code)
+                InfoRow("Host", room.hostName.ifBlank { members.firstOrNull { it.host }?.name.orEmpty() })
+                InfoRow("In room", "${members.size}")
+                InfoRow("In voice", "${members.count { it.voice }}")
+            }
             if (p.host) {
                 Spacer(Modifier.height(8.dp))
                 ToggleRow("Turn off voice chat", room.voiceOff) { WatchParty.setVoiceOff(it) }
@@ -474,10 +509,14 @@ private fun SheetContent(
             SheetTitle("Invite", null, onClose)
             Text("SHARE THIS CODE WITH FRIENDS", color = RmMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.height(8.dp))
-            Text(
-                p.code, color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 8.sp, textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(RmBg).border(1.dp, RmHair, RoundedCornerShape(14.dp)).padding(vertical = 18.dp),
-            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                p.code.forEach { ch ->
+                    Box(
+                        Modifier.weight(1f).height(60.dp).clip(RoundedCornerShape(14.dp)).background(RmBg).border(1.dp, RmHair, RoundedCornerShape(14.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) { Text(ch.toString(), color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.SemiBold) }
+                }
+            }
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 RmButton("Copy code", modifier = Modifier.weight(1f)) {

@@ -139,25 +139,25 @@ private val emojiGroups: List<Pair<String, List<String>>> = listOf(
 fun EmojiPickerPanel(height: Dp, onPick: (String) -> Unit, modifier: Modifier = Modifier) {
     var group by remember { mutableIntStateOf(0) }
     Column(modifier.fillMaxWidth().height(height).background(Color(0xFF18181B))) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-            emojiGroups.forEachIndexed { i, g ->
-                Box(
-                    Modifier.weight(1f).height(42.dp).clickable { group = i },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    EmojiText(g.first, Color.White, 20f, Modifier.padding(bottom = 2.dp))
-                    if (i == group) Box(Modifier.align(Alignment.BottomCenter).size(width = 22.dp, height = 2.dp).background(Color.White))
-                }
-            }
-        }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF26262B)))
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(44.dp), modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp),
+            columns = GridCells.Adaptive(44.dp), modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 8.dp),
         ) {
             items(emojiGroups[group].second) { e ->
                 Box(Modifier.height(44.dp).clickable { onPick(e) }, contentAlignment = Alignment.Center) {
                     EmojiText(e, Color.White, 26f)
                 }
+            }
+        }
+        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+            emojiGroups.forEachIndexed { i, g ->
+                Box(
+                    Modifier.weight(1f).height(38.dp).padding(horizontal = 2.dp)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                        .background(if (i == group) Color(0xFF2E2E35) else Color.Transparent)
+                        .clickable { group = i },
+                    contentAlignment = Alignment.Center,
+                ) { EmojiText(g.first, Color.White, 19f) }
             }
         }
     }

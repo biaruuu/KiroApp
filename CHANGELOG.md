@@ -4,6 +4,18 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.83.0]
+### Changed
+- Watch party redesign, cleaner and more minimal, and it adapts to phones, landscape and tablets.
+- Room header: room name with the host crown, "n watching", a tap-to-copy code, the first members as overlapping pictures, and a smaller Invite button.
+- A "Now playing" line under the player shows the title, episode and host. The host's Fullscreen button sits there.
+- Chat and Voice are now simple tabs with an underline. Voice shows how many people are talking.
+- Chat uses message bubbles: yours on the right, friends on the left, grouped when the same person writes several in a row. The host can also delete anyone's message (long-press).
+- A rounded message bar with a round Send button, a nicer "Editing message" strip, and emoji categories at the bottom of the picker.
+- Voice tab: one clear card to join, mute or leave, and a member list with a green ring around whoever is talking.
+- Room settings and Invite sheets: drag handle, room details in a tidy list, and the room code shown as six tiles.
+- On tablets the chat panel scales with the screen width.
+
 ## [1.82.0]
 ### Added
 - Watch party chat now shows "Seen by" under your latest message and "is typing..." while a friend writes.

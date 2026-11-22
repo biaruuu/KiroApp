@@ -45,8 +45,7 @@ import com.biaruuu.kiro.ui.auth.UnderlineField
 @Composable
 private fun PartyPageCard(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFF18181B))
-            .border(1.dp, Color(0xFF26262B), RoundedCornerShape(16.dp)).padding(16.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF18181B)).padding(18.dp),
         content = content,
     )
 }
