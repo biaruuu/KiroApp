@@ -141,6 +141,11 @@ fun VoiceControls(modifier: Modifier = Modifier) {
 }
 
 private val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+private val dayFormat = SimpleDateFormat("MMM d, h:mm a", Locale.getDefault())
+
+/** "Today 11:20 AM" or "Nov 21, 11:20 AM": the small centred time between runs of messages. */
+private fun stampLabel(at: Long): String =
+    if (android.text.format.DateUtils.isToday(at)) "Today " + timeFormat.format(Date(at)) else dayFormat.format(Date(at))
 
 /** The live message list with a box to write in. Long-press one of your own messages to edit or delete it. */
 @OptIn(ExperimentalFoundationApi::class)
@@ -235,67 +240,65 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                     val mine = m.uid == me
                     val iAmHost = me != null && me == hostUid
                     val prev = msgs.getOrNull(i - 1)
-                    val header = prev == null || prev.uid != m.uid || m.at - prev.at > 120_000L
+                    val next = msgs.getOrNull(i + 1)
+                    val newStamp = prev == null || m.at - prev.at > 15 * 60_000L
+                    val first = prev == null || prev.uid != m.uid || m.at - prev.at > 120_000L
+                    val last = next == null || next.uid != m.uid || next.at - m.at > 120_000L
                     val canMenu = mine || iAmHost
-                    Box(Modifier.fillMaxWidth().padding(top = if (header && i > 0) 10.dp else 0.dp)) {
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start,
-                            verticalAlignment = Alignment.Top,
-                        ) {
-                            if (!mine) {
-                                Box(Modifier.width(34.dp)) { if (header) DecoratedAvatar(m.avatar, m.name, 28.dp, m.decoration) }
-                            }
-                            Column(Modifier.weight(1f, fill = false), horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
-                                if (header) {
-                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 3.dp, start = 2.dp, end = 2.dp)) {
-                                        if (!mine) {
-                                            Text(
-                                                m.name, color = Color(0xFFD8D8DC), fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
-                                                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
-                                            )
+                    Column(Modifier.fillMaxWidth()) {
+                        if (newStamp) {
+                            Text(
+                                stampLabel(m.at), color = PtFaint, fontSize = 11.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth().padding(top = if (i == 0) 2.dp else 12.dp, bottom = 8.dp),
+                            )
+                        } else if (first) {
+                            Spacer(Modifier.height(8.dp))
+                        }
+                        Box(Modifier.fillMaxWidth()) {
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start,
+                                verticalAlignment = Alignment.Bottom,
+                            ) {
+                                if (!mine) {
+                                    Box(Modifier.width(40.dp).padding(end = 6.dp), contentAlignment = Alignment.Center) {
+                                        if (last) DecoratedAvatar(m.avatar, m.name, 30.dp, m.decoration)
+                                    }
+                                }
+                                Column(Modifier.weight(1f, fill = false), horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
+                                    if (first && !mine) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 12.dp, bottom = 2.dp)) {
+                                            Text(m.name, color = PrMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                                             if (m.uid == hostUid) {
                                                 Spacer(Modifier.width(4.dp))
                                                 androidx.compose.material3.Icon(
                                                     painterResource(com.biaruuu.kiro.R.drawable.fluent_crown_filled), contentDescription = "Host",
-                                                    tint = Color.Unspecified, modifier = Modifier.size(13.dp),
+                                                    tint = Color.Unspecified, modifier = Modifier.size(12.dp),
                                                 )
                                             }
-                                            Spacer(Modifier.width(7.dp))
                                         }
-                                        Text(timeFormat.format(Date(m.at)), color = PtFaint, fontSize = 10.sp)
+                                    }
+                                    // iMessage-style: round bubbles; the last one of a run gets the small "tail" corner.
+                                    val bubble = RoundedCornerShape(
+                                        topStart = 18.dp, topEnd = 18.dp,
+                                        bottomStart = if (!mine && last) 4.dp else 18.dp, bottomEnd = if (mine && last) 4.dp else 18.dp,
+                                    )
+                                    Column(
+                                        Modifier.clip(bubble).background(if (mine) PtBlue else PtBubble)
+                                            .then(if (canMenu) Modifier.combinedClickable(onClick = {}, onLongClick = { menuFor = m.id }) else Modifier)
+                                            .padding(horizontal = 13.dp, vertical = 8.dp),
+                                        horizontalAlignment = Alignment.End,
+                                    ) {
+                                        EmojiText(m.text, Color.White, 15f)
+                                        if (m.edited) Text("edited", color = Color(0x99FFFFFF), fontSize = 9.sp, modifier = Modifier.padding(top = 2.dp))
                                     }
                                 }
-                                val bubble = RoundedCornerShape(
-                                    topStart = 16.dp, topEnd = 16.dp,
-                                    bottomStart = if (mine) 16.dp else 5.dp, bottomEnd = if (mine) 5.dp else 16.dp,
-                                )
-                                Column(
-                                    Modifier.clip(bubble).background(if (mine) PtMine else PtOther)
-                                        .then(if (canMenu) Modifier.combinedClickable(onClick = {}, onLongClick = { menuFor = m.id }) else Modifier)
-                                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                                    horizontalAlignment = Alignment.End,
-                                ) {
-                                    EmojiText(m.text, Color(0xFFF1F1F3), 14f)
-                                    if (m.edited) Text("edited", color = PtFaint, fontSize = 9.sp, modifier = Modifier.padding(top = 2.dp))
-                                }
-                                if (m.id == lastOwnId) {
-                                    val others = members.filter { it.uid != me }
-                                    val seen = others.filter { it.seenAt >= m.at }
-                                    if (seen.isNotEmpty()) {
-                                        Text(
-                                            when {
-                                                seen.size == others.size && seen.size > 1 -> "Seen by everyone"
-                                                seen.size <= 2 -> "Seen by " + seen.joinToString(", ") { it.name }
-                                                else -> "Seen by ${seen.size}"
-                                            },
-                                            color = PtFaint, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                                            modifier = Modifier.padding(top = 3.dp, end = 2.dp),
-                                        )
+                                if (mine) {
+                                    Box(Modifier.width(40.dp).padding(start = 6.dp), contentAlignment = Alignment.Center) {
+                                        if (last) DecoratedAvatar(m.avatar, m.name, 30.dp, m.decoration)
                                     }
                                 }
                             }
-                        }
                         DropdownMenu(
                             expanded = menuFor == m.id,
                             onDismissRequest = { menuFor = null },
@@ -332,6 +335,22 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                                     PartyChat.delete(m.id)
                                 },
                             )
+                        }
+                        }
+                        if (m.id == lastOwnId) {
+                            val others = members.filter { it.uid != me }
+                            val seenBy = others.filter { it.seenAt >= m.at }
+                            if (seenBy.isNotEmpty()) {
+                                Text(
+                                    when {
+                                        seenBy.size == others.size && seenBy.size > 1 -> "Seen by everyone"
+                                        seenBy.size <= 2 -> "Seen by " + seenBy.joinToString(", ") { it.name }
+                                        else -> "Seen by ${seenBy.size}"
+                                    },
+                                    color = PrMuted, fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth().padding(top = 3.dp, end = 50.dp),
+                                )
+                            }
                         }
                     }
                 }
@@ -376,25 +395,26 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
         val ready = text.isNotBlank()
         Row(
             modifier = Modifier.fillMaxWidth().then(if (emojiOpen) Modifier else Modifier.navigationBarsPadding())
-                .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(start = 6.dp, end = 12.dp, top = 6.dp, bottom = 10.dp),
+            verticalAlignment = Alignment.Bottom,
         ) {
+            androidx.compose.material3.Icon(
+                painter = painterResource(com.biaruuu.kiro.R.drawable.fluent_emoji_regular),
+                contentDescription = "Emoji", tint = if (emojiOpen) Color.White else PrMuted,
+                modifier = Modifier.size(44.dp).clip(CircleShape).clickable {
+                    emojiOpen = !emojiOpen
+                    if (emojiOpen) keyboard?.hide() else field?.requestFocus()
+                }.padding(10.dp),
+            )
+            // iMessage-style: an outlined rounded field, with the blue send arrow appearing inside it.
             Row(
-                Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(if (editing != null) 14.dp else 24.dp)).background(PrChip),
+                Modifier.weight(1f).heightIn(min = 44.dp).clip(RoundedCornerShape(22.dp)).border(1.dp, Color(0xFF3A3A40), RoundedCornerShape(22.dp)),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                androidx.compose.material3.Icon(
-                    painter = painterResource(com.biaruuu.kiro.R.drawable.fluent_emoji_regular),
-                    contentDescription = "Emoji", tint = if (emojiOpen) Color.White else PrMuted,
-                    modifier = Modifier.size(44.dp).clip(CircleShape).clickable {
-                        emojiOpen = !emojiOpen
-                        if (emojiOpen) keyboard?.hide() else field?.requestFocus()
-                    }.padding(10.dp),
-                )
                 Box(
-                    Modifier.weight(1f).heightIn(min = 48.dp)
+                    Modifier.weight(1f).heightIn(min = 44.dp)
                         .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { focusField() }
-                        .padding(end = 14.dp),
+                        .padding(start = 16.dp, end = 8.dp),
                     contentAlignment = Alignment.CenterStart,
                 ) {
                     EmojiInput(
@@ -402,17 +422,17 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                         onReady = { field = it }, onChange = { text = it; WatchParty.setTyping(it.isNotBlank()) }, onSend = { send() },
                     )
                 }
-            }
-            Spacer(Modifier.width(8.dp))
-            Box(
-                Modifier.size(46.dp).clip(CircleShape).background(if (ready) Color.White else PrChip).clickable(enabled = ready) { send() },
-                contentAlignment = Alignment.Center,
-            ) {
-                androidx.compose.material3.Icon(
-                    painter = painterResource(com.biaruuu.kiro.R.drawable.fluent_send_regular),
-                    contentDescription = "Send", tint = if (ready) Color.Black else Color(0xFF55555B),
-                    modifier = Modifier.size(22.dp),
-                )
+                androidx.compose.animation.AnimatedVisibility(visible = ready, enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(), exit = androidx.compose.animation.fadeOut()) {
+                    Box(
+                        Modifier.padding(end = 6.dp).size(32.dp).clip(CircleShape).background(PtBlue).clickable { send() },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        androidx.compose.material3.Icon(
+                            painter = painterResource(com.biaruuu.kiro.R.drawable.fluent_arrow_up_filled),
+                            contentDescription = "Send", tint = Color.White, modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
             }
         }
         if (emojiOpen) {
@@ -457,17 +477,17 @@ private fun ToastCard(m: PartyChat.Msg, onDone: () -> Unit) {
     }
     val visible = remember { androidx.compose.animation.core.MutableTransitionState(false).apply { targetState = true } }
     androidx.compose.animation.AnimatedVisibility(visibleState = visible, enter = androidx.compose.animation.fadeIn()) {
-        // Solid, nearly opaque and flat: readable over any picture, and it never blurs the video behind it.
+        // A light, slightly see-through bubble with dark text: small, so it never hides the picture, and readable on any scene.
         Row(
-            modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xF2101012))
-                .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(12.dp)).padding(horizontal = 10.dp, vertical = 7.dp),
+            modifier = Modifier.widthIn(max = 260.dp).clip(RoundedCornerShape(18.dp)).background(Color(0xE6F4F4F8))
+                .padding(start = 6.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            DecoratedAvatar(m.avatar, m.name, 22.dp, m.decoration)
-            Spacer(Modifier.width(8.dp))
+            Box(Modifier.size(30.dp), contentAlignment = Alignment.Center) { DecoratedAvatar(m.avatar, m.name, 24.dp, m.decoration) }
+            Spacer(Modifier.width(7.dp))
             Column(Modifier.weight(1f, fill = false)) {
-                Text(m.name, color = Color(0xFFB4B4BA), fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                EmojiText(m.text, Color.White, 13f, maxLines = 2)
+                Text(m.name, color = Color(0xFF6B6B73), fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                EmojiText(m.text, Color(0xFF111114), 13f, maxLines = 2)
             }
         }
     }
@@ -480,21 +500,20 @@ fun PartyTopPill(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val members by WatchParty.members.collectAsState()
     val p = party ?: return
     Row(
-        modifier = modifier.clip(RoundedCornerShape(16.dp)).background(Color(0xFF111113))
-            .border(1.dp, Color(0xFF3A3A40), RoundedCornerShape(16.dp)).clickable(onClick = onClick)
+        modifier = modifier.clip(RoundedCornerShape(16.dp)).background(Color(0xE6F4F4F8)).clickable(onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(7.dp).clip(CircleShape).background(PrGreen))
+        Box(Modifier.size(7.dp).clip(CircleShape).background(Color(0xFF1FB865)))
         Spacer(Modifier.width(7.dp))
-        Text(p.code, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, maxLines = 1)
+        Text(p.code, color = Color(0xFF111114), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, maxLines = 1)
         Spacer(Modifier.width(8.dp))
         androidx.compose.material3.Icon(
             painterResource(com.biaruuu.kiro.R.drawable.fluent_people_regular), contentDescription = "Members",
-            tint = Color(0xFFB4B4BA), modifier = Modifier.size(13.dp),
+            tint = Color(0xFF55555C), modifier = Modifier.size(13.dp),
         )
         Spacer(Modifier.width(3.dp))
-        Text("${members.size}", color = Color(0xFFB4B4BA), fontSize = 11.sp, maxLines = 1)
+        Text("${members.size}", color = Color(0xFF55555C), fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1)
     }
 }
 

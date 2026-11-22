@@ -327,9 +327,9 @@ private fun VoicePane(voiceOff: Boolean, modifier: Modifier) {
             val talking = m.voice && !m.muted
             Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    Modifier.size(42.dp).clip(CircleShape).border(2.dp, if (talking) RmGreen else Color.Transparent, CircleShape).padding(3.dp),
+                    Modifier.size(46.dp).border(2.dp, if (talking) RmGreen else Color.Transparent, CircleShape),
                     contentAlignment = Alignment.Center,
-                ) { DecoratedAvatar(m.avatar, m.name, 34.dp, "") }
+                ) { DecoratedAvatar(m.avatar, m.name, 34.dp, m.decoration) }
                 Spacer(Modifier.width(12.dp))
                 Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                     Text(m.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))

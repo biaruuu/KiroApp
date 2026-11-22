@@ -36,6 +36,8 @@ internal val PtMuted = Color(0xFF9A9AA2)
 internal val PtFaint = Color(0xFF6A6A72)
 internal val PtRed = Color(0xFFFF6B6B)
 internal val PtGreen = Color(0xFF3DDC84)
+internal val PtBlue = Color(0xFF0A84FF)
+internal val PtBubble = Color(0xFF2A2A2E)
 internal val PtMine = Color(0xFF2E2E35)
 internal val PtOther = Color(0xFF1C1C20)
 

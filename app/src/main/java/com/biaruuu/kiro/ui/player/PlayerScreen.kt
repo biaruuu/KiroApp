@@ -1165,7 +1165,7 @@ fun PlayerScreen(
 
         // A friend's new message shows for a few seconds without opening the chat.
         if (party != null && !inPip && panel == null) {
-            com.biaruuu.kiro.ui.party.PartyToast(Modifier.align(Alignment.BottomStart).padding(start = 20.dp, bottom = 96.dp).fillMaxWidth(0.5f))
+            com.biaruuu.kiro.ui.party.PartyToast(Modifier.align(Alignment.BottomStart).padding(start = if (fullscreen) 20.dp else 12.dp, bottom = if (fullscreen) 96.dp else 70.dp).fillMaxWidth(if (fullscreen) 0.5f else 0.75f))
         }
 
         // ---- Side panels ----

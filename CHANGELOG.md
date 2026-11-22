@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.84.0]
+### Changed
+- Watch party chat now has an iMessage style: blue bubbles for you, grey for friends, rounded with a small tail on the last bubble of a run, a centred time ("Today 11:20 AM") between conversations, and a blue arrow that appears inside an outlined message field.
+- Profile pictures with their decorations are back in chat, next to the last message of each run (also in the voice list).
+- The room pill and the chat cards over the video are now light, slightly see-through and small, with dark text, so they no longer cover the picture. They also scale down in the small portrait player.
+
 ## [1.83.0]
 ### Changed
 - Watch party redesign, cleaner and more minimal, and it adapts to phones, landscape and tablets.
