@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -59,6 +60,33 @@ fun PartyPage() {
     var roomName by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var creating by remember { mutableStateOf(false) }
+    val waiting by WatchParty.waiting.collectAsState()
+    var pendingOpen by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(inRoom?.code, pendingOpen) {
+        if (pendingOpen && inRoom != null) {
+            pendingOpen = false
+            DeepLink.request.value = "room"
+        }
+    }
+    if (waiting != null) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { WatchParty.cancelWaiting() }) {
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF18181B)).padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                androidx.compose.material3.CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
+                Spacer(Modifier.height(16.dp))
+                Text("Waiting for the host", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(6.dp))
+                Text("You will join as soon as the host accepts your request.", color = Color(0xFF9A9AA2), fontSize = 13.sp, lineHeight = 18.sp, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(18.dp))
+                Text(
+                    "Cancel", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Color(0xFF222226)).clickable { WatchParty.cancelWaiting() }.padding(vertical = 12.dp),
+                )
+            }
+        }
+    }
     val ready = code.length == 6 && !busy
     Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 460.dp).fillMaxWidth()) {
@@ -148,8 +176,8 @@ fun PartyPage() {
                                     if (r == null) {
                                         com.biaruuu.kiro.ui.i18n.I18nToast.make(context, err ?: "Couldn't join", Toast.LENGTH_LONG).show()
                                     } else {
+                                        pendingOpen = true
                                         WatchParty.enter(context, code)
-                                        DeepLink.request.value = "room"
                                     }
                                 }
                             }

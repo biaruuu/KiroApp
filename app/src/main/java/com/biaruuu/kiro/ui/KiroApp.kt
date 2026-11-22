@@ -431,6 +431,10 @@ private fun KiroScaffold() {
     // While you are in a watch party a small pill follows you around the app; tap it to open the room.
     val partyNow by com.biaruuu.kiro.data.WatchParty.session.collectAsState()
     val topRoute = backStack.lastOrNull()
+    // The host's screen is mirrored to guests: which anime page (or tab) the host is on.
+    LaunchedEffect(partyNow?.code, partyNow?.host, topRoute, tab) {
+        if (partyNow?.host == true) com.biaruuu.kiro.data.WatchParty.publishBrowse(topRoute, tab)
+    }
     if (partyNow != null && topRoute?.startsWith("p:") != true && topRoute != "room") {
         com.biaruuu.kiro.ui.party.PartyPill(
             modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = if (online) 6.dp else 48.dp),

@@ -4,6 +4,18 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.89.0]
+### Added
+- Approve new guests: when someone joins with the room code they now wait until the host accepts (or declines) them. The host sees a small "wants to join" bar with Accept and Decline, and can switch this off in Permissions.
+- Kick: the host can kick a guest (they may ask to come back) or ban them.
+- Guests can see what the host is looking at: while nothing is playing, the picture area shows the anime page the host has open, or which part of Kiro they are on.
+- A room now ends by itself after 10 minutes with everyone offline.
+
+### Changed
+- With the keyboard open, the picture and anime details make way so chat gets the whole space, like a browser tab.
+- The fullscreen button floats on the left of the picture (host only).
+- The anime details row is more compact on small phones.
+
 ## [1.88.0]
 ### Added
 - Host permissions: under Room settings > Permissions the host can turn chat or voice on or off for all guests, or block a single person from chat or voice.

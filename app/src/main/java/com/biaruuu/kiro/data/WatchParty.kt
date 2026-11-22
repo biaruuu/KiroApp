@@ -70,6 +70,8 @@ object WatchParty {
         val name: String = "", val voiceOff: Boolean = false, val banned: Map<String, String> = emptyMap(), val hostName: String = "",
         /** Permissions the host sets: can guests chat or talk in voice at all, and per person exceptions ("chat", "voice" or "chat,voice" = not allowed). */
         val guestChat: Boolean = true, val guestVoice: Boolean = true, val denied: Map<String, String> = emptyMap(),
+        /** New guests must be accepted by the host before they come in. */
+        val approval: Boolean = false,
     )
 
     val room = MutableStateFlow(Room())
@@ -78,6 +80,19 @@ object WatchParty {
     private var nickname: String = ""
 
     /** One-shot message for the player to show (for example "The host ended the party"). */
+    /** What the host is looking at in the app, so guests can follow along (a screen share of sorts). */
+    class Browse(val screen: String, val animeId: Int, val title: String)
+
+    val browse = MutableStateFlow<Browse?>(null)
+
+    /** A guest who asked to join and is waiting for the host to accept (the room code). */
+    val waiting = MutableStateFlow<String?>(null)
+
+    class JoinRequest(val uid: String, val name: String, val avatar: String, val decoration: String)
+
+    /** Host: people asking to join. */
+    val requests = MutableStateFlow<List<JoinRequest>>(emptyList())
+
     val message = MutableStateFlow<String?>(null)
 
     /** One-shot notice for whoever is in the room, wherever they browse (for example "Sam left the watch party"). */
@@ -130,7 +145,7 @@ object WatchParty {
             "hostUid" to me, "hostName" to myName(), "animeId" to animeId, "episode" to episode,
             "title" to title, "positionMs" to 0L, "playing" to false, "createdAt" to System.currentTimeMillis(),
             "sentAt" to System.currentTimeMillis(), "roomName" to roomName.trim(), "voiceOff" to false,
-            "banned" to emptyMap<String, String>(),
+            "banned" to emptyMap<String, String>(), "approval" to true,
         )
         db().collection("parties").document(code).set(data)
             .addOnSuccessListener {
@@ -139,6 +154,7 @@ object WatchParty {
                 Achievements.bump(c, "hosted")
                 listenMembers(code)
                 listenParty(code, me)
+                listenRequests(code)
                 // Realtime playback goes over the socket; guests find its room code in `wsRoom`.
                 PartySocket.startHost(me, myName(), animeId, episode, title) { wsId ->
                     db().collection("parties").document(code).update("wsRoom", wsId)
@@ -176,19 +192,139 @@ object WatchParty {
         )
     }
 
-    /** Joins the party as a guest and starts following the host. */
+    private var requestReg: ListenerRegistration? = null
+    private var requestsReg: ListenerRegistration? = null
+    private var kickBase: Long? = null
+
+    /** Joins the party as a guest. If the host wants to approve guests, this first asks and waits. */
     fun enter(c: Context, rawCode: String) {
         val code = rawCode.trim().uppercase()
         val me = uid() ?: return
-        if (session.value?.code == code) return
+        if (session.value?.code == code || waiting.value == code) return
+        val ref = db().collection("parties").document(code)
+        ref.get().addOnSuccessListener { snap ->
+            val needs = snap.getBoolean("approval") == true && snap.getString("hostUid") != me
+            if (!needs) return@addOnSuccessListener doEnter(c, code, me)
+            // Someone who is already in the room (coming back) does not need to ask again.
+            ref.collection("members").document(me).get().addOnSuccessListener { m ->
+                if (m.exists()) doEnter(c, code, me) else requestJoin(c, code, me)
+            }.addOnFailureListener { message.value = friendly(it) }
+        }.addOnFailureListener { message.value = friendly(it) }
+    }
+
+    private fun requestJoin(c: Context, code: String, me: String) {
+        waiting.value = code
+        val ref = db().collection("parties").document(code).collection("requests").document(me)
+        val prof = ProfileRepository.profile.value
+        ref.set(
+            mapOf(
+                "name" to myName(), "avatar" to prof.avatar, "decoration" to prof.decoration,
+                "at" to System.currentTimeMillis(), "status" to "pending",
+            ),
+        ).addOnFailureListener { waiting.value = null; message.value = friendly(it) }
+        requestReg?.remove()
+        requestReg = ref.addSnapshotListener { s, _ ->
+            if (s == null || s.metadata.hasPendingWrites() || waiting.value != code) return@addSnapshotListener
+            when (s.getString("status")) {
+                "accepted" -> {
+                    requestReg?.remove(); requestReg = null
+                    waiting.value = null
+                    ref.delete()
+                    doEnter(c, code, me)
+                }
+                "declined" -> {
+                    requestReg?.remove(); requestReg = null
+                    waiting.value = null
+                    ref.delete()
+                    message.value = "The host declined your request to join"
+                }
+            }
+        }
+    }
+
+    /** Stop waiting for the host. */
+    fun cancelWaiting() {
+        val code = waiting.value ?: return
+        waiting.value = null
+        requestReg?.remove(); requestReg = null
+        val me = uid() ?: return
+        db().collection("parties").document(code).collection("requests").document(me).delete()
+    }
+
+    private fun doEnter(c: Context, code: String, me: String) {
         stopListening()
         session.value = Session(code, false)
         remote.value = null
+        kickBase = null
         Achievements.bump(c, "joined")
         PartySocket.warmUp()
         writeMember(code, me, false)
         listenParty(code, me)
         listenMembers(code)
+    }
+
+    /** Host: who is asking to come in. */
+    private fun listenRequests(code: String) {
+        requestsReg?.remove()
+        requestsReg = db().collection("parties").document(code).collection("requests").addSnapshotListener { snap, _ ->
+            requests.value = snap?.documents?.filter { it.getString("status") == "pending" }?.mapNotNull { d ->
+                JoinRequest(d.id, d.getString("name") ?: return@mapNotNull null, d.getString("avatar").orEmpty(), d.getString("decoration").orEmpty())
+            }.orEmpty()
+        }
+    }
+
+    fun answerRequest(uid: String, accept: Boolean) {
+        val s = session.value ?: return
+        if (!s.host) return
+        db().collection("parties").document(s.code).collection("requests").document(uid)
+            .update("status", if (accept) "accepted" else "declined")
+    }
+
+    fun setApproval(on: Boolean) {
+        val s = session.value ?: return
+        if (s.host) db().collection("parties").document(s.code).update("approval", on)
+    }
+
+    /** Removes someone for now; they can ask to come back in. */
+    fun kick(uid: String) {
+        val s = session.value ?: return
+        if (!s.host || uid == me()) return
+        db().collection("parties").document(s.code).update("kicks.$uid", com.google.firebase.firestore.FieldValue.increment(1))
+        db().collection("parties").document(s.code).collection("members").document(uid).delete()
+        PartySocket.kick(uid)
+    }
+
+    /** What the host is looking at changed (host only). */
+    fun publishBrowse(route: String?, tab: Int) {
+        val s = session.value ?: return
+        if (!s.host) return
+        // Playing in the room or the room itself: guests already see that.
+        if (route == "room" || route?.startsWith("p:") == true) return
+        val parts = route?.split(":")
+        val id = if (parts != null && (parts[0] == "d" || parts[0] == "m")) parts.getOrNull(1)?.toIntOrNull() else null
+        val o = org.json.JSONObject()
+        if (id != null) {
+            val a = AnimeCache.get(id)
+            o.put("screen", "anime").put("animeId", id).put("title", a?.displayTitle.orEmpty())
+        } else {
+            val name = when (route?.takeIf { it.isNotEmpty() }?.substringBefore(":") ?: "") {
+                "" -> when (tab) { 0 -> "home"; 1 -> "search"; 2 -> "schedule"; else -> "other" }
+                else -> "other"
+            }
+            o.put("screen", name)
+        }
+        PartySocket.sendBrowse(o)
+    }
+
+    fun onBrowse(o: org.json.JSONObject?) {
+        browse.value = if (o == null || o.optString("screen").isBlank()) null
+        else Browse(o.optString("screen"), o.optInt("animeId", 0), o.optString("title"))
+    }
+
+    /** Nobody was online for 10 minutes, so the room has ended. */
+    fun endedByIdle() {
+        message.value = "The room ended after 10 minutes of inactivity"
+        leave()
     }
 
     /** Follows the party document: the host's playback state and the room settings, live. */
@@ -209,8 +345,18 @@ object WatchParty {
             val denied = (snap.get("denied") as? Map<String, Any>)?.mapValues { it.value.toString() }.orEmpty()
             room.value = Room(
                 snap.getString("roomName").orEmpty(), snap.getBoolean("voiceOff") == true, banned, snap.getString("hostName").orEmpty(),
-                snap.getBoolean("guestChat") != false, snap.getBoolean("guestVoice") != false, denied,
+                snap.getBoolean("guestChat") != false, snap.getBoolean("guestVoice") != false, denied, snap.getBoolean("approval") == true,
             )
+            if (session.value?.host == false) {
+                val kicks = (snap.get("kicks") as? Map<String, Any>)?.get(me)?.let { (it as? Number)?.toLong() } ?: 0L
+                val base = kickBase
+                if (base == null) kickBase = kicks
+                else if (kicks > base) {
+                    message.value = "The host removed you from the room"
+                    leave()
+                    return@addSnapshotListener
+                }
+            }
             if (session.value?.host == false && banned.containsKey(me)) {
                 message.value = "You were removed from the room"
                 leave()
@@ -415,6 +561,10 @@ object WatchParty {
         membersReg?.remove()
         partyReg = null
         membersReg = null
+        requestsReg?.remove()
+        requestsReg = null
+        requests.value = emptyList()
+        browse.value = null
         members.value = emptyList()
         room.value = Room()
         settings.value = Settings()

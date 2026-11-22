@@ -73,6 +73,10 @@ object PartySocket {
     /** The host's latest state, kept even while the socket is down so it can be re-sent. */
     @Volatile private var latest: Snap? = null
     @Volatile private var latestSettings: WatchParty.Settings? = null
+    @Volatile private var latestBrowse: JSONObject? = null
+    /** When we last heard from the server; used to tell "the room timed out" from "the server restarted". */
+    @Volatile private var lastMsgAt = 0L
+    private const val IDLE_END_MS = 10 * 60_000L
     @Volatile private var sentAnime = 0
     @Volatile private var sentEpisode = 0
 
@@ -121,7 +125,20 @@ object PartySocket {
             resetLocked()
             latest = null
             latestSettings = null
+            latestBrowse = null
+            lastMsgAt = 0L
         }
+    }
+
+    /** Host: tells guests what screen the host is on (null = nothing special). */
+    fun sendBrowse(b: JSONObject?) {
+        latestBrowse = b
+        if (isHost && _open.value) send(JSONObject().put("type", "browse").put("browse", b ?: JSONObject()))
+    }
+
+    /** Ask the server to drop someone's connection (the host removed them). */
+    fun kick(uid: String) {
+        if (isHost) send(JSONObject().put("type", "kick").put("userId", uid))
     }
 
     /**
@@ -252,6 +269,7 @@ object PartySocket {
     private fun flushHostState() {
         latest?.let { sendVideo(it.animeId, it.episode, it.title, it.positionMs, it.playing) }
         latestSettings?.let { sendSettingsNow(it) }
+        latestBrowse?.let { send(JSONObject().put("type", "browse").put("browse", it)) }
     }
 
     /** The server gave the host role to someone else while we were away: open a fresh room. */
@@ -282,6 +300,7 @@ object PartySocket {
         } catch (_: Exception) {
             return
         }
+        lastMsgAt = SystemClock.elapsedRealtime()
         when (o.optString("type")) {
             "connected" -> {
                 clockOffset = o.optLong("serverTime") - System.currentTimeMillis()
@@ -317,10 +336,14 @@ object PartySocket {
                 }
                 synchronized(lock) { retry = 0 }
                 _open.value = true
-                if (isHost) flushHostState() else applyState(o.optJSONObject("state"))
+                if (isHost) flushHostState() else {
+                    applyState(o.optJSONObject("state"))
+                    WatchParty.onBrowse(o.optJSONObject("browse"))
+                }
                 PartyVoice.onSocketOpen(o.optJSONArray("voice"))
             }
             "state" -> if (!isHost) applyState(o)
+            "browse" -> if (!isHost) WatchParty.onBrowse(o.optJSONObject("browse"))
             "voice_state", "voice_signal", "speaking" -> PartyVoice.onSocket(o.optString("type"), o)
             "left" -> {
                 val create = synchronized(lock) {
@@ -337,7 +360,12 @@ object PartySocket {
             }
             "error" -> when (o.optString("code")) {
                 "room_not_found" -> {
-                    if (isHost) {
+                    val idleFor = SystemClock.elapsedRealtime() - lastMsgAt
+                    if (lastMsgAt > 0L && idleFor > IDLE_END_MS) {
+                        // Everyone was offline for 10 minutes: the server ended the room.
+                        lastMsgAt = 0L
+                        WatchParty.endedByIdle()
+                    } else if (isHost) {
                         synchronized(lock) { wsRoomId = null }
                         sendCreate()
                     } else {

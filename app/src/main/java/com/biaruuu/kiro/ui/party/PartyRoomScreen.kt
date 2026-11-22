@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -101,6 +103,7 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
     val remote by WatchParty.remote.collectAsState()
     val room by WatchParty.room.collectAsState()
     val hostSettings by WatchParty.settings.collectAsState()
+    val browse by WatchParty.browse.collectAsState()
     val p = party
     if (p == null) {
         Box(modifier.background(RmBg).statusBarsPadding().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -143,6 +146,8 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
         val sideW = (maxWidth * 0.32f).coerceIn(340.dp, 440.dp)
         val compactHeader = maxWidth < 400.dp
         val hasVideo = remote?.animeId?.let { it > 0 } == true
+        // With the keyboard open the picture and details make way, so chat gets the whole space (like a browser tab).
+        val imeOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0 && !wide && !full
 
         // ---- Page chrome: header, then the space the player will cover, then chat and voice ----
         if (!full) {
@@ -183,11 +188,11 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
                 if (wide) {
                     Row(Modifier.weight(1f).fillMaxWidth()) {
                         Spacer(Modifier.weight(1f))
-                        RoomPanel(tab, { tab = it }, hasVideo && p.host, { manualFull = true }, { sheet = Sheet.Invite }, true, Modifier.width(sideW).fillMaxHeight())
+                        RoomPanel(tab, { tab = it }, false, { sheet = Sheet.Invite }, true, false, Modifier.width(sideW).fillMaxHeight())
                     }
                 } else {
-                    Spacer(Modifier.fillMaxWidth().aspectRatio(16f / 9f))
-                    RoomPanel(tab, { tab = it }, hasVideo && p.host, { manualFull = true }, { sheet = Sheet.Invite }, false, Modifier.weight(1f).fillMaxWidth())
+                    if (!imeOpen) Spacer(Modifier.fillMaxWidth().aspectRatio(16f / 9f))
+                    RoomPanel(tab, { tab = it }, false, { sheet = Sheet.Invite }, false, imeOpen, Modifier.weight(1f).fillMaxWidth())
                 }
             }
         }
@@ -196,7 +201,7 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
         val playerMod = when {
             full -> Modifier.fillMaxSize()
             wide -> Modifier.padding(top = topInset + headerH).width(maxWidth - sideW).fillMaxHeight()
-            else -> Modifier.padding(top = topInset + headerH).fillMaxWidth().aspectRatio(16f / 9f)
+            else -> Modifier.padding(top = topInset + headerH).fillMaxWidth().aspectRatio(16f / 9f).then(if (imeOpen) Modifier.offset(y = (-3000).dp) else Modifier)
         }
         Box(playerMod.background(Color.Black)) {
             val r = remote
@@ -211,6 +216,8 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
                         fullscreen = full,
                     )
                 }
+            } else if (!p.host && browse != null) {
+                BrowseMirror(browse!!)
             } else {
                 Column(
                     Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.Center,
@@ -231,8 +238,16 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
                     }
                 }
             }
+            if (p.host && hasVideo && !full && !imeOpen) {
+                Box(
+                    Modifier.align(Alignment.TopStart).padding(8.dp).size(36.dp).clip(CircleShape).background(Color(0x73000000))
+                        .clickable { manualFull = true },
+                    contentAlignment = Alignment.Center,
+                ) { Icon(painterResource(R.drawable.fluent_fullscreen_regular), "Fullscreen", tint = Color.White, modifier = Modifier.size(20.dp)) }
+            }
         }
 
+        // (the button for the host to go fullscreen sits on the left of the picture, inside the player box below)
         // ---- Sheets ----
         sheet?.let { open ->
             Box(
@@ -257,7 +272,7 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
 /** Under the player: what is playing, then the Chat and Voice tabs. [side] draws a thin line on the left (tablet layout). */
 @Composable
 private fun RoomPanel(
-    tab: Int, onTab: (Int) -> Unit, canFullscreen: Boolean, onFullscreen: () -> Unit, onInvite: () -> Unit, side: Boolean, modifier: Modifier,
+    tab: Int, onTab: (Int) -> Unit, unused: Boolean, onInvite: () -> Unit, side: Boolean, compact: Boolean, modifier: Modifier,
 ) {
     val room by WatchParty.room.collectAsState()
     val remote by WatchParty.remote.collectAsState()
@@ -266,7 +281,9 @@ private fun RoomPanel(
         if (side) Box(Modifier.width(1.dp).fillMaxHeight().background(RmHair))
         Column(Modifier.weight(1f).fillMaxHeight()) {
             val r = remote
-            if (r != null && r.animeId > 0) NowPlaying(r, room.hostName, canFullscreen, onFullscreen)
+            val asks by WatchParty.requests.collectAsState()
+            if (asks.isNotEmpty()) JoinAsk(asks)
+            if (r != null && r.animeId > 0 && !compact) NowPlaying(r, room.hostName)
             Row(Modifier.fillMaxWidth().heightIn(min = 44.dp)) {
                 val vStates by PartyVoice.states.collectAsState()
                 val inVoice = vStates.size
@@ -299,9 +316,97 @@ private fun RoomPanel(
     }
 }
 
+/** Host: someone is asking to come in. */
+@Composable
+private fun JoinAsk(asks: List<WatchParty.JoinRequest>) {
+    val a = asks.first()
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp).clip(RoundedCornerShape(14.dp)).background(PtSurface)
+            .padding(start = 10.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        DecoratedAvatar(a.avatar, a.name, 30.dp, a.decoration)
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text(a.name, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(if (asks.size > 1) "wants to join  ·  +${asks.size - 1} more" else "wants to join", color = RmMuted, fontSize = 11.sp, maxLines = 1)
+        }
+        Text(
+            "Decline", color = RmMuted, fontSize = 13.sp, fontWeight = FontWeight.Medium,
+            modifier = Modifier.clip(RoundedCornerShape(16.dp)).clickable { WatchParty.answerRequest(a.uid, false) }.padding(horizontal = 10.dp, vertical = 8.dp),
+        )
+        Text(
+            "Accept", color = Color.Black, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Color.White).clickable { WatchParty.answerRequest(a.uid, true) }.padding(horizontal = 14.dp, vertical = 8.dp),
+        )
+    }
+}
+
+/** Guests: what the host is looking at in Kiro, shown where the video will be (like watching their screen). */
+@Composable
+private fun BrowseMirror(b: WatchParty.Browse) {
+    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.Center) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            PtDot(RmGreen, 6)
+            Spacer(Modifier.width(6.dp))
+            Text("Host's screen", color = RmMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.5.sp)
+        }
+        Spacer(Modifier.height(10.dp))
+        if (b.animeId > 0) {
+            val vm: com.biaruuu.kiro.ui.detail.DetailViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+                key = "detail-${b.animeId}", factory = com.biaruuu.kiro.ui.detail.DetailViewModel.Factory(b.animeId),
+            )
+            val ui by vm.state.collectAsState()
+            val a = ui.base
+            val summary = remember(a?.description) { (a?.description ?: "").replace(Regex("<[^>]*>"), " ").replace(Regex("\\s+"), " ").trim() }
+            val meta = listOfNotNull(
+                a?.averageScore?.takeIf { it > 0 }?.let { "★ %.1f".format(it / 10f) },
+                a?.format?.takeIf { it.isNotBlank() }?.replace('_', ' '),
+                a?.seasonYear?.takeIf { it > 0 }?.toString(),
+            ).joinToString("  ·  ")
+            Row(verticalAlignment = Alignment.Top) {
+                val poster = a?.posterUrl
+                if (!poster.isNullOrBlank()) {
+                    coil.compose.AsyncImage(
+                        model = poster, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier.width(64.dp).height(92.dp).clip(RoundedCornerShape(8.dp)).background(PtRaised),
+                    )
+                    Spacer(Modifier.width(12.dp))
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        a?.displayTitle?.takeIf { it.isNotBlank() } ?: b.title.ifBlank { "Looking at an anime" }, color = Color.White, fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    )
+                    if (meta.isNotBlank()) Text(meta, color = RmMuted, fontSize = 12.sp, maxLines = 1)
+                    val genres = a?.genres.orEmpty().take(3).joinToString(", ")
+                    if (genres.isNotBlank()) Text(genres, color = PtFaint, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (summary.isNotBlank()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(summary, color = RmMuted, fontSize = 12.sp, lineHeight = 16.sp, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+            }
+        } else {
+            Text(
+                when (b.screen) {
+                    "home" -> "Browsing the home page"
+                    "search" -> "Searching for something to watch"
+                    "schedule" -> "Checking the schedule"
+                    else -> "Browsing Kiro"
+                },
+                color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text("The host is picking what to watch. It will start here for everyone.", color = RmMuted, fontSize = 12.sp, lineHeight = 17.sp)
+        }
+    }
+}
+
 /** About the anime that is playing: poster, title, episode, score, genres and a short summary. */
 @Composable
-private fun NowPlaying(r: WatchParty.Remote, hostName: String, canFullscreen: Boolean, onFullscreen: () -> Unit) {
+private fun NowPlaying(r: WatchParty.Remote, hostName: String) {
+    val tall = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp >= 720
     val vm: com.biaruuu.kiro.ui.detail.DetailViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
         key = "detail-${r.animeId}", factory = com.biaruuu.kiro.ui.detail.DetailViewModel.Factory(r.animeId),
     )
@@ -315,7 +420,7 @@ private fun NowPlaying(r: WatchParty.Remote, hostName: String, canFullscreen: Bo
         a?.seasonYear?.takeIf { it > 0 }?.toString(),
     ).joinToString("  ·  ")
     Row(
-        Modifier.fillMaxWidth().padding(start = 16.dp, end = 6.dp, top = 12.dp, bottom = 12.dp)
+        Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp)
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { open = !open },
         verticalAlignment = Alignment.Top,
     ) {
@@ -339,12 +444,11 @@ private fun NowPlaying(r: WatchParty.Remote, hostName: String, canFullscreen: Bo
             if (meta.isNotBlank()) Text(meta, color = RmMuted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             val genres = a?.genres.orEmpty().take(3).joinToString(", ")
             if (genres.isNotBlank()) Text(genres, color = PtFaint, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (summary.isNotBlank()) {
+            if (summary.isNotBlank() && (tall || open)) {
                 Spacer(Modifier.height(4.dp))
                 Text(summary, color = RmMuted, fontSize = 12.sp, lineHeight = 17.sp, maxLines = if (open) 12 else 2, overflow = TextOverflow.Ellipsis)
             }
         }
-        if (canFullscreen) PtIconButton(R.drawable.fluent_fullscreen_regular, "Fullscreen", tint = Color.White, onClick = onFullscreen)
     }
 }
 
@@ -578,7 +682,11 @@ private fun SheetContent(
                     }
                     if (p.host && !m.host) {
                         Text(
-                            "Remove", color = RmRed, fontSize = 13.sp, fontWeight = FontWeight.Medium,
+                            "Kick", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium,
+                            modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable { WatchParty.kick(m.uid) }.padding(horizontal = 10.dp, vertical = 8.dp),
+                        )
+                        Text(
+                            "Ban", color = RmRed, fontSize = 13.sp, fontWeight = FontWeight.Medium,
                             modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable { WatchParty.ban(m.uid, m.name) }.padding(horizontal = 10.dp, vertical = 8.dp),
                         )
                     }
@@ -586,9 +694,9 @@ private fun SheetContent(
             }
             if (p.host) {
                 Spacer(Modifier.height(10.dp))
-                Text("REMOVED", color = RmMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                Text("BANNED", color = RmMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                 if (room.banned.isEmpty()) {
-                    Text("No one has been removed.", color = RmMuted, fontSize = 13.sp, modifier = Modifier.padding(vertical = 8.dp))
+                    Text("No one is banned.", color = RmMuted, fontSize = 13.sp, modifier = Modifier.padding(vertical = 8.dp))
                 } else {
                     room.banned.forEach { (uid, name) ->
                         Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -607,6 +715,7 @@ private fun SheetContent(
             SheetTitle("Permissions", { onNavigate(Sheet.Settings) }, onClose)
             Text("Decide what guests can do. The host can always do everything.", color = RmMuted, fontSize = 13.sp, lineHeight = 18.sp)
             Spacer(Modifier.height(8.dp))
+            ToggleRow("Approve new guests", room.approval) { WatchParty.setApproval(it) }
             ToggleRow("Guests can chat", room.guestChat) { WatchParty.setGuestChat(it) }
             ToggleRow("Guests can use voice", room.guestVoice && !room.voiceOff) { WatchParty.setGuestVoice(it); if (it && room.voiceOff) WatchParty.setVoiceOff(false) }
             Spacer(Modifier.height(10.dp))
