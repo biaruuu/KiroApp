@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -351,7 +352,7 @@ private fun VoicePane(voiceOff: Boolean, modifier: Modifier) {
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    items(inCall, key = { it.uid }) { m ->
+                    gridItems(inCall, key = { it.uid }) { m ->
                         val st = states[m.uid]
                         val talking = st?.speaking == true && st.muted.not()
                         Box(
