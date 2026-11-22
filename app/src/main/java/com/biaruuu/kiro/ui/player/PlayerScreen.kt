@@ -337,6 +337,11 @@ fun PlayerScreen(
     val partyMembers by com.biaruuu.kiro.data.WatchParty.members.collectAsState()
     val partyMessage by com.biaruuu.kiro.data.WatchParty.message.collectAsState()
     val isGuest = party?.host == false
+    // Pill and chat cards over the video open the room's chat; in fullscreen (guest, or a landscape phone) the chat opens inside the player.
+    val landscapeNow = context.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    val openPartyChat: () -> Unit = {
+        if (fullscreen && (isGuest || landscapeNow)) panel = Panel.Chat else com.biaruuu.kiro.ui.party.PartyNav.openChat()
+    }
     fun guestBlocked(): Boolean {
         if (isGuest) com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Only the host controls the watch party", Toast.LENGTH_SHORT).show()
         return isGuest
@@ -1157,7 +1162,7 @@ fun PlayerScreen(
                         interaction++
                     },
                     topExtra = {
-                        if (party != null) com.biaruuu.kiro.ui.party.PartyTopPill(onClick = { panel = Panel.Party })
+                        if (party != null) com.biaruuu.kiro.ui.party.PartyTopPill(onClick = openPartyChat)
                     },
                 )
             }
@@ -1165,7 +1170,7 @@ fun PlayerScreen(
 
         // A friend's new message shows for a few seconds without opening the chat.
         if (party != null && !inPip && panel == null) {
-            com.biaruuu.kiro.ui.party.PartyToast(Modifier.align(Alignment.BottomStart).padding(start = if (fullscreen) 20.dp else 12.dp, bottom = if (fullscreen) 96.dp else 70.dp).fillMaxWidth(if (fullscreen) 0.5f else 0.75f))
+            com.biaruuu.kiro.ui.party.PartyToast(Modifier.align(Alignment.BottomStart).padding(start = if (fullscreen) 20.dp else 12.dp, bottom = if (fullscreen) 96.dp else 70.dp).fillMaxWidth(if (fullscreen) 0.5f else 0.75f), onClick = openPartyChat)
         }
 
         // ---- Side panels ----

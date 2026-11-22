@@ -119,6 +119,14 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
     BackHandler(enabled = sheet != null) { sheet = null }
     BackHandler(enabled = manualFull && sheet == null) { manualFull = false }
     LaunchedEffect(room.voiceOff) { if (room.voiceOff) PartyVoice.leave() }
+    // The pill and chat cards over the video jump to the chat (the host leaves fullscreen first).
+    val chatAsk = PartyNav.chatRequest.intValue
+    LaunchedEffect(chatAsk) {
+        if (chatAsk > 0) {
+            tab = 0
+            if (p.host) manualFull = false
+        }
+    }
 
     BoxWithConstraints(modifier.background(RmBg)) {
         val phoneLandscape = maxHeight < 500.dp && maxWidth > maxHeight

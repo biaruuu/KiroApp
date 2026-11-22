@@ -16,6 +16,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.Box
@@ -69,6 +70,12 @@ import com.biaruuu.kiro.ui.i18n.Text
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+/** Tapping the pill or a chat card over the video asks the room page to show its chat. */
+object PartyNav {
+    val chatRequest = androidx.compose.runtime.mutableIntStateOf(0)
+    fun openChat() { chatRequest.intValue++ }
+}
 
 private val PrMuted = PtMuted
 private val PrCard = PtSurface
@@ -142,6 +149,12 @@ fun VoiceControls(modifier: Modifier = Modifier) {
 
 private val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
 private val dayFormat = SimpleDateFormat("MMM d, h:mm a", Locale.getDefault())
+
+private fun dayKey(at: Long): Int =
+    java.util.Calendar.getInstance().apply { timeInMillis = at }.let { it.get(java.util.Calendar.YEAR) * 1000 + it.get(java.util.Calendar.DAY_OF_YEAR) }
+
+private val dayOnly = SimpleDateFormat("EEEE, MMM d", Locale.getDefault())
+private fun dayLabel(at: Long): String = if (android.text.format.DateUtils.isToday(at)) "Today" else dayOnly.format(Date(at))
 
 /** "Today 11:20 AM" or "Nov 21, 11:20 AM": the small centred time between runs of messages. */
 private fun stampLabel(at: Long): String =
@@ -233,109 +246,98 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
         } else {
             LazyColumn(
                 state = listState, modifier = Modifier.weight(1f).fillMaxWidth(),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(3.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(1.dp),
             ) {
                 itemsIndexed(msgs, key = { _, m -> m.id }) { i, m ->
                     val mine = m.uid == me
                     val iAmHost = me != null && me == hostUid
                     val prev = msgs.getOrNull(i - 1)
-                    val next = msgs.getOrNull(i + 1)
-                    val newStamp = prev == null || m.at - prev.at > 15 * 60_000L
-                    val first = prev == null || prev.uid != m.uid || m.at - prev.at > 120_000L
-                    val last = next == null || next.uid != m.uid || next.at - m.at > 120_000L
+                    val newDay = prev == null || dayKey(prev.at) != dayKey(m.at)
+                    // A new run starts with a different person, a new day, or after a few quiet minutes.
+                    val first = prev == null || newDay || prev.uid != m.uid || m.at - prev.at > 7 * 60_000L
                     val canMenu = mine || iAmHost
                     Column(Modifier.fillMaxWidth()) {
-                        if (newStamp) {
-                            Text(
-                                stampLabel(m.at), color = PtFaint, fontSize = 11.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth().padding(top = if (i == 0) 2.dp else 12.dp, bottom = 8.dp),
-                            )
-                        } else if (first) {
-                            Spacer(Modifier.height(8.dp))
+                        if (newDay) {
+                            Row(Modifier.fillMaxWidth().padding(top = if (i == 0) 0.dp else 10.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Box(Modifier.weight(1f).height(1.dp).background(PrHair))
+                                Text(dayLabel(m.at), color = PtFaint, fontSize = 11.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 10.dp))
+                                Box(Modifier.weight(1f).height(1.dp).background(PrHair))
+                            }
                         }
-                        Box(Modifier.fillMaxWidth()) {
+                        Box(Modifier.fillMaxWidth().padding(top = if (first && !newDay && i > 0) 14.dp else 0.dp)) {
+                            // Discord-style: no bubbles. Picture on the left, name and time above the text, the next lines stack under it.
                             Row(
-                                Modifier.fillMaxWidth(),
-                                horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start,
-                                verticalAlignment = Alignment.Bottom,
+                                Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
+                                    .background(if (menuFor == m.id) Color(0x14FFFFFF) else Color.Transparent)
+                                    .then(if (canMenu) Modifier.combinedClickable(onClick = {}, onLongClick = { menuFor = m.id }) else Modifier)
+                                    .padding(vertical = 1.dp),
+                                verticalAlignment = Alignment.Top,
                             ) {
-                                if (!mine) {
-                                    Box(Modifier.width(40.dp).padding(end = 6.dp), contentAlignment = Alignment.Center) {
-                                        if (last) DecoratedAvatar(m.avatar, m.name, 30.dp, m.decoration)
-                                    }
+                                Box(Modifier.width(50.dp), contentAlignment = Alignment.TopStart) {
+                                    if (first) DecoratedAvatar(m.avatar, m.name, 36.dp, m.decoration, Modifier.padding(start = 3.dp, top = 2.dp))
                                 }
-                                Column(Modifier.weight(1f, fill = false), horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
-                                    if (first && !mine) {
-                                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 12.dp, bottom = 2.dp)) {
-                                            Text(m.name, color = PrMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                                Column(Modifier.weight(1f)) {
+                                    if (first) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(m.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                                             if (m.uid == hostUid) {
-                                                Spacer(Modifier.width(4.dp))
+                                                Spacer(Modifier.width(5.dp))
                                                 androidx.compose.material3.Icon(
                                                     painterResource(com.biaruuu.kiro.R.drawable.fluent_crown_filled), contentDescription = "Host",
-                                                    tint = Color.Unspecified, modifier = Modifier.size(12.dp),
+                                                    tint = Color.Unspecified, modifier = Modifier.size(14.dp),
                                                 )
                                             }
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(timeFormat.format(Date(m.at)), color = PtFaint, fontSize = 11.sp, maxLines = 1)
                                         }
                                     }
-                                    // iMessage-style: round bubbles; the last one of a run gets the small "tail" corner.
-                                    val bubble = RoundedCornerShape(
-                                        topStart = 18.dp, topEnd = 18.dp,
-                                        bottomStart = if (!mine && last) 4.dp else 18.dp, bottomEnd = if (mine && last) 4.dp else 18.dp,
-                                    )
-                                    Column(
-                                        Modifier.clip(bubble).background(if (mine) PtBlue else PtBubble)
-                                            .then(if (canMenu) Modifier.combinedClickable(onClick = {}, onLongClick = { menuFor = m.id }) else Modifier)
-                                            .padding(horizontal = 13.dp, vertical = 8.dp),
-                                        horizontalAlignment = Alignment.End,
-                                    ) {
-                                        EmojiText(m.text, Color.White, 15f)
-                                        if (m.edited) Text("edited", color = Color(0x99FFFFFF), fontSize = 9.sp, modifier = Modifier.padding(top = 2.dp))
-                                    }
-                                }
-                                if (mine) {
-                                    Box(Modifier.width(40.dp).padding(start = 6.dp), contentAlignment = Alignment.Center) {
-                                        if (last) DecoratedAvatar(m.avatar, m.name, 30.dp, m.decoration)
+                                    Row(verticalAlignment = Alignment.Bottom) {
+                                        EmojiText(m.text, Color(0xFFDCDDE0), 15f, Modifier.weight(1f, fill = false))
+                                        if (m.edited) {
+                                            Spacer(Modifier.width(5.dp))
+                                            Text("(edited)", color = PtFaint, fontSize = 10.sp)
+                                        }
                                     }
                                 }
                             }
-                        DropdownMenu(
-                            expanded = menuFor == m.id,
-                            onDismissRequest = { menuFor = null },
-                            modifier = Modifier.background(PrCard),
-                        ) {
-                            if (mine) DropdownMenuItem(
-                                text = { Text("Edit message", color = Color.White, fontSize = 15.sp) },
-                                trailingIcon = {
-                                    androidx.compose.material3.Icon(
-                                        painterResource(com.biaruuu.kiro.R.drawable.fluent_edit_regular), contentDescription = null,
-                                        tint = Color.White, modifier = Modifier.size(20.dp),
-                                    )
-                                },
-                                onClick = {
-                                    menuFor = null
-                                    editing = m
-                                    field?.let { f ->
-                                        f.setText(m.text)
-                                        f.setSelection(f.text.length)
-                                    }
-                                    focusField()
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Delete message", color = Color(0xFFFF5C5C), fontSize = 15.sp) },
-                                trailingIcon = {
-                                    androidx.compose.material3.Icon(
-                                        painterResource(com.biaruuu.kiro.R.drawable.fluent_delete_regular), contentDescription = null,
-                                        tint = Color(0xFFFF5C5C), modifier = Modifier.size(20.dp),
-                                    )
-                                },
-                                onClick = {
-                                    menuFor = null
-                                    PartyChat.delete(m.id)
-                                },
-                            )
-                        }
+                            DropdownMenu(
+                                expanded = menuFor == m.id,
+                                onDismissRequest = { menuFor = null },
+                                modifier = Modifier.background(PrCard),
+                            ) {
+                                if (mine) DropdownMenuItem(
+                                    text = { Text("Edit message", color = Color.White, fontSize = 15.sp) },
+                                    trailingIcon = {
+                                        androidx.compose.material3.Icon(
+                                            painterResource(com.biaruuu.kiro.R.drawable.fluent_edit_regular), contentDescription = null,
+                                            tint = Color.White, modifier = Modifier.size(20.dp),
+                                        )
+                                    },
+                                    onClick = {
+                                        menuFor = null
+                                        editing = m
+                                        field?.let { f ->
+                                            f.setText(m.text)
+                                            f.setSelection(f.text.length)
+                                        }
+                                        focusField()
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Delete message", color = Color(0xFFFF5C5C), fontSize = 15.sp) },
+                                    trailingIcon = {
+                                        androidx.compose.material3.Icon(
+                                            painterResource(com.biaruuu.kiro.R.drawable.fluent_delete_regular), contentDescription = null,
+                                            tint = Color(0xFFFF5C5C), modifier = Modifier.size(20.dp),
+                                        )
+                                    },
+                                    onClick = {
+                                        menuFor = null
+                                        PartyChat.delete(m.id)
+                                    },
+                                )
+                            }
                         }
                         if (m.id == lastOwnId) {
                             val others = members.filter { it.uid != me }
@@ -347,8 +349,8 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                                         seenBy.size <= 2 -> "Seen by " + seenBy.joinToString(", ") { it.name }
                                         else -> "Seen by ${seenBy.size}"
                                     },
-                                    color = PrMuted, fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth().padding(top = 3.dp, end = 50.dp),
+                                    color = PtFaint, fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.fillMaxWidth().padding(start = 50.dp, top = 3.dp),
                                 )
                             }
                         }
@@ -424,12 +426,12 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                 }
                 androidx.compose.animation.AnimatedVisibility(visible = ready, enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(), exit = androidx.compose.animation.fadeOut()) {
                     Box(
-                        Modifier.padding(end = 6.dp).size(32.dp).clip(CircleShape).background(PtBlue).clickable { send() },
+                        Modifier.padding(end = 6.dp).size(32.dp).clip(CircleShape).background(Color.White).clickable { send() },
                         contentAlignment = Alignment.Center,
                     ) {
                         androidx.compose.material3.Icon(
                             painter = painterResource(com.biaruuu.kiro.R.drawable.fluent_arrow_up_filled),
-                            contentDescription = "Send", tint = Color.White, modifier = Modifier.size(20.dp),
+                            contentDescription = "Send", tint = Color.Black, modifier = Modifier.size(20.dp),
                         )
                     }
                 }
@@ -447,7 +449,7 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
 
 /** New messages from friends over the video: a few small flat cards that fade away by themselves. */
 @Composable
-fun PartyToast(modifier: Modifier = Modifier) {
+fun PartyToast(modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
     val msgs by PartyChat.messages.collectAsState()
     val me = WatchParty.uid()
     val shown = remember { androidx.compose.runtime.mutableStateListOf<PartyChat.Msg>() }
@@ -464,13 +466,13 @@ fun PartyToast(modifier: Modifier = Modifier) {
     }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         shown.forEach { m ->
-            androidx.compose.runtime.key(m.id) { ToastCard(m) { shown.remove(m) } }
+            androidx.compose.runtime.key(m.id) { ToastCard(m, onClick) { shown.remove(m) } }
         }
     }
 }
 
 @Composable
-private fun ToastCard(m: PartyChat.Msg, onDone: () -> Unit) {
+private fun ToastCard(m: PartyChat.Msg, onClick: () -> Unit, onDone: () -> Unit) {
     LaunchedEffect(m.id) {
         kotlinx.coroutines.delay(5000)
         onDone()
@@ -479,7 +481,7 @@ private fun ToastCard(m: PartyChat.Msg, onDone: () -> Unit) {
     androidx.compose.animation.AnimatedVisibility(visibleState = visible, enter = androidx.compose.animation.fadeIn()) {
         // A light, slightly see-through bubble with dark text: small, so it never hides the picture, and readable on any scene.
         Row(
-            modifier = Modifier.widthIn(max = 260.dp).clip(RoundedCornerShape(18.dp)).background(Color(0xE6F4F4F8))
+            modifier = Modifier.widthIn(max = 260.dp).clip(RoundedCornerShape(18.dp)).background(Color(0xE6F4F4F8)).clickable(onClick = onClick)
                 .padding(start = 6.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -499,21 +501,30 @@ fun PartyTopPill(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val party by WatchParty.session.collectAsState()
     val members by WatchParty.members.collectAsState()
     val p = party ?: return
+    val shown = members.take(4)
+    val extra = members.size - shown.size
     Row(
-        modifier = modifier.clip(RoundedCornerShape(16.dp)).background(Color(0xE6F4F4F8)).clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 5.dp),
+        modifier = modifier.clip(RoundedCornerShape(18.dp)).background(Color(0xE6F4F4F8)).clickable(onClick = onClick)
+            .padding(start = 5.dp, end = 10.dp, top = 3.dp, bottom = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(7.dp).clip(CircleShape).background(Color(0xFF1FB865)))
-        Spacer(Modifier.width(7.dp))
-        Text(p.code, color = Color(0xFF111114), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, maxLines = 1)
+        // Small pictures of everyone in the room (with their decorations). Tap to open the chat.
+        Box(Modifier.width((26 + (shown.size - 1).coerceAtLeast(0) * 17).dp).height(28.dp)) {
+            shown.forEachIndexed { i, m ->
+                Box(Modifier.offset(x = (i * 17).dp).size(26.dp), contentAlignment = Alignment.Center) {
+                    DecoratedAvatar(m.avatar, m.name, 22.dp, m.decoration)
+                }
+            }
+        }
+        if (extra > 0) {
+            Spacer(Modifier.width(4.dp))
+            Text("+$extra", color = Color(0xFF55555C), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+        }
         Spacer(Modifier.width(8.dp))
         androidx.compose.material3.Icon(
-            painterResource(com.biaruuu.kiro.R.drawable.fluent_people_regular), contentDescription = "Members",
-            tint = Color(0xFF55555C), modifier = Modifier.size(13.dp),
+            painterResource(com.biaruuu.kiro.R.drawable.fluent_chat_regular), contentDescription = "Open chat",
+            tint = Color(0xFF111114), modifier = Modifier.size(16.dp),
         )
-        Spacer(Modifier.width(3.dp))
-        Text("${members.size}", color = Color(0xFF55555C), fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1)
     }
 }
 
