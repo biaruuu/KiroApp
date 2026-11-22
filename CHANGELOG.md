@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.86.0]
+### Changed
+- Watch party polish for every screen size: tabs, rows and the "now playing" line grow with a larger text size instead of clipping, and the emoji picker fits short screens and split-screen.
+- The pill that follows you around Kiro now shows small pictures of the room and "n watching", in the same clean style.
+- The player's member list marks the host with the crown.
+
 ## [1.85.0]
 ### Changed
 - Watch party chat now looks like Discord: no bubbles, the profile picture (with its decoration) on the left, name and time on top, and the next messages stacked underneath. A new day gets a thin divider. Nothing is blue any more.

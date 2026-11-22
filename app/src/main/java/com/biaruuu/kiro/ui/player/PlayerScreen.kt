@@ -1280,9 +1280,9 @@ fun PlayerScreen(
                                     modifier = Modifier.weight(1f),
                                 )
                                 if (m.host) {
-                                    Text(
-                                        "Host", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Medium,
-                                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(KiroAccent).padding(horizontal = 8.dp, vertical = 3.dp),
+                                    Icon(
+                                        painter = painterResource(R.drawable.fluent_crown_filled), contentDescription = "Host",
+                                        tint = Color.Unspecified, modifier = Modifier.size(18.dp),
                                     )
                                 }
                             }

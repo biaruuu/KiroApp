@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -269,7 +270,7 @@ private fun RoomPanel(
         Column(Modifier.weight(1f).fillMaxHeight()) {
             val r = remote
             if (r != null && r.animeId > 0) {
-                Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 6.dp).height(52.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 6.dp).heightIn(min = 52.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(
                             r.title.ifBlank { "Now playing" }, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
@@ -283,11 +284,11 @@ private fun RoomPanel(
                     if (canFullscreen) PtIconButton(R.drawable.fluent_fullscreen_regular, "Fullscreen", tint = RmMuted, onClick = onFullscreen)
                 }
             }
-            Row(Modifier.fillMaxWidth().height(44.dp)) {
+            Row(Modifier.fillMaxWidth().heightIn(min = 44.dp)) {
                 val inVoice = members.count { it.voice }
                 listOf("Chat" to 0, "Voice" to 1).forEach { (label, i) ->
                     val on = tab == i
-                    Box(Modifier.weight(1f).fillMaxHeight().clickable { onTab(i) }, contentAlignment = Alignment.Center) {
+                    Box(Modifier.weight(1f).heightIn(min = 44.dp).clickable { onTab(i) }, contentAlignment = Alignment.Center) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(label, color = if (on) Color.White else RmMuted, fontSize = 14.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium)
                             if (i == 1 && inVoice > 0) {
@@ -333,7 +334,7 @@ private fun VoicePane(voiceOff: Boolean, modifier: Modifier) {
         }
         items(members, key = { it.uid }) { m ->
             val talking = m.voice && !m.muted
-            Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     Modifier.size(46.dp).border(2.dp, if (talking) RmGreen else Color.Transparent, CircleShape),
                     contentAlignment = Alignment.Center,
@@ -379,7 +380,7 @@ private fun SheetTitle(title: String, back: (() -> Unit)?, onClose: () -> Unit) 
 @Composable
 private fun SheetRow(label: String, hint: String = "", danger: Boolean = false, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick).padding(horizontal = 4.dp),
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick).padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, color = if (danger) RmRed else Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))

@@ -438,7 +438,7 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
             }
         }
         if (emojiOpen) {
-            EmojiPickerPanel(height = 260.dp, modifier = Modifier.navigationBarsPadding(), onPick = { e ->
+            EmojiPickerPanel(height = (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * 0.34f).dp.coerceIn(170.dp, 280.dp), modifier = Modifier.navigationBarsPadding(), onPick = { e ->
                 val f = field ?: return@EmojiPickerPanel
                 val at = f.selectionStart.coerceAtLeast(0)
                 if (f.text.length + e.length <= 500) f.text.insert(at, e)
@@ -538,14 +538,25 @@ fun PartyPill(modifier: Modifier = Modifier, onOpen: () -> Unit, onWatch: (Int, 
     val muted by PartyVoice.muted.collectAsState()
     val p = party ?: return
     val r = remote
+    val shownMembers = members.take(3)
     Row(
-        modifier = modifier.clip(RoundedCornerShape(22.dp)).background(Color(0xE618181B)).border(1.dp, PrHair, RoundedCornerShape(22.dp))
-            .clickable(onClick = onOpen).padding(start = 12.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+        modifier = modifier.clip(RoundedCornerShape(22.dp)).background(Color(0xF0222226))
+            .clickable(onClick = onOpen).padding(start = 6.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(8.dp).clip(CircleShape).background(if (joined && !muted) PrGreen else if (joined) Color(0xFFFF6B6B) else Color(0xFF6A6A70)))
+        Box(Modifier.width((26 + (shownMembers.size - 1).coerceAtLeast(0) * 17).dp).height(28.dp)) {
+            shownMembers.forEachIndexed { i, m ->
+                Box(Modifier.offset(x = (i * 17).dp).size(26.dp), contentAlignment = Alignment.Center) {
+                    DecoratedAvatar(m.avatar, m.name, 22.dp, m.decoration)
+                }
+            }
+        }
         Spacer(Modifier.width(8.dp))
-        Text("${p.code} · ${members.size}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        if (joined) {
+            Box(Modifier.size(7.dp).clip(CircleShape).background(if (muted) Color(0xFFFF6B6B) else PrGreen))
+            Spacer(Modifier.width(7.dp))
+        }
+        Text("${members.size} watching", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1)
         if (!p.host && r != null && r.animeId > 0) {
             Spacer(Modifier.width(8.dp))
             Text(
