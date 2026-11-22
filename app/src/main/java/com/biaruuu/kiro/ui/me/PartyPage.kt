@@ -87,7 +87,7 @@ fun PartyPage() {
                     Text("Create a room", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(12.dp))
                     UnderlineField(
-                        value = roomName, onChange = { if (it.length <= 40) roomName = it }, hint = "Room name (optional)",
+                        value = roomName, onChange = { if (it.length <= 40) roomName = it }, hint = "Room name",
                         keyboardType = KeyboardType.Text, imeAction = ImeAction.Done, onImeAction = {}, autoFocus = false,
                     )
                     Spacer(Modifier.height(12.dp))
@@ -97,6 +97,10 @@ fun PartyPage() {
                         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp))
                             .background(if (creating) Color(0xFF222226) else Color.White)
                             .clickable(enabled = !creating) {
+                                if (roomName.isBlank()) {
+                                    com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Give your room a name first", Toast.LENGTH_SHORT).show()
+                                    return@clickable
+                                }
                                 creating = true
                                 WatchParty.host(context, 0, 0, "", roomName) { _, err ->
                                     creating = false

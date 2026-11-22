@@ -166,12 +166,10 @@ private val dayFormat = SimpleDateFormat("MMM d, h:mm a", Locale.getDefault())
 private fun dayKey(at: Long): Int =
     java.util.Calendar.getInstance().apply { timeInMillis = at }.let { it.get(java.util.Calendar.YEAR) * 1000 + it.get(java.util.Calendar.DAY_OF_YEAR) }
 
-private val dayOnly = SimpleDateFormat("EEEE, MMM d", Locale.getDefault())
-private fun dayLabel(at: Long): String = if (android.text.format.DateUtils.isToday(at)) "Today" else dayOnly.format(Date(at))
 
 /** "Today 11:20 AM" or "Nov 21, 11:20 AM": the small centred time between runs of messages. */
 private fun stampLabel(at: Long): String =
-    if (android.text.format.DateUtils.isToday(at)) "Today " + timeFormat.format(Date(at)) else dayFormat.format(Date(at))
+    if (android.text.format.DateUtils.isToday(at)) timeFormat.format(Date(at)) else dayFormat.format(Date(at))
 
 /** The live message list with a box to write in. Long-press one of your own messages to edit or delete it. */
 @OptIn(ExperimentalFoundationApi::class)
@@ -271,14 +269,7 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                     val first = prev == null || newDay || prev.uid != m.uid || m.at - prev.at > 7 * 60_000L
                     val canMenu = mine || iAmHost
                     Column(Modifier.fillMaxWidth()) {
-                        if (newDay) {
-                            Row(Modifier.fillMaxWidth().padding(top = if (i == 0) 0.dp else 10.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.weight(1f).height(1.dp).background(PrHair))
-                                Text(dayLabel(m.at), color = PtFaint, fontSize = 11.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 10.dp))
-                                Box(Modifier.weight(1f).height(1.dp).background(PrHair))
-                            }
-                        }
-                        Box(Modifier.fillMaxWidth().padding(top = if (first && !newDay && i > 0) 14.dp else 0.dp)) {
+                        Box(Modifier.fillMaxWidth().padding(top = if (first && i > 0) 14.dp else 0.dp)) {
                             // Discord-style: no bubbles. Picture on the left, name and time above the text, the next lines stack under it.
                             Row(
                                 Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
@@ -407,8 +398,15 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                 )
             }
         }
+        val roomState by WatchParty.room.collectAsState()
+        val allowed = remember(roomState) { WatchParty.canChat() }
+        if (!allowed) {
+            Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 14.dp), contentAlignment = Alignment.Center) {
+                Text("The host turned off chat for you", color = PrMuted, fontSize = 13.sp)
+            }
+        }
         val ready = text.isNotBlank()
-        Row(
+        if (allowed) Row(
             modifier = Modifier.fillMaxWidth().then(if (emojiOpen) Modifier else Modifier.navigationBarsPadding())
                 .padding(start = 6.dp, end = 12.dp, top = 6.dp, bottom = 10.dp),
             verticalAlignment = Alignment.Bottom,

@@ -66,7 +66,11 @@ object WatchParty {
     }
 
     /** Room-wide settings the host controls. [banned] maps a removed person's uid to their name. */
-    class Room(val name: String = "", val voiceOff: Boolean = false, val banned: Map<String, String> = emptyMap(), val hostName: String = "")
+    class Room(
+        val name: String = "", val voiceOff: Boolean = false, val banned: Map<String, String> = emptyMap(), val hostName: String = "",
+        /** Permissions the host sets: can guests chat or talk in voice at all, and per person exceptions ("chat", "voice" or "chat,voice" = not allowed). */
+        val guestChat: Boolean = true, val guestVoice: Boolean = true, val denied: Map<String, String> = emptyMap(),
+    )
 
     val room = MutableStateFlow(Room())
 
@@ -202,7 +206,11 @@ object WatchParty {
             }
             @Suppress("UNCHECKED_CAST")
             val banned = (snap.get("banned") as? Map<String, Any>)?.mapValues { it.value.toString() }.orEmpty()
-            room.value = Room(snap.getString("roomName").orEmpty(), snap.getBoolean("voiceOff") == true, banned, snap.getString("hostName").orEmpty())
+            val denied = (snap.get("denied") as? Map<String, Any>)?.mapValues { it.value.toString() }.orEmpty()
+            room.value = Room(
+                snap.getString("roomName").orEmpty(), snap.getBoolean("voiceOff") == true, banned, snap.getString("hostName").orEmpty(),
+                snap.getBoolean("guestChat") != false, snap.getBoolean("guestVoice") != false, denied,
+            )
             if (session.value?.host == false && banned.containsKey(me)) {
                 message.value = "You were removed from the room"
                 leave()
@@ -288,6 +296,42 @@ object WatchParty {
     fun setRoomName(name: String) {
         val s = session.value ?: return
         if (s.host) db().collection("parties").document(s.code).update("roomName", name.trim().take(40))
+    }
+
+    /** Whether this person may write in the room chat (the host always can). */
+    fun canChat(): Boolean {
+        val s = session.value ?: return false
+        if (s.host) return true
+        val r = room.value
+        return r.guestChat && r.denied[uid()]?.contains("chat") != true
+    }
+
+    /** Whether this person may join the voice call (the host always can). */
+    fun canVoice(): Boolean {
+        val s = session.value ?: return false
+        if (s.host) return true
+        val r = room.value
+        return !r.voiceOff && r.guestVoice && r.denied[uid()]?.contains("voice") != true
+    }
+
+    fun setGuestChat(on: Boolean) {
+        val s = session.value ?: return
+        if (s.host) db().collection("parties").document(s.code).update("guestChat", on)
+    }
+
+    fun setGuestVoice(on: Boolean) {
+        val s = session.value ?: return
+        if (s.host) db().collection("parties").document(s.code).update("guestVoice", on)
+    }
+
+    /** Host: allow or block one guest from chat and voice. */
+    fun setDenied(uid: String, chat: Boolean, voice: Boolean) {
+        val s = session.value ?: return
+        if (!s.host || uid == me()) return
+        val v = listOfNotNull(if (chat) "chat" else null, if (voice) "voice" else null).joinToString(",")
+        db().collection("parties").document(s.code).update(
+            "denied.$uid", if (v.isEmpty()) com.google.firebase.firestore.FieldValue.delete() else v,
+        )
     }
 
     fun setVoiceOff(off: Boolean) {

@@ -83,7 +83,7 @@ private val RmMuted = PtMuted
 private val RmRed = PtRed
 private val RmGreen = PtGreen
 
-private enum class Sheet { Settings, Overview, Members, Nickname, Invite }
+private enum class Sheet { Settings, Overview, Members, Permissions, Nickname, Invite }
 
 @Composable
 private fun RmButton(label: String, filled: Boolean = false, danger: Boolean = false, modifier: Modifier = Modifier, onClick: () -> Unit) =
@@ -120,7 +120,7 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
     var manualFull by remember { mutableStateOf(false) }
     BackHandler(enabled = sheet != null) { sheet = null }
     BackHandler(enabled = manualFull && sheet == null) { manualFull = false }
-    LaunchedEffect(room.voiceOff) { if (room.voiceOff) PartyVoice.leave() }
+    LaunchedEffect(room, p.host) { if (!WatchParty.canVoice()) PartyVoice.leave() }
     // The pill and chat cards over the video jump to the chat (the host leaves fullscreen first).
     val chatAsk = PartyNav.chatRequest.intValue
     LaunchedEffect(chatAsk) {
@@ -158,16 +158,12 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
                                 room.name.ifBlank { "Watch party" }, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
                             )
-                            if (p.host) {
-                                Spacer(Modifier.width(6.dp))
-                                Icon(painterResource(R.drawable.fluent_crown_filled), contentDescription = "You are the host", tint = Color.Unspecified, modifier = Modifier.size(17.dp))
-                            }
                         }
                         Spacer(Modifier.height(2.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            PtDot(PtGreen, 6)
-                            Spacer(Modifier.width(6.dp))
-                            Text("${members.size} watching", color = RmMuted, fontSize = 12.sp, maxLines = 1)
+                            Icon(painterResource(R.drawable.fluent_group_line), contentDescription = "Members", tint = RmMuted, modifier = Modifier.size(15.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("${members.size}", color = RmMuted, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1)
                             Text("  ·  ", color = PtFaint, fontSize = 12.sp)
                             Text(
                                 p.code, color = RmMuted, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp, maxLines = 1,
@@ -181,7 +177,7 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
                     }
                     if (!compactHeader) PtAvatarStack(members) { sheet = Sheet.Members }
                     Spacer(Modifier.width(4.dp))
-                    PtButton("Invite", filled = true) { sheet = Sheet.Invite }
+                    PtIconButton(R.drawable.fluent_person_add_regular, "Invite") { sheet = Sheet.Invite }
                     PtIconButton(R.drawable.fluent_more_vertical_regular, "Room settings") { sheet = Sheet.Settings }
                 }
                 if (wide) {
@@ -270,21 +266,7 @@ private fun RoomPanel(
         if (side) Box(Modifier.width(1.dp).fillMaxHeight().background(RmHair))
         Column(Modifier.weight(1f).fillMaxHeight()) {
             val r = remote
-            if (r != null && r.animeId > 0) {
-                Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 6.dp).heightIn(min = 52.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            r.title.ifBlank { "Now playing" }, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            "Episode ${r.episode}" + room.hostName.ifBlank { r.hostName }.let { if (it.isBlank()) "" else "  ·  Hosted by $it" },
-                            color = RmMuted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    if (canFullscreen) PtIconButton(R.drawable.fluent_fullscreen_regular, "Fullscreen", tint = RmMuted, onClick = onFullscreen)
-                }
-            }
+            if (r != null && r.animeId > 0) NowPlaying(r, room.hostName, canFullscreen, onFullscreen)
             Row(Modifier.fillMaxWidth().heightIn(min = 44.dp)) {
                 val vStates by PartyVoice.states.collectAsState()
                 val inVoice = vStates.size
@@ -314,6 +296,55 @@ private fun RoomPanel(
                 VoicePane(room.voiceOff, Modifier.weight(1f).fillMaxWidth())
             }
         }
+    }
+}
+
+/** About the anime that is playing: poster, title, episode, score, genres and a short summary. */
+@Composable
+private fun NowPlaying(r: WatchParty.Remote, hostName: String, canFullscreen: Boolean, onFullscreen: () -> Unit) {
+    val vm: com.biaruuu.kiro.ui.detail.DetailViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+        key = "detail-${r.animeId}", factory = com.biaruuu.kiro.ui.detail.DetailViewModel.Factory(r.animeId),
+    )
+    val ui by vm.state.collectAsState()
+    val a = ui.base
+    var open by remember(r.animeId) { mutableStateOf(false) }
+    val summary = remember(a?.description) { (a?.description ?: "").replace(Regex("<[^>]*>"), " ").replace(Regex("\\s+"), " ").trim() }
+    val meta = listOfNotNull(
+        a?.averageScore?.takeIf { it > 0 }?.let { "★ %.1f".format(it / 10f) },
+        a?.format?.takeIf { it.isNotBlank() }?.replace('_', ' '),
+        a?.seasonYear?.takeIf { it > 0 }?.toString(),
+    ).joinToString("  ·  ")
+    Row(
+        Modifier.fillMaxWidth().padding(start = 16.dp, end = 6.dp, top = 12.dp, bottom = 12.dp)
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { open = !open },
+        verticalAlignment = Alignment.Top,
+    ) {
+        val poster = a?.posterUrl
+        if (!poster.isNullOrBlank()) {
+            coil.compose.AsyncImage(
+                model = poster, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                modifier = Modifier.width(54.dp).height(78.dp).clip(RoundedCornerShape(8.dp)).background(PtRaised),
+            )
+            Spacer(Modifier.width(12.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(
+                a?.displayTitle?.takeIf { it.isNotBlank() } ?: r.title.ifBlank { "Now playing" }, color = Color.White, fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                "Episode ${r.episode}" + hostName.ifBlank { r.hostName }.let { if (it.isBlank()) "" else "  ·  Hosted by $it" },
+                color = RmMuted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+            if (meta.isNotBlank()) Text(meta, color = RmMuted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            val genres = a?.genres.orEmpty().take(3).joinToString(", ")
+            if (genres.isNotBlank()) Text(genres, color = PtFaint, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (summary.isNotBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(summary, color = RmMuted, fontSize = 12.sp, lineHeight = 17.sp, maxLines = if (open) 12 else 2, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        if (canFullscreen) PtIconButton(R.drawable.fluent_fullscreen_regular, "Fullscreen", tint = Color.White, onClick = onFullscreen)
     }
 }
 
@@ -370,10 +401,6 @@ private fun VoicePane(voiceOff: Boolean, modifier: Modifier) {
                             }
                             Row(Modifier.align(Alignment.BottomStart).padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text(m.name, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                                if (m.host) {
-                                    Spacer(Modifier.width(5.dp))
-                                    Icon(painterResource(R.drawable.fluent_crown_filled), contentDescription = "Host", tint = Color.Unspecified, modifier = Modifier.size(14.dp))
-                                }
                             }
                         }
                     }
@@ -383,7 +410,7 @@ private fun VoicePane(voiceOff: Boolean, modifier: Modifier) {
         if (error != null) Text(error!!, color = RmRed, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
         Box(Modifier.fillMaxWidth().height(1.dp).background(RmHair))
         Row(
-            Modifier.fillMaxWidth().background(RmBg).padding(horizontal = 16.dp, vertical = 8.dp).heightIn(min = 56.dp),
+            Modifier.fillMaxWidth().background(RmBg).navigationBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp).heightIn(min = 56.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
@@ -396,8 +423,12 @@ private fun VoicePane(voiceOff: Boolean, modifier: Modifier) {
                     color = if (joined && open) RmGreen else RmMuted, fontSize = 12.sp, maxLines = 1,
                 )
             }
+            val roomNow by WatchParty.room.collectAsState()
+            val allowed = remember(roomNow) { WatchParty.canVoice() }
             if (voiceOff) {
                 // nothing to control
+            } else if (!allowed && !joined) {
+                Text("Voice is off for you", color = RmMuted, fontSize = 12.sp)
             } else if (!joined) {
                 PtButton("Join voice", Modifier, true, false, true) { join() }
             } else {
@@ -416,6 +447,20 @@ private fun VoicePane(voiceOff: Boolean, modifier: Modifier) {
                 ) { Icon(painterResource(R.drawable.fluent_call_end_regular), "Leave voice", tint = Color.White, modifier = Modifier.size(22.dp)) }
             }
         }
+    }
+}
+
+/** A small on/off pill: on = allowed. */
+@Composable
+private fun PermChip(label: String, on: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    Row(
+        modifier.heightIn(min = 40.dp).clip(RoundedCornerShape(12.dp)).background(if (on) PtRaised else Color.Transparent)
+            .border(1.dp, if (on) PtRaised else RmRed.copy(alpha = 0.6f), RoundedCornerShape(12.dp)).clickable(onClick = onClick).padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center,
+    ) {
+        PtDot(if (on) RmGreen else RmRed, 6)
+        Spacer(Modifier.width(8.dp))
+        Text(if (on) "$label allowed" else "$label blocked", color = if (on) Color.White else RmRed, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1)
     }
 }
 
@@ -467,6 +512,7 @@ private fun SheetContent(
             SheetTitle("Room settings", null, onClose)
             SheetRow("Overview") { onNavigate(Sheet.Overview) }
             SheetRow("Members", "${members.size}") { onNavigate(Sheet.Members) }
+            if (p.host) SheetRow("Permissions") { onNavigate(Sheet.Permissions) }
             SheetRow("Nickname") { onNavigate(Sheet.Nickname) }
             Box(Modifier.fillMaxWidth().height(1.dp).background(RmHair))
             SheetRow(if (p.host) "End room for everyone" else "Leave room", danger = true, onClick = onLeave)
@@ -552,6 +598,34 @@ private fun SheetContent(
                                 modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable { WatchParty.unban(uid) }.padding(horizontal = 10.dp, vertical = 8.dp),
                             )
                         }
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+        Sheet.Permissions -> {
+            SheetTitle("Permissions", { onNavigate(Sheet.Settings) }, onClose)
+            Text("Decide what guests can do. The host can always do everything.", color = RmMuted, fontSize = 13.sp, lineHeight = 18.sp)
+            Spacer(Modifier.height(8.dp))
+            ToggleRow("Guests can chat", room.guestChat) { WatchParty.setGuestChat(it) }
+            ToggleRow("Guests can use voice", room.guestVoice && !room.voiceOff) { WatchParty.setGuestVoice(it); if (it && room.voiceOff) WatchParty.setVoiceOff(false) }
+            Spacer(Modifier.height(10.dp))
+            PtSectionLabel("Per person", Modifier.padding(bottom = 4.dp))
+            val guests = members.filter { !it.host }
+            if (guests.isEmpty()) Text("Nobody else is in the room yet.", color = RmMuted, fontSize = 13.sp, modifier = Modifier.padding(vertical = 8.dp))
+            guests.forEach { m ->
+                val d = room.denied[m.uid].orEmpty()
+                val noChat = d.contains("chat")
+                val noVoice = d.contains("voice")
+                Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        DecoratedAvatar(m.avatar, m.name, 34.dp, m.decoration)
+                        Spacer(Modifier.width(10.dp))
+                        Text(m.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    }
+                    Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        PermChip("Chat", !noChat, Modifier.weight(1f)) { WatchParty.setDenied(m.uid, !noChat, noVoice) }
+                        PermChip("Voice", !noVoice, Modifier.weight(1f)) { WatchParty.setDenied(m.uid, noChat, !noVoice) }
                     }
                 }
             }

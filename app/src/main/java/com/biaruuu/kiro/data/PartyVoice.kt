@@ -1,7 +1,13 @@
 package com.biaruuu.kiro.data
 
 import android.content.Context
+import android.Manifest
+import android.content.pm.PackageManager
+import android.media.AudioFormat
 import android.media.AudioManager
+import android.media.AudioRecord
+import android.media.MediaRecorder
+import androidx.core.content.ContextCompat
 import android.os.Handler
 import android.os.Looper
 import com.google.firebase.firestore.FirebaseFirestore
@@ -124,6 +130,7 @@ object PartyVoice {
         // Our own entry shows up straight away; the server's list replaces it as soon as it answers.
         _states.value = _states.value + (me to VState(muted.value, false, false))
         if (PartySocket.open.value) sendJoin()
+        main.post { updateMeter() }
     }
 
     /** Tells the server this phone is in the call (also after the socket reconnects). */
@@ -182,6 +189,7 @@ object PartyVoice {
         if (!joined.value && factory == null) return
         joined.value = false
         deafened.value = false
+        stopMeter()
         PartySocket.sendRaw(JSONObject().put("type", "voice_leave"))
         speakingSent = false
         WatchParty.uid()?.let { _states.value = _states.value - it }
@@ -247,7 +255,7 @@ object PartyVoice {
         }
         val rms = Math.sqrt(sum / n)
         val t = android.os.SystemClock.elapsedRealtime()
-        if (rms > 700) {
+        if (rms > 450) {
             lastLoud = t
             if (loudSince == 0L) loudSince = t
             if (!speakingSent && t - loudSince > 120) main.post { setSpeaking(true) }
@@ -268,7 +276,48 @@ object PartyVoice {
         PartySocket.sendRaw(JSONObject().put("type", "speaking").put("on", on))
     }
 
+    // ---- With nobody else in the call the call engine isn't listening yet, so the speaking light uses its own listener.
+    @Volatile private var meterRun = false
+
+    private fun updateMeter() {
+        if (joined.value && peers.isEmpty()) startMeter() else stopMeter()
+    }
+
+    private fun stopMeter() {
+        meterRun = false
+    }
+
+    private fun startMeter() {
+        if (meterRun || !joined.value) return
+        val ctx = appContext ?: return
+        if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) return
+        val rate = 16000
+        val min = AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+        if (min <= 0) return
+        val rec = try {
+            AudioRecord(MediaRecorder.AudioSource.VOICE_COMMUNICATION, rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, min * 2)
+        } catch (_: Throwable) { return }
+        if (rec.state != AudioRecord.STATE_INITIALIZED) { rec.release(); return }
+        meterRun = true
+        Thread {
+            val buf = ByteArray(1600)
+            try {
+                rec.startRecording()
+                while (meterRun) {
+                    val n = rec.read(buf, 0, buf.size)
+                    if (n > 0) onMicSamples(buf.copyOf(n)) else if (n < 0) break
+                }
+            } catch (_: Throwable) {
+            } finally {
+                meterRun = false
+                try { rec.stop() } catch (_: Throwable) {}
+                rec.release()
+            }
+        }.apply { isDaemon = true }.start()
+    }
+
     private fun releaseAll() {
+        stopMeter()
         peers.values.forEach { try { it.pc.close() } catch (_: Throwable) {} }
         peers.clear()
         early.clear()
@@ -295,16 +344,19 @@ object PartyVoice {
             for (uid in peers.keys.toList()) {
                 if (uid !in inCall) closePeer(uid)
             }
+            updateMeter()
         }
     }
 
     private fun closePeer(uid: String) {
         peers.remove(uid)?.let { try { it.pc.close() } catch (_: Throwable) {} }
+        updateMeter()
     }
 
     private fun createPeer(uid: String, offer: Boolean): Peer? {
         val f = factory ?: return null
         val t = track ?: return null
+        stopMeter()
         val cfg = PeerConnection.RTCConfiguration(iceServers).apply {
             sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
         }

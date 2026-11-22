@@ -1107,7 +1107,7 @@ fun PlayerScreen(
             }
         } else {
             AnimatedVisibility(
-                visible = controlsVisible && !inPip,
+                visible = controlsVisible && !inPip && !(party != null && !fullscreen),
                 enter = fadeIn(),
                 exit = fadeOut(),
                 modifier = Modifier.fillMaxSize(),
@@ -1169,7 +1169,15 @@ fun PlayerScreen(
         }
 
         // A friend's new message shows for a few seconds without opening the chat.
-        if (party != null && !inPip && panel == null) {
+        // In the room page the picture is only a view: nobody can tap it. The host goes fullscreen from the button under it.
+        if (party != null && !fullscreen) {
+            Box(
+                Modifier.fillMaxSize().pointerInput(Unit) {
+                    awaitPointerEventScope { while (true) { awaitPointerEvent().changes.forEach { it.consume() } } }
+                },
+            )
+        }
+        if (party != null && fullscreen && !inPip && panel == null) {
             com.biaruuu.kiro.ui.party.PartyToast(Modifier.align(Alignment.BottomStart).padding(start = if (fullscreen) 20.dp else 12.dp, bottom = if (fullscreen) 96.dp else 70.dp).fillMaxWidth(if (fullscreen) 0.5f else 0.75f), onClick = openPartyChat)
         }
 

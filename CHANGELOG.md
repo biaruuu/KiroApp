@@ -4,6 +4,19 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.88.0]
+### Added
+- Host permissions: under Room settings > Permissions the host can turn chat or voice on or off for all guests, or block a single person from chat or voice.
+- The "Now playing" area shows the anime's poster, title, episode, score, genres and a short summary (tap to read more).
+
+### Changed
+- The speaking light in voice now works, even when you are the only one in the call.
+- Invite is a small icon in the room header, the member count is an icon with a number, and the crown beside the room name is gone.
+- The video in the room page can no longer be tapped; the host goes fullscreen with the button beside the anime details.
+- The room name is required when creating a room.
+- The "Today" divider in chat is gone.
+- The voice controls sit above the phone's navigation buttons.
+
 ## [1.87.0]
 ### Changed
 - Voice call redesigned: a grid of everyone in the call with their picture, name and crown for the host, a red mic when someone is muted, and a green ring around whoever is speaking. A bottom bar shows who is connected with mic, headphones (deafen) and a red hang-up button.
