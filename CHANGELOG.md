@@ -4,6 +4,18 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.82.0]
+### Added
+- Watch party chat now shows "Seen by" under your latest message and "is typing..." while a friend writes.
+- A small pill on the player's top bar shows the room code and how many are watching; tap it for the room options, chat and members. It is solid, so it stays clear over any picture.
+- A short notice appears for everyone in the room when someone leaves or is removed.
+
+### Changed
+- New chat cards over the video: small flat cards with the sender's picture, up to three at once, fading away after a few seconds.
+- In a party, guests' captions look exactly like the host's (font, size, background and text style), and the host decides the audio, subtitles, speed, auto skip and fullscreen. Guests follow.
+- "Watch party" and "Chat & voice" are no longer in the player's 3-dot menu; use the pill instead.
+- Subtitle style now defaults to Satoshi, Medium, Transparent background and Outline text. (Anyone who already picked their own style keeps it.)
+
 ## [1.81.0]
 ### Added
 - Watch party chat: long-press one of your own messages to Edit or Delete it. Edited messages show "(edited)".

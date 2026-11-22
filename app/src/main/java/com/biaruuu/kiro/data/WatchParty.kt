@@ -30,6 +30,10 @@ object WatchParty {
     class Member(
         val uid: String, val name: String, val avatar: String, val decoration: String, val nameFont: String, val host: Boolean,
         val voice: Boolean = false, val muted: Boolean = false,
+        /** This phone's clock (elapsedRealtime) until which the person counts as typing. */
+        val typingUntil: Long = 0L,
+        /** Time of the newest chat message this person has seen. */
+        val seenAt: Long = 0L,
     )
 
     val members = MutableStateFlow<List<Member>>(emptyList())
@@ -44,6 +48,11 @@ object WatchParty {
         val sub: String = "",
         val fullscreen: Boolean = false,
         val speed: Float = 1f,
+        /** The host's subtitle look: font name, then indexes into the size, background and edge lists (-1 = not set). */
+        val subFont: String = "",
+        val subSize: Int = -1,
+        val subBg: Int = -1,
+        val subEdge: Int = -1,
     )
 
     val settings = MutableStateFlow(Settings())
@@ -66,6 +75,14 @@ object WatchParty {
 
     /** One-shot message for the player to show (for example "The host ended the party"). */
     val message = MutableStateFlow<String?>(null)
+
+    /** One-shot notice for whoever is in the room, wherever they browse (for example "Sam left the watch party"). */
+    val notice = MutableStateFlow<String?>(null)
+
+    private val typingState = HashMap<String, Pair<Long, Long>>()
+    private var knownMembers: Map<String, String>? = null
+    private var lastTypingWrite = 0L
+    private var lastSeenWritten = 0L
 
     private var partyReg: ListenerRegistration? = null
     private var membersReg: ListenerRegistration? = null
@@ -202,13 +219,36 @@ object WatchParty {
         membersReg?.remove()
         membersReg = db().collection("parties").document(code).collection("members")
             .addSnapshotListener { snap, _ ->
-                members.value = snap?.documents?.mapNotNull { d ->
+                val list = snap?.documents?.mapNotNull { d ->
+                    // Typing: the writer's clock may differ from ours, so count 4.5 s from when the change reached us.
+                    val raw = d.getLong("typingAt") ?: 0L
+                    val prev = typingState[d.id]
+                    val until = when {
+                        raw == 0L -> 0L
+                        prev?.first == raw -> prev.second
+                        else -> SystemClock.elapsedRealtime() + 4500L
+                    }
+                    typingState[d.id] = raw to until
                     Member(
                         d.id, d.getString("name") ?: return@mapNotNull null, d.getString("avatar").orEmpty(),
                         d.getString("decoration").orEmpty(), d.getString("nameFont").orEmpty(), d.getBoolean("host") ?: false,
                         d.getBoolean("voice") ?: false, d.getBoolean("muted") ?: false,
+                        until, d.getLong("seenAt") ?: 0L,
                     )
                 }?.sortedWith(compareByDescending<Member> { it.host }.thenBy { it.name.lowercase() }) ?: emptyList()
+                members.value = list
+                // Tell the room when someone leaves. Only server snapshots count, so a stale cache never fakes it.
+                if (snap != null && !snap.metadata.isFromCache) {
+                    val nowIds = list.associate { it.uid to it.name }
+                    val me = uid()
+                    knownMembers?.forEach { (id, name) ->
+                        if (id !in nowIds && id != me) {
+                            notice.value = if (room.value.banned.containsKey(id)) "$name was removed from the watch party"
+                            else "$name left the watch party"
+                        }
+                    }
+                    knownMembers = nowIds
+                }
             }
     }
 
@@ -290,6 +330,31 @@ object WatchParty {
 
     private fun me() = uid()
 
+    /** Tells the room you are typing (at most one write every 2 s); [on] = false clears it at once. */
+    fun setTyping(on: Boolean) {
+        val s = session.value ?: return
+        val me = uid() ?: return
+        val now = System.currentTimeMillis()
+        if (on) {
+            if (now - lastTypingWrite < 2000L) return
+            lastTypingWrite = now
+        } else {
+            if (lastTypingWrite == 0L) return
+            lastTypingWrite = 0L
+        }
+        db().collection("parties").document(s.code).collection("members").document(me)
+            .update("typingAt", if (on) now else 0L)
+    }
+
+    /** Records the newest chat message you have looked at, so others can see "Seen by". */
+    fun markSeen(at: Long) {
+        val s = session.value ?: return
+        val me = uid() ?: return
+        if (at <= lastSeenWritten) return
+        lastSeenWritten = at
+        db().collection("parties").document(s.code).collection("members").document(me).update("seenAt", at)
+    }
+
     /** Tells the room whether this phone is in the voice call and whether its mic is muted. */
     fun setVoice(on: Boolean, muted: Boolean) {
         val s = session.value ?: return
@@ -309,6 +374,10 @@ object WatchParty {
         members.value = emptyList()
         room.value = Room()
         settings.value = Settings()
+        typingState.clear()
+        knownMembers = null
+        lastTypingWrite = 0L
+        lastSeenWritten = 0L
         nickname = ""
     }
 

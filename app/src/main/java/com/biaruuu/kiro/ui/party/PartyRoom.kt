@@ -39,6 +39,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -79,6 +80,14 @@ private val PrGreen = Color(0xFF3DDC84)
 fun PartyRuntime() {
     val party by WatchParty.session.collectAsState()
     val members by WatchParty.members.collectAsState()
+    val notice by WatchParty.notice.collectAsState()
+    val noticeContext = LocalContext.current
+    LaunchedEffect(notice) {
+        notice?.let {
+            com.biaruuu.kiro.ui.i18n.I18nToast.make(noticeContext, it, Toast.LENGTH_SHORT).show()
+            WatchParty.notice.value = null
+        }
+    }
     LaunchedEffect(party?.code) {
         PartyChat.listen(party?.code)
         if (party == null) PartyVoice.leave()
@@ -143,6 +152,30 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
     LaunchedEffect(msgs.size) { if (msgs.isNotEmpty()) listState.scrollToItem(msgs.lastIndex) }
     var editing by remember { mutableStateOf<PartyChat.Msg?>(null) }
     var menuFor by remember { mutableStateOf<String?>(null) }
+    val members by WatchParty.members.collectAsState()
+    val lastOwnId = msgs.lastOrNull { it.uid == me }?.id
+    // "Typing" fades by itself, so look again every second.
+    var tick by remember { mutableStateOf(0L) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(1000)
+            tick = android.os.SystemClock.elapsedRealtime()
+        }
+    }
+    // "Seen by": the newest message counts as seen while this chat is on screen and the app is in front.
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    var resumed by remember { mutableStateOf(lifecycleOwner.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) }
+    DisposableEffect(lifecycleOwner) {
+        val o = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME) resumed = true
+            else if (e == androidx.lifecycle.Lifecycle.Event.ON_PAUSE) resumed = false
+        }
+        lifecycleOwner.lifecycle.addObserver(o)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(o) }
+    }
+    LaunchedEffect(msgs.lastOrNull()?.id, resumed) {
+        if (resumed) msgs.lastOrNull()?.let { WatchParty.markSeen(it.at) }
+    }
     fun send() {
         if (text.isBlank()) return
         val e = editing
@@ -218,6 +251,21 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                                 }
                             }
                             EmojiText(m.text, Color(0xFFD0D0D4), 14f)
+                            if (m.id == lastOwnId) {
+                                val others = members.filter { it.uid != me }
+                                val seen = others.filter { it.seenAt >= m.at }
+                                if (seen.isNotEmpty()) {
+                                    Text(
+                                        when {
+                                            seen.size == others.size && seen.size > 1 -> "Seen by everyone"
+                                            seen.size <= 2 -> "Seen by " + seen.joinToString(", ") { it.name }
+                                            else -> "Seen by ${seen.size}"
+                                        },
+                                        color = PrMuted, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(top = 3.dp),
+                                    )
+                                }
+                            }
                         }
                     }
                     DropdownMenu(
@@ -261,6 +309,19 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                 }
             }
         }
+        val typers = members.filter { it.uid != me && it.typingUntil > maxOf(tick, android.os.SystemClock.elapsedRealtime()) }
+        Box(Modifier.fillMaxWidth().height(20.dp).padding(horizontal = 16.dp), contentAlignment = Alignment.CenterStart) {
+            if (typers.isNotEmpty()) {
+                Text(
+                    when (typers.size) {
+                        1 -> "${typers[0].name} is typing..."
+                        2 -> "${typers[0].name} and ${typers[1].name} are typing..."
+                        else -> "Several people are typing..."
+                    },
+                    color = PrMuted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
         Box(Modifier.fillMaxWidth().height(1.dp).background(PrHair))
         if (editing != null) {
             Row(
@@ -299,7 +360,7 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
             ) {
                 EmojiInput(
                     hint = "Type a message", textColor = Color.White, hintColor = PrMuted, modifier = Modifier.fillMaxWidth(),
-                    onReady = { field = it }, onChange = { text = it }, onSend = { send() },
+                    onReady = { field = it }, onChange = { text = it; WatchParty.setTyping(it.isNotBlank()) }, onSend = { send() },
                 )
             }
             val ready = text.isNotBlank()
@@ -319,31 +380,76 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
     }
 }
 
-/** A small line at the bottom of the player when a friend writes, so chat is seen without opening it. */
+/** New messages from friends over the video: a few small flat cards that fade away by themselves. */
 @Composable
 fun PartyToast(modifier: Modifier = Modifier) {
     val msgs by PartyChat.messages.collectAsState()
     val me = WatchParty.uid()
-    var shown by remember { mutableStateOf<PartyChat.Msg?>(null) }
+    val shown = remember { androidx.compose.runtime.mutableStateListOf<PartyChat.Msg>() }
     var lastSeen by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(msgs.lastOrNull()?.id) {
         val last = msgs.lastOrNull() ?: return@LaunchedEffect
         if (lastSeen == null) { lastSeen = last.id; return@LaunchedEffect } // old history is not announced
         if (last.id == lastSeen) return@LaunchedEffect
         lastSeen = last.id
+        WatchParty.markSeen(last.at) // it is on screen, so it counts as seen
         if (last.uid == me) return@LaunchedEffect
-        shown = last
-        kotlinx.coroutines.delay(4500)
-        if (shown?.id == last.id) shown = null
+        shown.add(last)
+        while (shown.size > 3) shown.removeAt(0)
     }
-    val m = shown ?: return
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        shown.forEach { m ->
+            androidx.compose.runtime.key(m.id) { ToastCard(m) { shown.remove(m) } }
+        }
+    }
+}
+
+@Composable
+private fun ToastCard(m: PartyChat.Msg, onDone: () -> Unit) {
+    LaunchedEffect(m.id) {
+        kotlinx.coroutines.delay(5000)
+        onDone()
+    }
+    val visible = remember { androidx.compose.animation.core.MutableTransitionState(false).apply { targetState = true } }
+    androidx.compose.animation.AnimatedVisibility(visibleState = visible, enter = androidx.compose.animation.fadeIn()) {
+        // Solid, nearly opaque and flat: readable over any picture, and it never blurs the video behind it.
+        Row(
+            modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xF2101012))
+                .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(12.dp)).padding(horizontal = 10.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            DecoratedAvatar(m.avatar, m.name, 22.dp, m.decoration)
+            Spacer(Modifier.width(8.dp))
+            Column(Modifier.weight(1f, fill = false)) {
+                Text(m.name, color = Color(0xFFB4B4BA), fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                EmojiText(m.text, Color.White, 13f, maxLines = 2)
+            }
+        }
+    }
+}
+
+/** The room pill on the player's top bar: solid, so it stays clear over any picture. Tap for the room options. */
+@Composable
+fun PartyTopPill(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val party by WatchParty.session.collectAsState()
+    val members by WatchParty.members.collectAsState()
+    val p = party ?: return
     Row(
-        modifier = modifier.clip(RoundedCornerShape(16.dp)).background(Color.Black.copy(alpha = 0.65f)).padding(horizontal = 12.dp, vertical = 8.dp),
+        modifier = modifier.clip(RoundedCornerShape(16.dp)).background(Color(0xFF111113))
+            .border(1.dp, Color(0xFF3A3A40), RoundedCornerShape(16.dp)).clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(m.name, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Box(Modifier.size(7.dp).clip(CircleShape).background(PrGreen))
+        Spacer(Modifier.width(7.dp))
+        Text(p.code, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp, maxLines = 1)
         Spacer(Modifier.width(8.dp))
-        EmojiText(m.text, Color(0xFFE0E0E4), 12f, Modifier.weight(1f, fill = false), maxLines = 2)
+        androidx.compose.material3.Icon(
+            painterResource(com.biaruuu.kiro.R.drawable.fluent_people_regular), contentDescription = "Members",
+            tint = Color(0xFFB4B4BA), modifier = Modifier.size(13.dp),
+        )
+        Spacer(Modifier.width(3.dp))
+        Text("${members.size}", color = Color(0xFFB4B4BA), fontSize = 11.sp, maxLines = 1)
     }
 }
 

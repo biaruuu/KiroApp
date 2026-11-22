@@ -475,7 +475,7 @@ fun PlayerScreen(
         if (partyHost) exo.addListener(l)
         onDispose { exo.removeListener(l) }
     }
-    LaunchedEffect(partyHost, trackTick, sourceIndex, sources, speed) {
+    LaunchedEffect(partyHost, trackTick, sourceIndex, sources, speed, subStyle) {
         if (!partyHost) return@LaunchedEffect
         val src = sources.getOrNull(sourceIndex)
         com.biaruuu.kiro.data.WatchParty.pushSettings(
@@ -484,6 +484,10 @@ fun PlayerScreen(
                 audio = src?.let { audioLanguage(it) }.orEmpty(),
                 sub = currentSubCode(),
                 speed = speed,
+                subFont = subStyle.font,
+                subSize = subStyle.size,
+                subBg = subStyle.background,
+                subEdge = subStyle.edge,
             ),
         )
     }
@@ -636,8 +640,18 @@ fun PlayerScreen(
     }
 
     // Keep the caption look in sync with the saved style.
-    LaunchedEffect(playerView, subStyle) {
-        playerView?.subtitleView?.applyKiroStyle(context, subStyle)
+    // In a watch party a guest's captions look exactly like the host's.
+    val partyHostStyle by com.biaruuu.kiro.data.WatchParty.settings.collectAsState()
+    val shownSubStyle = if (party?.host == false && partyHostStyle.subFont.isNotBlank()) {
+        SubtitleStyle(
+            font = partyHostStyle.subFont.takeIf { it in SubtitleOptions.fonts && it != SubtitleOptions.CUSTOM } ?: SubtitleOptions.DEFAULT_FONT,
+            size = partyHostStyle.subSize.coerceIn(0, SubtitleOptions.sizes.lastIndex),
+            background = partyHostStyle.subBg.coerceIn(0, SubtitleOptions.backgrounds.lastIndex),
+            edge = partyHostStyle.subEdge.coerceIn(0, SubtitleOptions.edges.lastIndex),
+        )
+    } else subStyle
+    LaunchedEffect(playerView, shownSubStyle) {
+        playerView?.subtitleView?.applyKiroStyle(context, shownSubStyle)
     }
 
     DisposableEffect(exo) {
@@ -938,7 +952,11 @@ fun PlayerScreen(
             val posSec = position / 1000.0
             val active = skipSegments.firstOrNull { posSec >= it.start - 0.5 && posSec < it.end - 1.0 }
             val activeKey = active?.let { "${it.type}:${it.start}" }
-            val skipNow = { seg: com.biaruuu.kiro.data.SkipTimes.Segment ->
+            val skipNow = skip@{ seg: com.biaruuu.kiro.data.SkipTimes.Segment ->
+                if (isGuest) {
+                    guestBlocked()
+                    return@skip false
+                }
                 val target = (seg.end * 1000).toLong().coerceAtMost(if (duration > 0) duration else Long.MAX_VALUE)
                 exo.seekTo(target)
                 position = target
@@ -946,14 +964,14 @@ fun PlayerScreen(
             }
             // Auto skip: a short, visible countdown, then jump. Each part is skipped once, so
             // going back into it with the seek bar is never fought over.
-            LaunchedEffect(activeKey, autoSkip) {
+            LaunchedEffect(activeKey, autoSkip, isGuest) {
                 autoProgress.snapTo(0f)
-                if (active != null && autoSkip && activeKey !in handledSkips) {
+                if (active != null && autoSkip && !isGuest && activeKey !in handledSkips) {
                     autoProgress.animateTo(1f, androidx.compose.animation.core.tween(2500, easing = androidx.compose.animation.core.LinearEasing))
                     skipNow(active)
                 }
             }
-            val counting = active != null && autoSkip && activeKey !in handledSkips
+            val counting = active != null && autoSkip && !isGuest && activeKey !in handledSkips
             val bottomPad by androidx.compose.animation.core.animateDpAsState(
                 if (controlsVisible) 118.dp else 40.dp,
                 androidx.compose.animation.core.tween(220),
@@ -1138,6 +1156,9 @@ fun PlayerScreen(
                         controlsVisible = true
                         interaction++
                     },
+                    topExtra = {
+                        if (party != null) com.biaruuu.kiro.ui.party.PartyTopPill(onClick = { panel = Panel.Party })
+                    },
                 )
             }
         }
@@ -1190,7 +1211,7 @@ fun PlayerScreen(
                 when (open) {
                     Panel.Menu -> LazyColumn {
                         item {
-                            MenuRow("Auto Skip Intro/Outro", if (autoSkip) "On" else "Off") { panel = Panel.AutoSkip }
+                            MenuRow("Auto Skip Intro/Outro", if (autoSkip && !isGuest) "On" else "Off") { if (!guestBlocked()) panel = Panel.AutoSkip }
                         }
                         item {
                             MenuRow("Quality", if (quality == 0) "Auto" else "${quality}p") { panel = Panel.Quality }
@@ -1198,16 +1219,12 @@ fun PlayerScreen(
                         item {
                             MenuRow(
                                 "Subtitle style",
-                                subStyle.font,
-                            ) { panel = Panel.SubStyle }
+                                shownSubStyle.font,
+                            ) { if (!guestBlocked()) panel = Panel.SubStyle }
                         }
                         item { MenuRow("Audio boost", if (boostDb == 0) "Off" else "+$boostDb dB") { panel = Panel.Boost } }
                         item { MenuRow("HDR & Dolby Vision", if (hdrOn) "On" else "Auto") { panel = Panel.Hdr } }
                         item { MenuRow("Playback speed", if (speed == 1f) "Normal" else "${speed}x") { if (!guestBlocked()) panel = Panel.Speed } }
-                        item {
-                            MenuRow("Watch party", party?.code ?: "") { panel = Panel.Party }
-                            if (party != null) MenuRow("Chat & voice", "") { panel = Panel.Chat }
-                        }
                     }
                     Panel.Quality -> {
                         val heights = remember(tracks) { videoHeights(tracks) }
@@ -1305,15 +1322,19 @@ fun PlayerScreen(
                             Spacer(Modifier.height(10.dp))
                             Text(
                                 if (partyMembers.size <= 1) "Waiting for friends to join..."
-                                else "${partyMembers.size} watching. Tap the avatars at the top to see who.",
+                                else "${partyMembers.size} watching.",
                                 color = Color(0xFFD0D0D4), fontSize = 12.sp, textAlign = TextAlign.Center,
                             )
                             if (!p.host) {
                                 Spacer(Modifier.height(6.dp))
-                                Text("The host controls playback.", color = Color(0xFF8E8E93), fontSize = 12.sp)
+                                Text("The host controls playback, audio, subtitles, speed and fullscreen.", color = Color(0xFF8E8E93), fontSize = 12.sp, textAlign = TextAlign.Center)
                             }
                             Spacer(Modifier.height(18.dp))
                             PartyButton("Share code", true) { shareCode(p.code) }
+                            Spacer(Modifier.height(10.dp))
+                            PartyButton("Chat & voice", false) { panel = Panel.Chat }
+                            Spacer(Modifier.height(10.dp))
+                            PartyButton("Members", false) { panel = Panel.Members }
                             Spacer(Modifier.height(10.dp))
                             PartyButton(if (p.host) "End party" else "Leave party", false) {
                                 com.biaruuu.kiro.data.WatchParty.leave()
@@ -1447,6 +1468,7 @@ private fun Controls(
     onEpisodes: () -> Unit,
     onNext: () -> Unit,
     onLock: () -> Unit,
+    topExtra: @Composable () -> Unit = {},
 ) {
     BoxWithConstraints(
         modifier = Modifier.fillMaxSize().background(
@@ -1482,6 +1504,8 @@ private fun Controls(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
+            topExtra()
+            Spacer(Modifier.width(12.dp))
             Icon(
                 painter = painterResource(R.drawable.fluent_more_vertical_regular),
                 contentDescription = "More",

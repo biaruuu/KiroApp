@@ -158,7 +158,8 @@ object PartySocket {
         JSONObject().put("type", "host_settings").put(
             "settings",
             JSONObject().put("provider", st.provider).put("audio", st.audio).put("sub", st.sub)
-                .put("fullscreen", st.fullscreen).put("speed", st.speed.toDouble()),
+                .put("fullscreen", st.fullscreen).put("speed", st.speed.toDouble())
+                .put("subFont", st.subFont).put("subSize", st.subSize).put("subBg", st.subBg).put("subEdge", st.subEdge),
         ),
     )
 
@@ -355,6 +356,10 @@ object PartySocket {
                 sub = o.optString("sub"),
                 fullscreen = o.optBoolean("fullscreen", false),
                 speed = o.optDouble("speed", 1.0).toFloat(),
+                subFont = o.optString("subFont"),
+                subSize = o.optInt("subSize", -1),
+                subBg = o.optInt("subBg", -1),
+                subEdge = o.optInt("subEdge", -1),
             )
         }
         val video = st.optJSONObject("video") ?: return

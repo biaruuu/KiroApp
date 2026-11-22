@@ -22,7 +22,7 @@ data class SubtitleStyle(
     val font: String = SubtitleOptions.DEFAULT_FONT,
     val size: Int = 1,
     val background: Int = 0,
-    val edge: Int = 1,
+    val edge: Int = 2,
 )
 
 object SubtitleOptions {
@@ -132,7 +132,7 @@ object SubtitleStyleStore {
             font = font,
             size = p.getInt("sub_size_idx", 1).coerceIn(0, SubtitleOptions.sizes.lastIndex),
             background = p.getInt("sub_bg_idx", 0).coerceIn(0, SubtitleOptions.backgrounds.lastIndex),
-            edge = p.getInt("sub_edge_idx", 1).coerceIn(0, SubtitleOptions.edges.lastIndex),
+            edge = p.getInt("sub_edge_idx", 2).coerceIn(0, SubtitleOptions.edges.lastIndex),
         )
     }
 
