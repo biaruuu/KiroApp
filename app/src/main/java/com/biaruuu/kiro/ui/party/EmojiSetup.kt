@@ -96,6 +96,11 @@ fun EmojiInput(
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
                 setPadding(0, 0, 0, 0)
                 includeFontPadding = false
+                // A real touch target: tapping anywhere in the bar focuses it and opens the keyboard.
+                minimumHeight = (44 * ctx.resources.displayMetrics.density).toInt()
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                isFocusable = true
+                isFocusableInTouchMode = true
                 maxLines = 4
                 setRawInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES)
                 imeOptions = EditorInfo.IME_ACTION_SEND

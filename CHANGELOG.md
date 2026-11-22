@@ -4,6 +4,16 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.81.0]
+### Added
+- Watch party chat: long-press one of your own messages to Edit or Delete it. Edited messages show "(edited)".
+- Guests now see what the host is watching while they browse: the room pill shows the title and episode, with a Join button.
+
+### Changed
+- Guests now use the same source as the host (same provider and audio) and the same subtitle language, so the host's subtitles show up for everyone.
+- The host's playback speed and fullscreen are copied to every guest in real time. Only the host can change speed, audio, subtitles or fullscreen; guests follow.
+- The "Type a message" bar is a much bigger tap target: tapping anywhere on it opens the keyboard.
+
 ## [1.80.0]
 ### Changed
 - Watch party is now truly realtime: when the host plays, pauses, skips or changes the episode, everyone in the room follows within a fraction of a second. It runs on a dedicated live server instead of waiting on database updates.

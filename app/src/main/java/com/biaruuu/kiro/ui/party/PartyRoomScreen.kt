@@ -104,6 +104,7 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
     val members by WatchParty.members.collectAsState()
     val remote by WatchParty.remote.collectAsState()
     val room by WatchParty.room.collectAsState()
+    val hostSettings by WatchParty.settings.collectAsState()
     val p = party
     if (p == null) {
         Box(modifier.background(RmBg).statusBarsPadding().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -128,7 +129,11 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
     BoxWithConstraints(modifier.background(RmBg)) {
         val phoneLandscape = maxHeight < 500.dp && maxWidth > maxHeight
         val wide = !phoneLandscape && maxWidth >= 720.dp
-        val full = manualFull || phoneLandscape
+        // Only the host chooses fullscreen; guests follow it (a landscape phone is always full).
+        val full = if (p.host) manualFull || phoneLandscape else hostSettings.fullscreen || phoneLandscape
+        LaunchedEffect(full, p.host) {
+            if (p.host) WatchParty.pushSettings(WatchParty.settings.value.copy(fullscreen = full))
+        }
         val headerH = 56.dp
         val topInset = with(LocalDensity.current) { WindowInsets.statusBars.asPaddingValues().calculateTopPadding() }
         val sideW = 380.dp
@@ -168,11 +173,11 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
                 if (wide) {
                     Row(Modifier.weight(1f).fillMaxWidth()) {
                         Spacer(Modifier.weight(1f))
-                        RoomPanel(tab, { tab = it }, hasVideo, { manualFull = true }, { sheet = Sheet.Invite }, Modifier.width(sideW).fillMaxHeight())
+                        RoomPanel(tab, { tab = it }, hasVideo && p.host, { manualFull = true }, { sheet = Sheet.Invite }, Modifier.width(sideW).fillMaxHeight())
                     }
                 } else {
                     Spacer(Modifier.fillMaxWidth().aspectRatio(16f / 9f))
-                    RoomPanel(tab, { tab = it }, hasVideo, { manualFull = true }, { sheet = Sheet.Invite }, Modifier.weight(1f).fillMaxWidth())
+                    RoomPanel(tab, { tab = it }, hasVideo && p.host, { manualFull = true }, { sheet = Sheet.Invite }, Modifier.weight(1f).fillMaxWidth())
                 }
             }
         }

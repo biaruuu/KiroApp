@@ -72,6 +72,7 @@ object PartySocket {
 
     /** The host's latest state, kept even while the socket is down so it can be re-sent. */
     @Volatile private var latest: Snap? = null
+    @Volatile private var latestSettings: WatchParty.Settings? = null
     @Volatile private var sentAnime = 0
     @Volatile private var sentEpisode = 0
 
@@ -119,6 +120,7 @@ object PartySocket {
         synchronized(lock) {
             resetLocked()
             latest = null
+            latestSettings = null
         }
     }
 
@@ -145,6 +147,20 @@ object PartySocket {
         if (!isLive()) return false
         return sendVideo(animeId, episode, "", 0L, false)
     }
+
+    /** Host: shares which source, audio, subtitle and speed it uses, and whether it is fullscreen. */
+    fun sendSettings(st: WatchParty.Settings) {
+        latestSettings = st
+        if (isLive()) sendSettingsNow(st)
+    }
+
+    private fun sendSettingsNow(st: WatchParty.Settings): Boolean = send(
+        JSONObject().put("type", "host_settings").put(
+            "settings",
+            JSONObject().put("provider", st.provider).put("audio", st.audio).put("sub", st.sub)
+                .put("fullscreen", st.fullscreen).put("speed", st.speed.toDouble()),
+        ),
+    )
 
     // ------------------------------------------------------------------ internals
 
@@ -230,8 +246,8 @@ object PartySocket {
     }
 
     private fun flushHostState() {
-        val s = latest ?: return
-        sendVideo(s.animeId, s.episode, s.title, s.positionMs, s.playing)
+        latest?.let { sendVideo(it.animeId, it.episode, it.title, it.positionMs, it.playing) }
+        latestSettings?.let { sendSettingsNow(it) }
     }
 
     /** The server gave the host role to someone else while we were away: open a fresh room. */
@@ -332,6 +348,15 @@ object PartySocket {
     /** Turns the server's playback state into what the player already understands. */
     private fun applyState(st: JSONObject?) {
         if (st == null) return
+        st.optJSONObject("settings")?.let { o ->
+            WatchParty.settings.value = WatchParty.Settings(
+                provider = o.optString("provider"),
+                audio = o.optString("audio"),
+                sub = o.optString("sub"),
+                fullscreen = o.optBoolean("fullscreen", false),
+                speed = o.optDouble("speed", 1.0).toFloat(),
+            )
+        }
         val video = st.optJSONObject("video") ?: return
         val meta = video.optJSONObject("meta") ?: return
         val animeId = meta.optInt("animeId", 0)

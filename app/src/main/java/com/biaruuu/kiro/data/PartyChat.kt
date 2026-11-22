@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
  * server, so it feels instant.
  */
 object PartyChat {
-    class Msg(val id: String, val uid: String, val name: String, val avatar: String, val decoration: String, val text: String, val at: Long)
+    class Msg(val id: String, val uid: String, val name: String, val avatar: String, val decoration: String, val text: String, val at: Long, val edited: Boolean = false)
 
     val messages = MutableStateFlow<List<Msg>>(emptyList())
 
@@ -35,9 +35,40 @@ object PartyChat {
                         d.id, d.getString("uid") ?: return@mapNotNull null, d.getString("name").orEmpty().ifBlank { "Guest" },
                         d.getString("avatar").orEmpty(), d.getString("decoration").orEmpty(),
                         d.getString("text") ?: return@mapNotNull null, d.getLong("at") ?: 0L,
+                        d.getBoolean("edited") == true,
                     )
                 }
             }
+    }
+
+    private fun col(c: String) = FirebaseFirestore.getInstance().collection("parties").document(c).collection("messages")
+
+    /** Removes one of your own messages for everyone in the room. */
+    fun delete(id: String) {
+        val c = code ?: return
+        col(c).document(id).delete()
+    }
+
+    /**
+     * Changes one of your own messages. It is written again with the same time (so it keeps its place)
+     * and the old one is removed in the same step, which the existing Firestore rules already allow.
+     */
+    fun edit(m: Msg, newText: String) {
+        val c = code ?: return
+        if (m.uid != WatchParty.uid()) return
+        val clean = newText.trim().take(500)
+        if (clean.isEmpty() || clean == m.text) return
+        val col = col(c)
+        val batch = FirebaseFirestore.getInstance().batch()
+        batch.set(
+            col.document(),
+            mapOf(
+                "uid" to m.uid, "name" to m.name, "avatar" to m.avatar, "decoration" to m.decoration,
+                "text" to clean, "at" to m.at, "edited" to true,
+            ),
+        )
+        batch.delete(col.document(m.id))
+        batch.commit()
     }
 
     fun send(text: String) {

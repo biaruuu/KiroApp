@@ -386,6 +386,8 @@ fun PlayerScreen(
     // position, so a pause or a skip lands within a fraction of a second.
     val latestParty by rememberUpdatedState(party)
     val latestRemote by rememberUpdatedState(partyRemote)
+    val hostSettings by com.biaruuu.kiro.data.WatchParty.settings.collectAsState()
+    val latestHostSettings by rememberUpdatedState(hostSettings)
     val lastSeek = remember { longArrayOf(0L) }
     fun syncGuest() {
         val p = latestParty ?: return
@@ -401,7 +403,7 @@ fun PlayerScreen(
         // Phone clocks can differ; only trust the host's timestamp when it is plausible.
         val elapsed = if (r.sentAt > 0L && travelled in 0L..6000L) travelled
         else android.os.SystemClock.elapsedRealtime() - r.receivedAt
-        val target = r.positionMs + if (r.playing) elapsed else 0L
+        val target = r.positionMs + if (r.playing) (elapsed * latestHostSettings.speed).toLong() else 0L
         val now = android.os.SystemClock.elapsedRealtime()
         val allowed = if (r.playing) 700L else 250L
         if (kotlin.math.abs(exo.currentPosition - target) > allowed && now - lastSeek[0] > 800L) {
@@ -415,6 +417,75 @@ fun PlayerScreen(
             delay(250)
             syncGuest()
         }
+    }
+
+    // Guest: when the host switches provider or audio, switch to the same one (the position carries over).
+    LaunchedEffect(hostSettings.provider, hostSettings.audio, sources) {
+        if (party?.host != false || sources.isEmpty()) return@LaunchedEffect
+        val idx = hostSourceIndex(sources, hostSettings)
+        if (idx >= 0 && idx != sourceIndex) {
+            pendingSeek = exo.currentPosition
+            sourceIndex = idx
+        }
+    }
+    // Guest: same subtitle as the host (a language, or off), and the host's speed.
+    fun applyHostSub() {
+        if (latestParty?.host != false) return
+        val want = latestHostSettings.sub
+        if (want.isBlank()) return
+        val b = exo.trackSelectionParameters.buildUpon().clearOverridesOfType(C.TRACK_TYPE_TEXT)
+        if (want == "off") {
+            b.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+        } else {
+            b.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false).setPreferredTextLanguage(want)
+        }
+        val next = b.build()
+        if (next != exo.trackSelectionParameters) exo.trackSelectionParameters = next
+    }
+    LaunchedEffect(hostSettings.sub, sources, sourceIndex) { applyHostSub() }
+    DisposableEffect(exo) {
+        val l = object : Player.Listener {
+            override fun onTracksChanged(t: Tracks) = applyHostSub()
+        }
+        exo.addListener(l)
+        onDispose { exo.removeListener(l) }
+    }
+    LaunchedEffect(hostSettings.speed, party?.host) {
+        if (party?.host != false) return@LaunchedEffect
+        speed = hostSettings.speed
+        exo.setPlaybackSpeed(hostSettings.speed)
+    }
+
+    // Host: publish the provider, audio, subtitle and speed in use, so every guest copies them.
+    fun currentSubCode(): String {
+        val groups = exo.currentTracks.groups.filter { it.type == C.TRACK_TYPE_TEXT }
+        if (groups.isEmpty()) return if (exo.currentTracks.groups.isEmpty()) "" else "off"
+        if (exo.trackSelectionParameters.disabledTrackTypes.contains(C.TRACK_TYPE_TEXT)) return "off"
+        for (g in groups) {
+            for (i in 0 until g.length) if (g.isTrackSelected(i)) return g.getTrackFormat(i).language ?: ""
+        }
+        return "off"
+    }
+    var trackTick by remember { mutableIntStateOf(0) }
+    DisposableEffect(exo, partyHost) {
+        val l = object : Player.Listener {
+            override fun onTracksChanged(t: Tracks) { trackTick++ }
+            override fun onTrackSelectionParametersChanged(p: androidx.media3.common.TrackSelectionParameters) { trackTick++ }
+        }
+        if (partyHost) exo.addListener(l)
+        onDispose { exo.removeListener(l) }
+    }
+    LaunchedEffect(partyHost, trackTick, sourceIndex, sources, speed) {
+        if (!partyHost) return@LaunchedEffect
+        val src = sources.getOrNull(sourceIndex)
+        com.biaruuu.kiro.data.WatchParty.pushSettings(
+            com.biaruuu.kiro.data.WatchParty.settings.value.copy(
+                provider = src?.providerName.orEmpty(),
+                audio = src?.let { audioLanguage(it) }.orEmpty(),
+                sub = currentSubCode(),
+                speed = speed,
+            ),
+        )
     }
 
     // Sub and dub come as separate streams; this jumps to the best one of the other kind.
@@ -466,6 +537,11 @@ fun PlayerScreen(
             val dubIdx = found.indexOfFirst { it.isDub && audioLanguage(it) == "English" }
                 .takeIf { it >= 0 } ?: found.indexOfFirst { it.isDub }
             if (dubIdx > 0) sourceIndex = dubIdx
+        }
+        // A guest uses the host's provider and audio, so the same subtitles are there too.
+        if (latestParty?.host == false) {
+            val idx = hostSourceIndex(found, com.biaruuu.kiro.data.WatchParty.settings.value)
+            if (idx >= 0) sourceIndex = idx
         }
         resolving = false
         if (found.isEmpty()) {
@@ -1049,7 +1125,7 @@ fun PlayerScreen(
                         seeking = false
                         interaction++
                     },
-                    onTracks = { panel = Panel.Tracks },
+                    onTracks = { if (!guestBlocked()) panel = Panel.Tracks },
                     onEpisodes = { panel = Panel.Episodes },
                     onNext = {
                         val next = nextEpisode
@@ -1127,7 +1203,7 @@ fun PlayerScreen(
                         }
                         item { MenuRow("Audio boost", if (boostDb == 0) "Off" else "+$boostDb dB") { panel = Panel.Boost } }
                         item { MenuRow("HDR & Dolby Vision", if (hdrOn) "On" else "Auto") { panel = Panel.Hdr } }
-                        item { MenuRow("Playback speed", if (speed == 1f) "Normal" else "${speed}x") { panel = Panel.Speed } }
+                        item { MenuRow("Playback speed", if (speed == 1f) "Normal" else "${speed}x") { if (!guestBlocked()) panel = Panel.Speed } }
                         item {
                             MenuRow("Watch party", party?.code ?: "") { panel = Panel.Party }
                             if (party != null) MenuRow("Chat & voice", "") { panel = Panel.Chat }
@@ -2119,6 +2195,20 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
     }
     }
     }
+}
+
+/** The source on this phone that matches what the host uses: same provider and audio, else same audio. -1 if none. */
+private fun hostSourceIndex(list: List<StreamSource>, h: com.biaruuu.kiro.data.WatchParty.Settings): Int {
+    if (list.isEmpty()) return -1
+    if (h.provider.isNotBlank()) {
+        val exact = list.indexOfFirst { it.providerName == h.provider && (h.audio.isBlank() || audioLanguage(it) == h.audio) }
+        if (exact >= 0) return exact
+    }
+    if (h.audio.isNotBlank()) {
+        val byAudio = list.indexOfFirst { audioLanguage(it) == h.audio }
+        if (byAudio >= 0) return byAudio
+    }
+    return -1
 }
 
 /** Japanese for the original, Filipino for the developer's own dub, English for every other dub. */

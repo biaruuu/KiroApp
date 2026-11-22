@@ -34,6 +34,28 @@ object WatchParty {
 
     val members = MutableStateFlow<List<Member>>(emptyList())
 
+    /** What the host is using. Guests copy it so they see and hear the same thing. */
+    data class Settings(
+        /** Provider (source) name, for example "Anivault". Empty means "no preference". */
+        val provider: String = "",
+        /** "Japanese", "English" or "Filipino". */
+        val audio: String = "",
+        /** A subtitle language code, or "off". */
+        val sub: String = "",
+        val fullscreen: Boolean = false,
+        val speed: Float = 1f,
+    )
+
+    val settings = MutableStateFlow(Settings())
+
+    /** The host shares its source, subtitle, speed and fullscreen. Only does something for the host. */
+    fun pushSettings(s: Settings) {
+        val sess = session.value ?: return
+        if (!sess.host || settings.value == s) return
+        settings.value = s
+        PartySocket.sendSettings(s)
+    }
+
     /** Room-wide settings the host controls. [banned] maps a removed person's uid to their name. */
     class Room(val name: String = "", val voiceOff: Boolean = false, val banned: Map<String, String> = emptyMap(), val hostName: String = "")
 
@@ -286,6 +308,7 @@ object WatchParty {
         membersReg = null
         members.value = emptyList()
         room.value = Room()
+        settings.value = Settings()
         nickname = ""
     }
 

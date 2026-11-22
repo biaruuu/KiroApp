@@ -7,7 +7,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -125,7 +131,8 @@ fun VoiceControls(modifier: Modifier = Modifier) {
 
 private val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
 
-/** The live message list with a box to write in. */
+/** The live message list with a box to write in. Long-press one of your own messages to edit or delete it. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null) {
     val msgs by PartyChat.messages.collectAsState()
@@ -134,13 +141,29 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
     var text by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     LaunchedEffect(msgs.size) { if (msgs.isNotEmpty()) listState.scrollToItem(msgs.lastIndex) }
+    var editing by remember { mutableStateOf<PartyChat.Msg?>(null) }
+    var menuFor by remember { mutableStateOf<String?>(null) }
     fun send() {
         if (text.isBlank()) return
-        PartyChat.send(text)
+        val e = editing
+        if (e != null) {
+            PartyChat.edit(e, text)
+            editing = null
+        } else {
+            PartyChat.send(text)
+        }
         field?.setText("")
         text = ""
     }
     var emojiOpen by remember { mutableStateOf(false) }
+    fun focusField() {
+        emojiOpen = false
+        field?.let {
+            it.requestFocus()
+            (it.context.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager)
+                .showSoftInput(it, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+        }
+    }
     val keyboard = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
     val hostUid = WatchParty.members.collectAsState().value.firstOrNull { it.host }?.uid
     Column(modifier.imePadding()) {
@@ -167,7 +190,10 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(msgs, key = { it.id }) { m ->
-                    Row {
+                  Box {
+                    Row(
+                        if (m.uid == me) Modifier.combinedClickable(onClick = {}, onLongClick = { menuFor = m.id }) else Modifier,
+                    ) {
                         DecoratedAvatar(m.avatar, m.name, 30.dp, m.decoration)
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
@@ -186,14 +212,73 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                                 }
                                 Spacer(Modifier.width(8.dp))
                                 Text(timeFormat.format(Date(m.at)), color = PrMuted, fontSize = 11.sp)
+                                if (m.edited) {
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("(edited)", color = PrMuted, fontSize = 10.sp)
+                                }
                             }
                             EmojiText(m.text, Color(0xFFD0D0D4), 14f)
                         }
                     }
+                    DropdownMenu(
+                        expanded = menuFor == m.id,
+                        onDismissRequest = { menuFor = null },
+                        modifier = Modifier.background(PrCard),
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Edit Message", color = Color.White, fontSize = 15.sp) },
+                            trailingIcon = {
+                                androidx.compose.material3.Icon(
+                                    painterResource(com.biaruuu.kiro.R.drawable.fluent_edit_regular), contentDescription = null,
+                                    tint = Color.White, modifier = Modifier.size(20.dp),
+                                )
+                            },
+                            onClick = {
+                                menuFor = null
+                                editing = m
+                                field?.let { f ->
+                                    f.setText(m.text)
+                                    f.setSelection(f.text.length)
+                                }
+                                focusField()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete Message", color = Color(0xFFFF5C5C), fontSize = 15.sp) },
+                            trailingIcon = {
+                                androidx.compose.material3.Icon(
+                                    painterResource(com.biaruuu.kiro.R.drawable.fluent_delete_regular), contentDescription = null,
+                                    tint = Color(0xFFFF5C5C), modifier = Modifier.size(20.dp),
+                                )
+                            },
+                            onClick = {
+                                menuFor = null
+                                PartyChat.delete(m.id)
+                            },
+                        )
+                    }
+                  }
                 }
             }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(PrHair))
+        if (editing != null) {
+            Row(
+                Modifier.fillMaxWidth().background(PrChip).padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Editing message", color = PrMuted, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                androidx.compose.material3.Icon(
+                    painterResource(com.biaruuu.kiro.R.drawable.fluent_dismiss_regular), contentDescription = "Cancel edit",
+                    tint = PrMuted,
+                    modifier = Modifier.size(32.dp).clip(CircleShape).clickable {
+                        editing = null
+                        field?.setText("")
+                        text = ""
+                    }.padding(6.dp),
+                )
+            }
+        }
         Row(
             modifier = Modifier.fillMaxWidth().background(PrCard).then(if (emojiOpen) Modifier else Modifier.navigationBarsPadding()).padding(horizontal = 8.dp).heightIn(min = 60.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -206,7 +291,12 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                     if (emojiOpen) keyboard?.hide() else field?.requestFocus()
                 }.padding(10.dp),
             )
-            Box(Modifier.weight(1f).padding(horizontal = 4.dp, vertical = 10.dp)) {
+            Box(
+                Modifier.weight(1f).heightIn(min = 60.dp)
+                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { focusField() }
+                    .padding(horizontal = 4.dp),
+                contentAlignment = Alignment.CenterStart,
+            ) {
                 EmojiInput(
                     hint = "Type a message", textColor = Color.White, hintColor = PrMuted, modifier = Modifier.fillMaxWidth(),
                     onReady = { field = it }, onChange = { text = it }, onSend = { send() },
@@ -276,6 +366,12 @@ fun PartyPill(modifier: Modifier = Modifier, onOpen: () -> Unit, onWatch: (Int, 
         Spacer(Modifier.width(8.dp))
         Text("${p.code} · ${members.size}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
         if (!p.host && r != null && r.animeId > 0) {
+            Spacer(Modifier.width(8.dp))
+            Text(
+                (if (r.title.isNotBlank()) r.title + " · " else "") + "Ep ${r.episode}",
+                color = PrMuted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 140.dp),
+            )
             Spacer(Modifier.width(8.dp))
             Text(
                 "Join", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Medium,
