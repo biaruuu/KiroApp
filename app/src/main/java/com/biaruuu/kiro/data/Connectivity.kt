@@ -26,7 +26,10 @@ object Connectivity {
         val cm = app.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         try {
             cm.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
-                override fun onAvailable(network: Network) { online.value = true }
+                override fun onAvailable(network: Network) {
+                    online.value = true
+                    PartySocket.networkBack()
+                }
                 override fun onLost(network: Network) { online.value = isOnline(app) }
                 override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
                     online.value = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)

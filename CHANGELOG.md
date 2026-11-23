@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.96.0]
+### Improved
+- Chat is now live over the watch party WebSocket: messages, edits and deletions reach everyone at once, while Firestore still keeps the saved history. Both are merged, so nothing shows twice.
+- Faster reconnect for the watch party connection: the first retry is almost immediate, and it reconnects the instant the phone gets a network again.
+
 ## [1.95.0]
 ### Removed
 - Automatic captions for the Filipino dub (the admin setup, the Generate/Redo/Clear buttons and the captions on the Filipino Dub source).

@@ -229,11 +229,21 @@ object PartySocket {
         scheduleReconnect()
     }
 
+    /** The phone got a network again: reconnect right away instead of waiting out the back-off. */
+    fun networkBack() {
+        synchronized(lock) {
+            if (!wanted || _open.value) return
+            reconnectJob?.cancel()
+            retry = 0
+        }
+        connect()
+    }
+
     private fun scheduleReconnect() {
         synchronized(lock) {
             if (!wanted) return
             reconnectJob?.cancel()
-            val wait = minOf(15_000L, 1_000L shl minOf(retry, 4))
+            val wait = minOf(8_000L, 250L shl minOf(retry, 5))
             retry++
             reconnectJob = scope.launch {
                 delay(wait)
@@ -344,6 +354,8 @@ object PartySocket {
             }
             "state" -> if (!isHost) applyState(o)
             "browse" -> if (!isHost) WatchParty.onBrowse(o.optJSONObject("browse"))
+            "chat" -> PartyChat.onLive(o)
+            "chat_delete" -> PartyChat.onGone(o.optString("id"))
             "voice_state", "voice_signal", "speaking" -> PartyVoice.onSocket(o.optString("type"), o)
             "left" -> {
                 val create = synchronized(lock) {
