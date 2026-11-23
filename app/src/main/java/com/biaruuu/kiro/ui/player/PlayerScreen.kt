@@ -287,19 +287,21 @@ fun PlayerScreen(
     var autoSkip by remember { mutableStateOf(com.biaruuu.kiro.data.AppSettings.autoSkip(context)) }
     val handledSkips = remember(current) { mutableStateListOf<String>() }
     val autoProgress = remember { androidx.compose.animation.core.Animatable(0f) }
-    var skipSegments by remember { mutableStateOf<List<com.biaruuu.kiro.data.SkipTimes.Segment>>(emptyList()) }
+    var skipFound by remember { mutableStateOf<List<com.biaruuu.kiro.data.SkipTimes.Segment>>(emptyList()) }
     val skipMalId = ui.detail?.malId ?: 0
     val hasDuration = duration > 0
     // Looked up once per episode when the length is known; the length wobbling afterwards (streams
     // refine it as they load) must not clear the markers or the skip button.
     LaunchedEffect(current, skipMalId, hasDuration) {
-        if (!hasDuration) { skipSegments = emptyList(); return@LaunchedEffect }
+        if (!hasDuration) { skipFound = emptyList(); return@LaunchedEffect }
         val found = com.biaruuu.kiro.data.SkipTimes.load(skipMalId, current, duration / 1000.0)
-        skipSegments = found
+        skipFound = found
     }
 
     var sources by remember { mutableStateOf<List<StreamSource>>(emptyList()) }
     var sourceIndex by remember { mutableIntStateOf(0) }
+    // The Filipino dub has its own cut, so the usual intro/outro times don't fit it: no skip buttons there.
+    val skipSegments = if (sources.getOrNull(sourceIndex)?.providerName?.startsWith("Filipino") == true) emptyList() else skipFound
     var resolving by remember { mutableStateOf(true) }
     var pendingSeek by remember { mutableLongStateOf(0L) }
     val prefs = remember { context.getSharedPreferences("kiro_user_data", android.content.Context.MODE_PRIVATE) }

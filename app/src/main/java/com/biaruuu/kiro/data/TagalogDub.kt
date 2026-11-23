@@ -89,8 +89,8 @@ object TagalogDub {
         if (e.captions.isBlank()) return null
         return try {
             val dir = java.io.File(ctx.cacheDir, "tagdub_caps").apply { mkdirs() }
-            val f = java.io.File(dir, "${e.id}_${e.captions.hashCode()}.vtt")
-            if (!f.exists()) f.writeText(e.captions)
+            val f = java.io.File(dir, "${e.id}_${e.captions.hashCode()}_v2.vtt")
+            if (!f.exists()) f.writeText(TagalogCaptions.scrub(e.captions))
             com.biaruuu.kiro.data.stream.SubtitleTrack(android.net.Uri.fromFile(f).toString(), "Filipino", "fil", "text/vtt")
         } catch (_: Exception) { null }
     }

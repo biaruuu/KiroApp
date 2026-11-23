@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.92.0]
+### Fixed
+- Filipino dub captions no longer show a made-up line ("Pag-ibig na tayo ng mga pangungusap sa Filipino, may halong English"): the hint that caused it is gone and such lines are removed, including from captions saved before.
+- No Skip Intro / Skip Outro buttons or markers on the Filipino dub (its cut doesn't match).
+
+### Improved
+- Automatic captions are more complete and more exact: the episode is listened to in 8 minute pieces (no more length limit, fewer skipped lines), word times set when each caption appears and disappears, and only clearly invented lines are filtered so real speech is kept. Use "Redo captions" on episodes made before.
+
 ## [1.91.0]
 ### Fixed
 - English dub no longer shows the subbed episode's English captions (different words and timing); captions that belong to the dub (CC/SDH) and other languages stay.
