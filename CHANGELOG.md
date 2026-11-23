@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.93.0]
+### Fixed
+- Auto captions no longer get stuck on "Getting the sound": the sound track is now copied straight out of the video (no re-encoding), so it is quick, works for episodes of any length, and the slower fallback gives up after 3 minutes with a clear message instead of hanging.
+
+### Changed
+- Cleaner admin design for captions: a collapsed "Automatic captions" setup row with a status dot, and one quiet line per episode (Captions ready / No captions) with Generate, Redo, Clear, a thin progress bar and a Stop button.
+
 ## [1.92.0]
 ### Fixed
 - Filipino dub captions no longer show a made-up line ("Pag-ibig na tayo ng mga pangungusap sa Filipino, may halong English"): the hint that caused it is gone and such lines are removed, including from captions saved before.

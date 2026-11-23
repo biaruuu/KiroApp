@@ -2,6 +2,10 @@ package com.biaruuu.kiro.data
 
 import android.content.Context
 import android.os.Handler
+import android.media.MediaCodec
+import android.media.MediaExtractor
+import android.media.MediaFormat
+import android.media.MediaMuxer
 import android.os.Looper
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
@@ -20,6 +24,8 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import org.json.JSONObject
 import java.io.File
+import java.nio.ByteBuffer
+import java.util.concurrent.ConcurrentHashMap
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
@@ -61,8 +67,13 @@ object TagalogCaptions {
         FirebaseFirestore.getInstance().collection("tagdub").document(id).update("captions", com.google.firebase.firestore.FieldValue.delete())
     }
 
+    private val cancelled = ConcurrentHashMap.newKeySet<String>()
+
+    /** Stops a captions job that is running for this episode. */
+    fun cancel(id: String) { cancelled.add(id) }
+
     private const val CHUNK_MS = 8L * 60 * 1000
-    /** A full 8 minute piece at 48 kbps is about 2.9 MB; anything clearly smaller was the end of the episode. */
+    /** Without a way to know the end, a piece clearly smaller than a full one (8 min at 48 kbps = 2.9 MB) was the last. */
     private const val FULL_CHUNK_BYTES = 2_400_000L
 
     /** Runs the whole job. [progress] gets short status lines; [done] gets null on success or an error. */
@@ -81,21 +92,24 @@ object TagalogCaptions {
                         .addOnSuccessListener { finish(null) }.addOnFailureListener { finish(it.message ?: "Could not save") }
                 }.start()
             }
-            // The episode is listened to in 8 minute pieces: long audio makes the service skip speech and drift.
+            cancelled.remove(e.id)
+            val headers = if (e.referer.startsWith("http")) mapOf("Referer" to e.referer, "User-Agent" to "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36") else emptyMap()
+            // The episode is listened to in 8 minute pieces: long audio makes the service skip speech and drift,
+            // and pieces mean an episode of any length works.
             fun step(i: Int) {
-                say(if (i == 0) "Getting the sound…" else "Listening… part ${i + 1}")
-                extractAudio(context, e.url, i * CHUNK_MS, (i + 1) * CHUNK_MS) { file, err ->
-                    if (file == null || file.length() < 15_000) {
+                if (cancelled.remove(e.id)) return finish("Stopped.")
+                say(if (i == 0) "Getting the sound" else "Part ${i + 1}")
+                extract(context, e.url, headers, i * CHUNK_MS, (i + 1) * CHUNK_MS) { file, ended, err ->
+                    if (file == null || file.length() < 8_000) {
                         file?.delete()
-                        if (i == 0) return@extractAudio finish(err ?: "Could not read the sound of this video.")
-                        return@extractAudio complete()
+                        if (i == 0) return@extract finish(err ?: "Could not read the sound of this video.")
+                        return@extract complete()
                     }
-                    val wasLast = file.length() < FULL_CHUNK_BYTES
                     Thread {
                         try {
-                            say("Listening… part ${i + 1}")
+                            say("Part ${i + 1} · listening")
                             all.addAll(transcribe(cfg, file, i * CHUNK_MS / 1000.0))
-                            main.post { if (wasLast || i >= 60) complete() else step(i + 1) }
+                            main.post { if (ended || i >= 200) complete() else step(i + 1) }
                         } catch (ex: Exception) {
                             finish(ex.message ?: "Failed")
                         } finally {
@@ -108,8 +122,86 @@ object TagalogCaptions {
         }
     }
 
-    /** One piece of the video -> a small AAC file with only the sound, made on this phone. */
-    private fun extractAudio(context: Context, url: String, fromMs: Long, toMs: Long, done: (File?, String?) -> Unit) {
+    /**
+     * One piece of the video as an audio-only file. The sound track is copied as it is (no re-encoding, so
+     * it is quick and cannot get stuck); only when that is not possible (a streaming playlist, an unusual
+     * sound format) does the slower Media3 export take over, with a time limit.
+     */
+    private fun extract(context: Context, url: String, headers: Map<String, String>, fromMs: Long, toMs: Long, done: (File?, Boolean, String?) -> Unit) {
+        Thread {
+            try {
+                val r = extractFast(context, url, headers, fromMs, toMs)
+                if (r != null) { done(r.first, r.second, null); return@Thread }
+            } catch (_: Exception) {
+            }
+            extractAudio(context, url, fromMs, toMs) { f, err -> done(f, f != null && f.length() < FULL_CHUNK_BYTES, err) }
+        }.start()
+    }
+
+    private fun extractFast(context: Context, url: String, headers: Map<String, String>, fromMs: Long, toMs: Long): Pair<File, Boolean>? {
+        if (url.substringBefore('?').endsWith(".m3u8")) return null
+        val ex = MediaExtractor()
+        var muxer: MediaMuxer? = null
+        val out = File(context.cacheDir, "asr_${System.nanoTime()}.m4a")
+        try {
+            ex.setDataSource(url, headers)
+            var track = -1
+            var fmt: MediaFormat? = null
+            for (i in 0 until ex.trackCount) {
+                val f = ex.getTrackFormat(i)
+                if (f.getString(MediaFormat.KEY_MIME).orEmpty().startsWith("audio/")) { track = i; fmt = f; break }
+            }
+            if (track < 0 || fmt == null) return null
+            val mime = fmt.getString(MediaFormat.KEY_MIME).orEmpty()
+            val container = when (mime) {
+                "audio/mp4a-latm" -> MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4
+                "audio/opus", "audio/vorbis" -> MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM
+                else -> return null
+            }
+            val target = if (container == MediaMuxer.OutputFormat.MUXER_OUTPUT_WEBM) File(out.path.removeSuffix(".m4a") + ".webm") else out
+            ex.selectTrack(track)
+            if (fromMs > 0) ex.seekTo(fromMs * 1000, MediaExtractor.SEEK_TO_PREVIOUS_SYNC)
+            muxer = MediaMuxer(target.path, container)
+            val idx = muxer.addTrack(fmt)
+            muxer.start()
+            val buf = ByteBuffer.allocate(1 shl 18)
+            val info = MediaCodec.BufferInfo()
+            val fromUs = fromMs * 1000
+            val toUs = toMs * 1000
+            var wrote = 0
+            var reachedEnd = false
+            while (true) {
+                buf.clear()
+                val size = ex.readSampleData(buf, 0)
+                if (size < 0) { reachedEnd = true; break }
+                val ts = ex.sampleTime
+                if (ts >= toUs) break
+                if (ts >= fromUs) {
+                    info.set(0, size, ts - fromUs, if (ex.sampleFlags and MediaExtractor.SAMPLE_FLAG_SYNC != 0) MediaCodec.BUFFER_FLAG_KEY_FRAME else 0)
+                    muxer.writeSampleData(idx, buf, info)
+                    wrote++
+                }
+                ex.advance()
+            }
+            muxer.stop()
+            muxer.release()
+            muxer = null
+            if (wrote == 0) { target.delete(); return Pair(target, true) }
+            return Pair(target, reachedEnd)
+        } catch (e: Exception) {
+            try { muxer?.release() } catch (_: Exception) {}
+            out.delete()
+            throw e
+        } finally {
+            ex.release()
+        }
+    }
+
+    /** Slower fallback: Media3 re-encodes the sound of one piece (works for streaming playlists). Gives up after 3 minutes. */
+    private fun extractAudio(context: Context, url: String, fromMs: Long, toMs: Long, finished: (File?, String?) -> Unit) {
+        val once = java.util.concurrent.atomic.AtomicBoolean(false)
+        val done: (File?, String?) -> Unit = { f, err -> if (once.compareAndSet(false, true)) finished(f, err) else f?.delete() }
+        main.postDelayed({ done(null, "Reading the sound took too long. Try an .mp4 link, which is much faster.") }, 180_000)
         main.post {
             val out = File(context.cacheDir, "asr_${System.nanoTime()}.m4a")
             try {
@@ -139,7 +231,7 @@ object TagalogCaptions {
     private fun transcribe(cfg: Config, file: File, offset: Double): List<Seg> {
         // No "prompt": with music or silence the service tends to print the prompt back as if it were speech.
         val body = MultipartBody.Builder().setType(MultipartBody.FORM)
-            .addFormDataPart("file", "audio.m4a", file.asRequestBody("audio/mp4".toMediaType()))
+            .addFormDataPart("file", file.name, file.asRequestBody((if (file.name.endsWith(".webm")) "audio/webm" else "audio/mp4").toMediaType()))
             .addFormDataPart("model", cfg.model)
             .addFormDataPart("language", "tl")
             .addFormDataPart("response_format", "verbose_json")
