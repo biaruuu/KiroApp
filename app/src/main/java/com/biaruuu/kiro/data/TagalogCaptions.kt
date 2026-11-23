@@ -65,8 +65,8 @@ object TagalogCaptions {
 
     /** Runs the whole job. [progress] gets short status lines; [done] gets null on success or an error. */
     fun generate(context: Context, e: TagalogDub.Entry, progress: (String) -> Unit, done: (String?) -> Unit) {
-        fun finish(err: String?) = main.post { done(err) }
-        fun say(s: String) = main.post { progress(s) }
+        fun finish(err: String?) { main.post { done(err) } }
+        fun say(s: String) { main.post { progress(s) } }
         loadConfig { cfg ->
             if (cfg == null) return@loadConfig finish("Save your transcription key first.")
             say("Getting the sound…")
