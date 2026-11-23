@@ -4,6 +4,16 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.95.0]
+### Removed
+- Automatic captions for the Filipino dub (the admin setup, the Generate/Redo/Clear buttons and the captions on the Filipino Dub source).
+
+### Fixed
+- Every episode now starts in Japanese with subtitles. The app no longer remembers a dub and starts the next episode in English; switching to a dub is one tap in the audio menu.
+
+### Improved
+- English and Japanese captions appear from the first second: their files are downloaded while the stream is being looked up, so there is no wait for them to load after play starts.
+
 ## [1.94.0]
 ### Changed
 - Auto captions show a real percentage for the whole episode ("Getting the sound · 23%", then "Listening · 50%") with a thin progress bar that fills as it goes, instead of "Part 1, Part 2…". If the video host stops answering for 2 minutes the job stops with a clear message instead of hanging.

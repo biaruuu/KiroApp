@@ -49,6 +49,17 @@ public final class StreamResolver {
 
     private static final java.util.concurrent.ConcurrentHashMap<String, Cached> CACHE = new java.util.concurrent.ConcurrentHashMap<>();
 
+    private static boolean filesStillThere(List<StreamSource> list) {
+        for (StreamSource s : list) {
+            for (SubtitleTrack t : s.getSubtitles()) {
+                if (t.getUrl().startsWith("file:") && !new java.io.File(android.net.Uri.parse(t.getUrl()).getPath()).exists()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     private static String key(StreamRequest r) {
         return r.getAnimeId() + ":" + r.getEpisode();
     }
@@ -71,7 +82,7 @@ public final class StreamResolver {
         POOL.execute(() -> {
             try {
                 Cached hit = CACHE.get(key(request));
-                if (hit != null && System.currentTimeMillis() - hit.at < CACHE_TTL_MS) {
+                if (hit != null && System.currentTimeMillis() - hit.at < CACHE_TTL_MS && filesStillThere(hit.sources)) {
                     if (!cancelled.get()) {
                         callback.onSuccess(hit.sources);
                     }
@@ -202,7 +213,98 @@ public final class StreamResolver {
             }
         }
         ranked.addAll(dubs);
+        prefetchSubtitles(context, ranked);
         return ranked;
+    }
+
+    /**
+     * English and Japanese caption files of the first few streams are downloaded before the picture starts,
+     * so captions are on screen from the first second (a file on the phone, nothing to wait for) instead of
+     * being fetched from another server after play begins.
+     */
+    private static void prefetchSubtitles(Context context, List<StreamSource> ranked) {
+        java.io.File dir = new java.io.File(context.getCacheDir(), "subs");
+        dir.mkdirs();
+        int limit = Math.min(ranked.size(), 3);
+        List<Callable<Object[]>> jobs = new ArrayList<>();
+        for (int i = 0; i < limit; i++) {
+            final StreamSource src = ranked.get(i);
+            List<SubtitleTrack> tracks = src.getSubtitles();
+            for (int j = 0; j < tracks.size(); j++) {
+                final SubtitleTrack t = tracks.get(j);
+                String lang = t.getLanguage().toLowerCase(java.util.Locale.ROOT);
+                String label = t.getLabel().toLowerCase(java.util.Locale.ROOT);
+                boolean wanted = lang.startsWith("en") || lang.startsWith("ja") || label.startsWith("english") || label.startsWith("japanese");
+                if (!wanted) {
+                    continue;
+                }
+                final int si = i;
+                final int ti = j;
+                jobs.add(() -> new Object[]{si, ti, fetchSubtitle(dir, src, t)});
+            }
+        }
+        if (jobs.isEmpty()) {
+            return;
+        }
+        List<List<SubtitleTrack>> next = new ArrayList<>();
+        for (int i = 0; i < limit; i++) {
+            next.add(new ArrayList<>(ranked.get(i).getSubtitles()));
+        }
+        try {
+            for (Future<Object[]> f : POOL.invokeAll(jobs, 5, TimeUnit.SECONDS)) {
+                try {
+                    Object[] r = f.get();
+                    next.get((Integer) r[0]).set((Integer) r[1], (SubtitleTrack) r[2]);
+                } catch (Exception ignored) {
+                    // Not fetched in time: that track stays a normal address.
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        for (int i = 0; i < limit; i++) {
+            ranked.set(i, ranked.get(i).withSubtitles(next.get(i)));
+        }
+    }
+
+    private static SubtitleTrack fetchSubtitle(java.io.File dir, StreamSource src, SubtitleTrack t) {
+        String url = t.getUrl();
+        if (!url.startsWith("http")) {
+            return t;
+        }
+        String ext = t.getMimeType().contains("vtt") ? ".vtt" : ".srt";
+        java.io.File f = new java.io.File(dir, Integer.toHexString(url.hashCode()) + ext);
+        try {
+            if (!f.exists() || f.length() == 0) {
+                OkHttpClient client = HttpClientProvider.get().newBuilder().callTimeout(4, TimeUnit.SECONDS).build();
+                Request.Builder rb = new Request.Builder().url(url);
+                for (java.util.Map.Entry<String, String> h : src.getHeaders().entrySet()) {
+                    rb.header(h.getKey(), h.getValue());
+                }
+                try (Response r = client.newCall(rb.build()).execute()) {
+                    if (!r.isSuccessful() || r.body() == null) {
+                        return t;
+                    }
+                    byte[] b = r.body().bytes();
+                    if (b.length == 0 || b.length > 3_000_000) {
+                        return t;
+                    }
+                    String head = new String(b, 0, Math.min(b.length, 64), java.nio.charset.StandardCharsets.UTF_8).trim().toLowerCase(java.util.Locale.ROOT);
+                    if (head.startsWith("<")) {
+                        return t; // a web page, not captions
+                    }
+                    java.io.FileOutputStream out = new java.io.FileOutputStream(f);
+                    try {
+                        out.write(b);
+                    } finally {
+                        out.close();
+                    }
+                }
+            }
+            return new SubtitleTrack(android.net.Uri.fromFile(f).toString(), t.getLabel(), t.getLanguage(), t.getMimeType());
+        } catch (Exception e) {
+            return t;
+        }
     }
 
     /**

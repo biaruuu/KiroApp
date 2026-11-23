@@ -664,19 +664,6 @@ private fun TagalogTab() {
     var referer by remember { mutableStateOf("") }
     var quality by remember { mutableIntStateOf(0) }
     var busy by remember { mutableStateOf(false) }
-    // Automatic captions: the transcription service settings and one status line per episode being worked on.
-    var asrKey by remember { mutableStateOf("") }
-    var asrEndpoint by remember { mutableStateOf(com.biaruuu.kiro.data.TagalogCaptions.DEFAULT_ENDPOINT) }
-    var asrModel by remember { mutableStateOf(com.biaruuu.kiro.data.TagalogCaptions.DEFAULT_MODEL) }
-    var asrSaved by remember { mutableStateOf(false) }
-    val capStatus = remember { androidx.compose.runtime.mutableStateMapOf<String, String>() }
-    val capFrac = remember { androidx.compose.runtime.mutableStateMapOf<String, Float>() }
-    LaunchedEffect(Unit) {
-        com.biaruuu.kiro.data.TagalogCaptions.loadConfig { c ->
-            if (c != null) { asrKey = c.key; asrEndpoint = c.endpoint; asrModel = c.model; asrSaved = true }
-        }
-    }
-
     LaunchedEffect(query) {
         val q = query.trim()
         if (q.length < 2 || chosen != null) { results = emptyList(); return@LaunchedEffect }
@@ -780,50 +767,6 @@ private fun TagalogTab() {
             }
         }
         item {
-            var open by remember { mutableStateOf(false) }
-            AdmCard {
-                Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable { open = !open },
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Automatic captions", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                        Text("Filipino captions written from the dub's own sound.", color = Muted, fontSize = 12.sp)
-                    }
-                    Box(Modifier.size(7.dp).clip(CircleShape).background(if (asrSaved) Color(0xFF3DDC84) else Color(0xFF6A6A72)))
-                    Spacer(Modifier.width(8.dp))
-                    Text(if (open) "Done" else if (asrSaved) "Edit" else "Set up", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                }
-                if (open) {
-                    Spacer(Modifier.height(6.dp))
-                    UnderlineField(
-                        value = asrKey, onChange = { asrKey = it.trim(); asrSaved = false }, hint = "Service key (Groq or OpenAI)",
-                        keyboardType = KeyboardType.Password, imeAction = ImeAction.Next, onImeAction = {}, autoFocus = false,
-                    )
-                    UnderlineField(
-                        value = asrEndpoint, onChange = { asrEndpoint = it.trim(); asrSaved = false }, hint = "Endpoint",
-                        keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next, onImeAction = {}, autoFocus = false,
-                    )
-                    UnderlineField(
-                        value = asrModel, onChange = { asrModel = it.trim(); asrSaved = false }, hint = "Model",
-                        keyboardType = KeyboardType.Text, imeAction = ImeAction.Done, onImeAction = {}, autoFocus = false,
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    PrimaryButton(
-                        label = if (asrSaved) "Saved" else "Save",
-                        enabled = asrKey.length > 10 && asrEndpoint.startsWith("http") && asrModel.isNotBlank() && !asrSaved,
-                        busy = false,
-                        onClick = {
-                            com.biaruuu.kiro.data.TagalogCaptions.saveConfig(com.biaruuu.kiro.data.TagalogCaptions.Config(asrEndpoint, asrModel, asrKey)) { err ->
-                                if (err == null) asrSaved = true
-                                else com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Couldn't save: $err", Toast.LENGTH_LONG).show()
-                            }
-                        },
-                    )
-                }
-            }
-        }
-        item {
             Spacer(Modifier.height(8.dp))
             AdmSectionTitle("Published", count = entries.size)
         }
@@ -839,50 +782,6 @@ private fun TagalogTab() {
                     }
                     AdmDeleteAction(what = "Episode ${e.episode} of ${e.title.ifBlank { "this anime" }} will no longer appear as a Filipino Dub source.") {
                         com.biaruuu.kiro.data.TagalogDub.delete(e.id)
-                    }
-                }
-                // Captions: one quiet line, a thin bar while it works.
-                val st = capStatus[e.id]
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        Modifier.size(6.dp).clip(CircleShape)
-                            .background(if (st != null) Color.White else if (e.captions.isNotBlank()) Color(0xFF3DDC84) else Color(0xFF6A6A72)),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        st ?: if (e.captions.isNotBlank()) "Captions ready" else "No captions",
-                        color = if (st != null) Color.White else Muted, fontSize = 12.sp, modifier = Modifier.weight(1f), maxLines = 1,
-                    )
-                    if (st != null) {
-                        AdmTextAction("Stop", Muted) { com.biaruuu.kiro.data.TagalogCaptions.cancel(e.id) }
-                    } else {
-                        AdmTextAction(if (e.captions.isNotBlank()) "Redo" else "Generate", Color.White) {
-                            capStatus[e.id] = "Starting"
-                            com.biaruuu.kiro.data.TagalogCaptions.generate(context, e, { text, f -> capStatus[e.id] = text; capFrac[e.id] = f }) { err ->
-                                capStatus.remove(e.id); capFrac.remove(e.id)
-                                com.biaruuu.kiro.ui.i18n.I18nToast.make(
-                                    context, if (err == null) "Captions ready for episode ${e.episode}." else "Captions: $err", Toast.LENGTH_LONG,
-                                ).show()
-                            }
-                        }
-                        if (e.captions.isNotBlank()) AdmTextAction("Clear", AdmRed) { com.biaruuu.kiro.data.TagalogCaptions.remove(e.id) }
-                    }
-                }
-                if (st != null) {
-                    Spacer(Modifier.height(6.dp))
-                    val f = capFrac[e.id] ?: -1f
-                    if (f >= 0f) {
-                        androidx.compose.material3.LinearProgressIndicator(
-                            progress = { f },
-                            modifier = Modifier.fillMaxWidth().height(2.dp).clip(RoundedCornerShape(1.dp)),
-                            color = Color.White, trackColor = AdmChip,
-                        )
-                    } else {
-                        androidx.compose.material3.LinearProgressIndicator(
-                            modifier = Modifier.fillMaxWidth().height(2.dp).clip(RoundedCornerShape(1.dp)),
-                            color = Color.White, trackColor = AdmChip,
-                        )
                     }
                 }
             }

@@ -504,7 +504,6 @@ fun PlayerScreen(
     fun switchAudio(language: String) {
         val idx = latestSources.indexOfFirst { audioLanguage(it) == language }
         if (idx < 0 || idx == latestIndex) return
-        prefs.edit().putBoolean("audio_dub", language != "Japanese").apply()
         pendingSeek = exo.currentPosition
         sourceIndex = idx
     }
@@ -545,12 +544,7 @@ fun PlayerScreen(
             emptyList()
         }
         sources = found
-        // Start in the language chosen last time, when this episode has it.
-        if (prefs.getBoolean("audio_dub", false)) {
-            val dubIdx = found.indexOfFirst { it.isDub && audioLanguage(it) == "English" }
-                .takeIf { it >= 0 } ?: found.indexOfFirst { it.isDub }
-            if (dubIdx > 0) sourceIndex = dubIdx
-        }
+        // Always start in Japanese with subtitles (the first, best subbed stream); switching to a dub is one tap in the audio menu.
         // A guest uses the host's provider and audio, so the same subtitles are there too.
         if (latestParty?.host == false) {
             val idx = hostSourceIndex(found, com.biaruuu.kiro.data.WatchParty.settings.value)
