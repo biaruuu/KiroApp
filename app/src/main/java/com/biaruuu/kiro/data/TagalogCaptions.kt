@@ -77,9 +77,13 @@ object TagalogCaptions {
     private const val FULL_CHUNK_BYTES = 2_400_000L
 
     /** Runs the whole job. [progress] gets short status lines; [done] gets null on success or an error. */
-    fun generate(context: Context, e: TagalogDub.Entry, progress: (String) -> Unit, done: (String?) -> Unit) {
+    fun generate(context: Context, e: TagalogDub.Entry, progress: (String, Float) -> Unit, done: (String?) -> Unit) {
         fun finish(err: String?) { main.post { done(err) } }
-        fun say(s: String) { main.post { progress(s) } }
+        // [frac] is how far the whole episode is (0..1), or -1 when the length is not known yet.
+        fun say(s: String, frac: Float = -1f) {
+            val label = if (frac >= 0f) "$s · ${(frac * 100).toInt()}%" else s
+            main.post { progress(label, frac) }
+        }
         loadConfig { cfg ->
             if (cfg == null) return@loadConfig finish("Save your transcription key first.")
             val all = ArrayList<Seg>()
@@ -93,13 +97,22 @@ object TagalogCaptions {
                 }.start()
             }
             cancelled.remove(e.id)
+            val total = java.util.concurrent.atomic.AtomicLong(0)
+            fun overall(i: Int, within: Float): Float {
+                val t = total.get()
+                return if (t <= 0) -1f else ((i * CHUNK_MS + within * CHUNK_MS) / t).coerceIn(0f, 1f)
+            }
             val headers = if (e.referer.startsWith("http")) mapOf("Referer" to e.referer, "User-Agent" to "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36") else emptyMap()
             // The episode is listened to in 8 minute pieces: long audio makes the service skip speech and drift,
             // and pieces mean an episode of any length works.
             fun step(i: Int) {
                 if (cancelled.remove(e.id)) return finish("Stopped.")
-                say(if (i == 0) "Getting the sound" else "Part ${i + 1}")
-                extract(context, e.url, headers, i * CHUNK_MS, (i + 1) * CHUNK_MS) { file, ended, err ->
+                say("Getting the sound", overall(i, 0f))
+                extract(
+                    context, e.url, headers, i * CHUNK_MS, (i + 1) * CHUNK_MS,
+                    onDuration = { total.set(it) },
+                    onFrac = { f -> say("Getting the sound", overall(i, f * 0.5f)) },
+                ) { file, ended, err ->
                     if (file == null || file.length() < 8_000) {
                         file?.delete()
                         if (i == 0) return@extract finish(err ?: "Could not read the sound of this video.")
@@ -107,8 +120,9 @@ object TagalogCaptions {
                     }
                     Thread {
                         try {
-                            say("Part ${i + 1} · listening")
+                            say("Listening", overall(i, 0.5f))
                             all.addAll(transcribe(cfg, file, i * CHUNK_MS / 1000.0))
+                            say("Listening", overall(i, 1f))
                             main.post { if (ended || i >= 200) complete() else step(i + 1) }
                         } catch (ex: Exception) {
                             finish(ex.message ?: "Failed")
@@ -127,21 +141,44 @@ object TagalogCaptions {
      * it is quick and cannot get stuck); only when that is not possible (a streaming playlist, an unusual
      * sound format) does the slower Media3 export take over, with a time limit.
      */
-    private fun extract(context: Context, url: String, headers: Map<String, String>, fromMs: Long, toMs: Long, done: (File?, Boolean, String?) -> Unit) {
+    private fun extract(
+        context: Context, url: String, headers: Map<String, String>, fromMs: Long, toMs: Long,
+        onDuration: (Long) -> Unit, onFrac: (Float) -> Unit, done: (File?, Boolean, String?) -> Unit,
+    ) {
         Thread {
             try {
-                val r = extractFast(context, url, headers, fromMs, toMs)
+                val r = extractFast(context, url, headers, fromMs, toMs, onDuration, onFrac)
                 if (r != null) { done(r.first, r.second, null); return@Thread }
+            } catch (t: java.util.concurrent.TimeoutException) {
+                done(null, false, t.message)
+                return@Thread
             } catch (_: Exception) {
             }
-            extractAudio(context, url, fromMs, toMs) { f, err -> done(f, f != null && f.length() < FULL_CHUNK_BYTES, err) }
+            extractAudio(context, url, fromMs, toMs, onDuration, onFrac) { f, err -> done(f, f != null && f.length() < FULL_CHUNK_BYTES, err) }
         }.start()
     }
 
-    private fun extractFast(context: Context, url: String, headers: Map<String, String>, fromMs: Long, toMs: Long): Pair<File, Boolean>? {
+    private fun extractFast(
+        context: Context, url: String, headers: Map<String, String>, fromMs: Long, toMs: Long,
+        onDuration: (Long) -> Unit, onFrac: (Float) -> Unit,
+    ): Pair<File, Boolean>? {
         if (url.substringBefore('?').endsWith(".m3u8")) return null
         val ex = MediaExtractor()
         var muxer: MediaMuxer? = null
+        // If the video host stops answering for 2 minutes, stop instead of waiting forever.
+        val tick = java.util.concurrent.atomic.AtomicLong(System.currentTimeMillis())
+        val alive = java.util.concurrent.atomic.AtomicBoolean(true)
+        val stalled = java.util.concurrent.atomic.AtomicBoolean(false)
+        Thread {
+            while (alive.get()) {
+                try { Thread.sleep(5000) } catch (_: InterruptedException) { return@Thread }
+                if (alive.get() && System.currentTimeMillis() - tick.get() > 120_000) {
+                    stalled.set(true)
+                    try { ex.release() } catch (_: Exception) {}
+                    return@Thread
+                }
+            }
+        }.apply { isDaemon = true }.start()
         val out = File(context.cacheDir, "asr_${System.nanoTime()}.m4a")
         try {
             ex.setDataSource(url, headers)
@@ -152,6 +189,7 @@ object TagalogCaptions {
                 if (f.getString(MediaFormat.KEY_MIME).orEmpty().startsWith("audio/")) { track = i; fmt = f; break }
             }
             if (track < 0 || fmt == null) return null
+            if (fmt.containsKey(MediaFormat.KEY_DURATION)) onDuration(fmt.getLong(MediaFormat.KEY_DURATION) / 1000)
             val mime = fmt.getString(MediaFormat.KEY_MIME).orEmpty()
             val container = when (mime) {
                 "audio/mp4a-latm" -> MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4
@@ -170,9 +208,11 @@ object TagalogCaptions {
             val toUs = toMs * 1000
             var wrote = 0
             var reachedEnd = false
+            var lastReport = 0L
             while (true) {
                 buf.clear()
                 val size = ex.readSampleData(buf, 0)
+                tick.set(System.currentTimeMillis())
                 if (size < 0) { reachedEnd = true; break }
                 val ts = ex.sampleTime
                 if (ts >= toUs) break
@@ -180,6 +220,8 @@ object TagalogCaptions {
                     info.set(0, size, ts - fromUs, if (ex.sampleFlags and MediaExtractor.SAMPLE_FLAG_SYNC != 0) MediaCodec.BUFFER_FLAG_KEY_FRAME else 0)
                     muxer.writeSampleData(idx, buf, info)
                     wrote++
+                    val now = System.currentTimeMillis()
+                    if (now - lastReport > 700) { lastReport = now; onFrac(((ts - fromUs).toFloat() / (toUs - fromUs)).coerceIn(0f, 1f)) }
                 }
                 ex.advance()
             }
@@ -191,14 +233,19 @@ object TagalogCaptions {
         } catch (e: Exception) {
             try { muxer?.release() } catch (_: Exception) {}
             out.delete()
+            if (stalled.get()) throw java.util.concurrent.TimeoutException("The video host stopped answering. Try again later.")
             throw e
         } finally {
-            ex.release()
+            alive.set(false)
+            try { ex.release() } catch (_: Exception) {}
         }
     }
 
     /** Slower fallback: Media3 re-encodes the sound of one piece (works for streaming playlists). Gives up after 3 minutes. */
-    private fun extractAudio(context: Context, url: String, fromMs: Long, toMs: Long, finished: (File?, String?) -> Unit) {
+    private fun extractAudio(
+        context: Context, url: String, fromMs: Long, toMs: Long, onDuration: (Long) -> Unit, onFrac: (Float) -> Unit,
+        finished: (File?, String?) -> Unit,
+    ) {
         val once = java.util.concurrent.atomic.AtomicBoolean(false)
         val done: (File?, String?) -> Unit = { f, err -> if (once.compareAndSet(false, true)) finished(f, err) else f?.delete() }
         main.postDelayed({ done(null, "Reading the sound took too long. Try an .mp4 link, which is much faster.") }, 180_000)
@@ -220,6 +267,15 @@ object TagalogCaptions {
                 val clip = MediaItem.ClippingConfiguration.Builder().setStartPositionMs(fromMs).setEndPositionMs(toMs).build()
                 val media = MediaItem.Builder().setUri(url).setClippingConfiguration(clip).build()
                 transformer.start(EditedMediaItem.Builder(media).setRemoveVideo(true).build(), out.absolutePath)
+                val holder = androidx.media3.transformer.ProgressHolder()
+                val poll = object : Runnable {
+                    override fun run() {
+                        if (once.get()) return
+                        if (transformer.getProgress(holder) != Transformer.PROGRESS_STATE_NOT_STARTED) onFrac(holder.progress / 100f)
+                        main.postDelayed(this, 700)
+                    }
+                }
+                main.postDelayed(poll, 700)
             } catch (ex: Exception) {
                 done(null, ex.message)
             }

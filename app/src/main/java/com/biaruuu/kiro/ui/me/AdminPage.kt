@@ -670,6 +670,7 @@ private fun TagalogTab() {
     var asrModel by remember { mutableStateOf(com.biaruuu.kiro.data.TagalogCaptions.DEFAULT_MODEL) }
     var asrSaved by remember { mutableStateOf(false) }
     val capStatus = remember { androidx.compose.runtime.mutableStateMapOf<String, String>() }
+    val capFrac = remember { androidx.compose.runtime.mutableStateMapOf<String, Float>() }
     LaunchedEffect(Unit) {
         com.biaruuu.kiro.data.TagalogCaptions.loadConfig { c ->
             if (c != null) { asrKey = c.key; asrEndpoint = c.endpoint; asrModel = c.model; asrSaved = true }
@@ -858,8 +859,8 @@ private fun TagalogTab() {
                     } else {
                         AdmTextAction(if (e.captions.isNotBlank()) "Redo" else "Generate", Color.White) {
                             capStatus[e.id] = "Starting"
-                            com.biaruuu.kiro.data.TagalogCaptions.generate(context, e, { capStatus[e.id] = it }) { err ->
-                                capStatus.remove(e.id)
+                            com.biaruuu.kiro.data.TagalogCaptions.generate(context, e, { text, f -> capStatus[e.id] = text; capFrac[e.id] = f }) { err ->
+                                capStatus.remove(e.id); capFrac.remove(e.id)
                                 com.biaruuu.kiro.ui.i18n.I18nToast.make(
                                     context, if (err == null) "Captions ready for episode ${e.episode}." else "Captions: $err", Toast.LENGTH_LONG,
                                 ).show()
@@ -870,10 +871,19 @@ private fun TagalogTab() {
                 }
                 if (st != null) {
                     Spacer(Modifier.height(6.dp))
-                    androidx.compose.material3.LinearProgressIndicator(
-                        modifier = Modifier.fillMaxWidth().height(2.dp).clip(RoundedCornerShape(1.dp)),
-                        color = Color.White, trackColor = AdmChip,
-                    )
+                    val f = capFrac[e.id] ?: -1f
+                    if (f >= 0f) {
+                        androidx.compose.material3.LinearProgressIndicator(
+                            progress = { f },
+                            modifier = Modifier.fillMaxWidth().height(2.dp).clip(RoundedCornerShape(1.dp)),
+                            color = Color.White, trackColor = AdmChip,
+                        )
+                    } else {
+                        androidx.compose.material3.LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth().height(2.dp).clip(RoundedCornerShape(1.dp)),
+                            color = Color.White, trackColor = AdmChip,
+                        )
+                    }
                 }
             }
         }

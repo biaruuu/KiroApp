@@ -4,6 +4,10 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.94.0]
+### Changed
+- Auto captions show a real percentage for the whole episode ("Getting the sound · 23%", then "Listening · 50%") with a thin progress bar that fills as it goes, instead of "Part 1, Part 2…". If the video host stops answering for 2 minutes the job stops with a clear message instead of hanging.
+
 ## [1.93.0]
 ### Fixed
 - Auto captions no longer get stuck on "Getting the sound": the sound track is now copied straight out of the video (no re-encoding), so it is quick, works for episodes of any length, and the slower fallback gives up after 3 minutes with a clear message instead of hanging.
