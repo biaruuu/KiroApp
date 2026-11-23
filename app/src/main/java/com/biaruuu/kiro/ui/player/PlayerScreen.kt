@@ -281,6 +281,7 @@ fun PlayerScreen(
     var panel by remember { mutableStateOf<Panel?>(null) }
     var seeking by remember { mutableStateOf(false) }
     var retry by remember { mutableIntStateOf(0) }
+    var audioTick by remember { mutableIntStateOf(0) }
 
     // Intro / outro / recap times for this exact episode (Aniskip), looked up once the real length is known.
     var autoSkip by remember { mutableStateOf(com.biaruuu.kiro.data.AppSettings.autoSkip(context)) }
@@ -581,6 +582,26 @@ fun PlayerScreen(
         }
     }
 
+    // 1c. Trust the sound itself: if the stream's audio is not the language it was filed under, relabel it.
+    DisposableEffect(exo, sources, sourceIndex) {
+        val src = sources.getOrNull(sourceIndex)
+        val l = object : Player.Listener {
+            override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
+                if (src == null || src.providerName.startsWith("Filipino")) return
+                val langs = tracks.groups.filter { it.type == C.TRACK_TYPE_AUDIO && it.isSelected }
+                    .flatMap { g -> (0 until g.length).filter { g.isTrackSelected(it) }.mapNotNull { g.getTrackFormat(it).language } }
+                    .map { it.lowercase().substringBefore('-') }
+                val ja = langs.any { it == "ja" || it == "jpn" }
+                val en = langs.any { it == "en" || it == "eng" }
+                val now = audioLanguage(src)
+                if (ja && !en && now != "Japanese") { audioFix[src.url] = "Japanese"; audioTick++ }
+                else if (en && !ja && now == "Japanese") { audioFix[src.url] = "English"; audioTick++ }
+            }
+        }
+        exo.addListener(l)
+        onDispose { exo.removeListener(l) }
+    }
+
     // 2. Play the chosen source (also when switching source or adding a subtitle file).
     LaunchedEffect(sources, sourceIndex) {
         val source = sources.getOrNull(sourceIndex) ?: return@LaunchedEffect
@@ -599,6 +620,11 @@ fun PlayerScreen(
         // The quality picked last time (the best one at or below it when this stream has no such size).
         quality = com.biaruuu.kiro.data.AppSettings.qualityPref(context)
         applyQuality(exo, quality)
+        // A stream that carries both Japanese and English audio plays the language this source stands for.
+        exo.trackSelectionParameters = exo.trackSelectionParameters.buildUpon()
+            .setPreferredAudioLanguage(
+                when (audioLanguage(source)) { "Japanese" -> "ja"; "English" -> "en"; else -> null },
+            ).build()
         exo.setMediaItem(
             MediaItem.Builder()
                 .setUri(source.url)
@@ -1207,7 +1233,7 @@ fun PlayerScreen(
         panel?.let { open ->
             if (open == Panel.Tracks) TracksDialog(
                 exo, tracks,
-                languages = sources.map { audioLanguage(it) }.distinct().sortedBy { if (it == "Japanese") 0 else 1 },
+                languages = audioTick.let { sources }.map { audioLanguage(it) }.distinct().sortedBy { if (it == "Japanese") 0 else 1 },
                 currentLanguage = sources.getOrNull(sourceIndex)?.let { audioLanguage(it) } ?: "Japanese",
                 onPickLanguage = { language -> switchAudio(language); panel = null },
             ) { panel = null } else if (open == Panel.Episodes) EpisodeShelf(
@@ -2271,7 +2297,9 @@ private fun hostSourceIndex(list: List<StreamSource>, h: com.biaruuu.kiro.data.W
 }
 
 /** Japanese for the original, Filipino for the developer's own dub, English for every other dub. */
-private fun audioLanguage(s: com.biaruuu.kiro.data.stream.StreamSource): String = when {
+private val audioFix = java.util.concurrent.ConcurrentHashMap<String, String>()
+
+private fun audioLanguage(s: com.biaruuu.kiro.data.stream.StreamSource): String = audioFix[s.url] ?: when {
     !s.isDub -> "Japanese"
     s.providerName.startsWith("Filipino") -> "Filipino"
     else -> "English"

@@ -31,6 +31,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    // Settings that hold a secret (the speech-to-text key for automatic captions): developer only, even to read.
+    match /adminconfig/{doc} {
+      allow read, write: if isAdmin();
+    }
     match /meta/{doc} {
       allow read: if true;
       allow write: if isAdmin();

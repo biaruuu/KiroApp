@@ -194,11 +194,36 @@ public final class StreamResolver {
         for (int index : order) {
             if (index >= 0 && index < alive.size()) {
                 StreamSource s = alive.get(index);
-                (s.isDub() ? dubs : ranked).add(s);
+                if (s.isDub()) {
+                    dubs.add(dubCaptions(s));
+                } else {
+                    ranked.add(s);
+                }
             }
         }
         ranked.addAll(dubs);
         return ranked;
+    }
+
+    /**
+     * English captions that providers attach to a dub are the subbed episode's script (different words,
+     * sometimes different timing from what the actors say), so they are dropped. Captions that say
+     * they belong to the dub (CC / SDH) and captions in other languages stay. The Filipino dub brings its own.
+     */
+    private static StreamSource dubCaptions(StreamSource s) {
+        if (s.getProviderName().startsWith("Filipino") || s.getSubtitles().isEmpty()) {
+            return s;
+        }
+        List<SubtitleTrack> keep = new ArrayList<>();
+        for (SubtitleTrack t : s.getSubtitles()) {
+            String label = t.getLabel().toLowerCase(java.util.Locale.ROOT);
+            boolean english = t.getLanguage().toLowerCase(java.util.Locale.ROOT).startsWith("en") || label.startsWith("english");
+            boolean forDub = label.contains("cc") || label.contains("sdh") || label.contains("dub") || label.contains("closed");
+            if (!english || forDub) {
+                keep.add(t);
+            }
+        }
+        return keep.size() == s.getSubtitles().size() ? s : s.withSubtitles(keep);
     }
 
     /** Time to the first byte. Local files count as instant; unreachable addresses return null. */

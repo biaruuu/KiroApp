@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.91.0]
+### Fixed
+- English dub no longer shows the subbed episode's English captions (different words and timing); captions that belong to the dub (CC/SDH) and other languages stay.
+- Streams that carry both Japanese and English sound now play the language you chose, and a stream filed under the wrong audio is relabelled from what its playlist (and then the sound itself) says.
+
+### Added
+- Automatic Filipino captions: in the admin Filipino tab, "Auto captions" listens to a published dub on the phone (sound only), sends it to a Whisper speech-to-text service you set up, removes lines invented over music and silence, and saves timed WebVTT with the episode. Viewers get the captions with the Filipino Dub source.
+
 ## [1.90.0]
 ### Changed
 - Faster streams: the Filipino dub library is now kept up to date live in the background (new or removed dubs show up the moment they are saved) and is looked up instantly, so it no longer holds up every other source.

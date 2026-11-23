@@ -27,7 +27,7 @@ public class KiroApplication extends Application implements ImageLoaderFactory {
         com.biaruuu.kiro.ui.party.EmojiSetupKt.installIosEmoji();
         com.biaruuu.kiro.data.ApiDiskCache.init(this);
         // The Filipino dub library stays in sync live, so it is ready the moment a stream is looked up.
-        com.biaruuu.kiro.data.TagalogDub.INSTANCE.warm();
+        com.biaruuu.kiro.data.TagalogDub.INSTANCE.init(this);
         // The streaming API sleeps when idle; wake it now so the first episode starts fast.
         com.biaruuu.kiro.data.stream.AnivaultProvider.warmUp();
         // Tell the user when a new version is out.

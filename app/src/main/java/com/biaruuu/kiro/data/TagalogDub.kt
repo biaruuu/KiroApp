@@ -22,6 +22,8 @@ object TagalogDub {
         val quality: Int,
         val referer: String,
         val createdAt: Long,
+        /** Automatic Filipino captions (WebVTT text), empty when there are none. */
+        val captions: String = "",
     )
 
     private const val COLLECTION = "tagdub"
@@ -36,7 +38,7 @@ object TagalogDub {
         return Entry(
             d.id, anime, d.getString("title").orEmpty(), d.getString("poster").orEmpty(),
             (d.getLong("episode") ?: return null).toInt(), url, (d.getLong("quality") ?: 0L).toInt(),
-            d.getString("referer").orEmpty(), d.getLong("createdAt") ?: 0L,
+            d.getString("referer").orEmpty(), d.getLong("createdAt") ?: 0L, d.getString("captions").orEmpty(),
         )
     }
 
@@ -58,6 +60,7 @@ object TagalogDub {
                 "episode" to entry.episode, "url" to entry.url, "quality" to entry.quality,
                 "referer" to entry.referer, "createdAt" to System.currentTimeMillis(),
             ),
+            com.google.firebase.firestore.SetOptions.merge(),
         ).addOnSuccessListener { done(null) }.addOnFailureListener { done(it.message ?: "failed") }
     }
 
@@ -72,6 +75,25 @@ object TagalogDub {
     @Volatile private var index: Map<String, Entry> = emptyMap()
     @Volatile private var live: com.google.firebase.firestore.ListenerRegistration? = null
     private val firstSnapshot = CountDownLatch(1)
+
+    @Volatile var appContext: android.content.Context? = null
+
+    fun init(c: android.content.Context) {
+        appContext = c.applicationContext
+        warm()
+    }
+
+    /** The captions of an entry as a file the player can open (written once, reused). */
+    fun captionTrack(e: Entry): com.biaruuu.kiro.data.stream.SubtitleTrack? {
+        val ctx = appContext ?: return null
+        if (e.captions.isBlank()) return null
+        return try {
+            val dir = java.io.File(ctx.cacheDir, "tagdub_caps").apply { mkdirs() }
+            val f = java.io.File(dir, "${e.id}_${e.captions.hashCode()}.vtt")
+            if (!f.exists()) f.writeText(e.captions)
+            com.biaruuu.kiro.data.stream.SubtitleTrack(android.net.Uri.fromFile(f).toString(), "Filipino", "fil", "text/vtt")
+        } catch (_: Exception) { null }
+    }
 
     /** Starts the live listener (safe to call many times). */
     fun warm() {

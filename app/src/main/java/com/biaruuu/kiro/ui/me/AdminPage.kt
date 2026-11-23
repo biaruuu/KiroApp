@@ -664,6 +664,17 @@ private fun TagalogTab() {
     var referer by remember { mutableStateOf("") }
     var quality by remember { mutableIntStateOf(0) }
     var busy by remember { mutableStateOf(false) }
+    // Automatic captions: the transcription service settings and one status line per episode being worked on.
+    var asrKey by remember { mutableStateOf("") }
+    var asrEndpoint by remember { mutableStateOf(com.biaruuu.kiro.data.TagalogCaptions.DEFAULT_ENDPOINT) }
+    var asrModel by remember { mutableStateOf(com.biaruuu.kiro.data.TagalogCaptions.DEFAULT_MODEL) }
+    var asrSaved by remember { mutableStateOf(false) }
+    val capStatus = remember { androidx.compose.runtime.mutableStateMapOf<String, String>() }
+    LaunchedEffect(Unit) {
+        com.biaruuu.kiro.data.TagalogCaptions.loadConfig { c ->
+            if (c != null) { asrKey = c.key; asrEndpoint = c.endpoint; asrModel = c.model; asrSaved = true }
+        }
+    }
 
     LaunchedEffect(query) {
         val q = query.trim()
@@ -768,6 +779,39 @@ private fun TagalogTab() {
             }
         }
         item {
+            AdmCard {
+                AdmSectionTitle(
+                    "Automatic captions",
+                    "Listens to a published dub and writes Filipino captions timed to the video. Needs a Whisper-compatible service key (Groq or OpenAI). Saved for admins only.",
+                )
+                Spacer(Modifier.height(8.dp))
+                UnderlineField(
+                    value = asrKey, onChange = { asrKey = it.trim(); asrSaved = false }, hint = "Service key",
+                    keyboardType = KeyboardType.Password, imeAction = ImeAction.Next, onImeAction = {}, autoFocus = false,
+                )
+                UnderlineField(
+                    value = asrEndpoint, onChange = { asrEndpoint = it.trim(); asrSaved = false }, hint = "Endpoint",
+                    keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next, onImeAction = {}, autoFocus = false,
+                )
+                UnderlineField(
+                    value = asrModel, onChange = { asrModel = it.trim(); asrSaved = false }, hint = "Model",
+                    keyboardType = KeyboardType.Text, imeAction = ImeAction.Done, onImeAction = {}, autoFocus = false,
+                )
+                Spacer(Modifier.height(10.dp))
+                PrimaryButton(
+                    label = if (asrSaved) "Saved" else "Save",
+                    enabled = asrKey.length > 10 && asrEndpoint.startsWith("http") && asrModel.isNotBlank() && !asrSaved,
+                    busy = false,
+                    onClick = {
+                        com.biaruuu.kiro.data.TagalogCaptions.saveConfig(com.biaruuu.kiro.data.TagalogCaptions.Config(asrEndpoint, asrModel, asrKey)) { err ->
+                            if (err == null) asrSaved = true
+                            else com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Couldn't save: $err", Toast.LENGTH_LONG).show()
+                        }
+                    },
+                )
+            }
+        }
+        item {
             Spacer(Modifier.height(8.dp))
             AdmSectionTitle("Published", count = entries.size)
         }
@@ -780,6 +824,27 @@ private fun TagalogTab() {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(e.title.ifBlank { "AniList ${e.anilistId}" }, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
                         Text("Episode ${e.episode} · ${if (e.quality > 0) "${e.quality}p" else "Auto"} · ${ago(e.createdAt)}", color = Muted, fontSize = 12.sp)
+                        val st = capStatus[e.id]
+                        Text(
+                            st ?: if (e.captions.isNotBlank()) "Captions: ready" else "Captions: none",
+                            color = if (st != null) AdmSoft else Muted, fontSize = 12.sp,
+                        )
+                    }
+                    if (capStatus[e.id] == null) {
+                        AdmTextAction(if (e.captions.isNotBlank()) "Redo captions" else "Auto captions", Color.White) {
+                            capStatus[e.id] = "Starting…"
+                            com.biaruuu.kiro.data.TagalogCaptions.generate(
+                                context, e, { capStatus[e.id] = it },
+                            ) { err ->
+                                capStatus.remove(e.id)
+                                com.biaruuu.kiro.ui.i18n.I18nToast.make(
+                                    context, if (err == null) "Captions ready for episode ${e.episode}." else "Captions failed: $err", Toast.LENGTH_LONG,
+                                ).show()
+                            }
+                        }
+                    }
+                    if (e.captions.isNotBlank() && capStatus[e.id] == null) {
+                        AdmTextAction("Clear", AdmRed) { com.biaruuu.kiro.data.TagalogCaptions.remove(e.id) }
                     }
                     AdmDeleteAction(what = "Episode ${e.episode} of ${e.title.ifBlank { "this anime" }} will no longer appear as a Filipino Dub source.") {
                         com.biaruuu.kiro.data.TagalogDub.delete(e.id)

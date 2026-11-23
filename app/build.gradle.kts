@@ -18,8 +18,8 @@ android {
         applicationId = "com.biaruuu.kiro"
         minSdk = 26
         targetSdk = 35
-        versionCode = 165
-        versionName = "1.90.0"
+        versionCode = 166
+        versionName = "1.91.0"
         // TMDB key: GitHub secret TMDB_API_KEY in CI, or -PTMDB_API_KEY / env var locally.
         val tmdbKey = (System.getenv("TMDB_API_KEY") ?: project.findProperty("TMDB_API_KEY") as String? ?: "").trim()
         buildConfigField("String", "TMDB_API_KEY", "\"$tmdbKey\"")
@@ -92,6 +92,7 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.5.1")
     implementation("androidx.media3:media3-exoplayer-hls:1.5.1")
     implementation("androidx.media3:media3-ui:1.5.1")
+    implementation("androidx.media3:media3-transformer:1.5.1")
     implementation("io.getstream:stream-webrtc-android:1.3.10")
     implementation("com.vanniktech:emoji-ios:0.20.0")
     // FFmpeg (native C/C++) software audio decoders: AC3, E-AC3, DTS, FLAC, Opus, Vorbis, ALAC...

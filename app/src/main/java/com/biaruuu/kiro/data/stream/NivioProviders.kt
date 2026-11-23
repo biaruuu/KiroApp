@@ -39,7 +39,8 @@ internal fun getJson(url: String, headers: Map<String, String>): JSONObject? = t
     null
 }
 
-internal class Checked(val hls: Boolean, val height: Int, val ms: Int)
+/** [langs]: the audio languages an HLS master playlist declares ("ja", "en"...); empty when it says nothing. */
+internal class Checked(val hls: Boolean, val height: Int, val ms: Int, val langs: Set<String> = emptySet())
 
 /** Opens a stream address with its headers: an HLS playlist (with its best height) or a media file. */
 internal fun check(url: String, headers: Map<String, String>): Checked? {
@@ -51,7 +52,10 @@ internal fun check(url: String, headers: Map<String, String>): Checked? {
             val ms = ((System.nanoTime() - start) / 1_000_000L).toInt()
             if (src.peek().let { it.request(7) && it.readUtf8(7) == "#EXTM3U" }) {
                 val text = src.readUtf8()
-                Checked(true, HEIGHT.findAll(text).maxOfOrNull { it.groupValues[1].toInt() } ?: 0, ms)
+                val langs = Regex("#EXT-X-MEDIA:[^\\n]*TYPE=AUDIO[^\\n]*").findAll(text).mapNotNull { m ->
+                    Regex("LANGUAGE=\"([^\"]+)\"").find(m.value)?.groupValues?.get(1)?.lowercase()?.substringBefore('-')
+                }.toSet()
+                Checked(true, HEIGHT.findAll(text).maxOfOrNull { it.groupValues[1].toInt() } ?: 0, ms, langs)
             } else {
                 Checked(false, 0, ms)
             }
@@ -105,7 +109,13 @@ internal fun source(
     subs: List<SubtitleTrack>, qualityHint: Int = 0,
 ): StreamSource? {
     val c = check(url, headers) ?: return null
-    return StreamSource("$provider · $label", url, if (c.hls) c.height.takeIf { it > 0 } ?: qualityHint else qualityHint, c.hls, subs, audio)
+    // Some servers file a stream under the wrong audio. When the playlist names its audio language, believe it.
+    var kind = audio
+    val hasJa = c.langs.any { it == "ja" || it == "jpn" }
+    val hasEn = c.langs.any { it == "en" || it == "eng" }
+    if (audio == "dub" && hasJa && !hasEn) kind = "sub"
+    else if (audio == "sub" && hasEn && !hasJa) kind = "dub"
+    return StreamSource("$provider · $label", url, if (c.hls) c.height.takeIf { it > 0 } ?: qualityHint else qualityHint, c.hls, subs, kind)
         .withLatency(c.ms).withHeaders(headers)
 }
 
