@@ -30,8 +30,33 @@ public final class StreamResolver {
 
     private static final ExecutorService POOL = Executors.newCachedThreadPool();
     private static final int PROVIDER_TIMEOUT_S = 32;
-    private static final long PROVIDER_GRACE_MS = 5000L;
-    private static final int PROBE_TIMEOUT_S = 8;
+    /** Once something playable has arrived, slower providers get this long to beat it. */
+    private static final long PROVIDER_GRACE_MS = 2000L;
+    /** ...and only this long when the first answer is already sharp (1080p+ and quick). */
+    private static final long PROVIDER_GRACE_FAST_MS = 700L;
+    private static final int PROBE_TIMEOUT_S = 5;
+    private static final long CACHE_TTL_MS = 4 * 60_000L;
+
+    private static final class Cached {
+        final long at;
+        final List<StreamSource> sources;
+
+        Cached(long at, List<StreamSource> sources) {
+            this.at = at;
+            this.sources = sources;
+        }
+    }
+
+    private static final java.util.concurrent.ConcurrentHashMap<String, Cached> CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static String key(StreamRequest r) {
+        return r.getAnimeId() + ":" + r.getEpisode();
+    }
+
+    /** Throws away the saved answer for this episode (use before retrying a failed one). */
+    public static void forget(int animeId, int episode) {
+        CACHE.remove(animeId + ":" + episode);
+    }
 
     private StreamResolver() {
     }
@@ -45,7 +70,17 @@ public final class StreamResolver {
         final Context app = context.getApplicationContext();
         POOL.execute(() -> {
             try {
+                Cached hit = CACHE.get(key(request));
+                if (hit != null && System.currentTimeMillis() - hit.at < CACHE_TTL_MS) {
+                    if (!cancelled.get()) {
+                        callback.onSuccess(hit.sources);
+                    }
+                    return;
+                }
                 List<StreamSource> ranked = run(app, request);
+                if (!ranked.isEmpty()) {
+                    CACHE.put(key(request), new Cached(System.currentTimeMillis(), ranked));
+                }
                 if (!cancelled.get()) {
                     callback.onSuccess(ranked);
                 }
@@ -79,9 +114,6 @@ public final class StreamResolver {
         for (StreamProvider p : providers) {
             pending.add(done.submit(() -> p.resolve(request)));
         }
-        // The developer's own Tagalog dub is never cut short by the grace period: it is the
-        // only copy of that audio, and its host (archive.org) can be slow to answer.
-        Future<List<StreamSource>> own = pending.get(0);
         List<StreamSource> candidates = new ArrayList<>();
         long deadline = System.currentTimeMillis() + PROVIDER_TIMEOUT_S * 1000L;
         int remaining = pending.size();
@@ -98,12 +130,26 @@ public final class StreamResolver {
                 remaining--;
                 try {
                     List<StreamSource> got = f.get();
-                    if (!got.isEmpty() && candidates.isEmpty() && own.isDone()) {
-                        deadline = Math.min(deadline, System.currentTimeMillis() + PROVIDER_GRACE_MS);
-                    }
                     candidates.addAll(got);
-                    if (!candidates.isEmpty() && own.isDone() && deadline - System.currentTimeMillis() > PROVIDER_GRACE_MS) {
-                        deadline = System.currentTimeMillis() + PROVIDER_GRACE_MS;
+                    boolean subbed = false;
+                    for (StreamSource c : got) {
+                        if (!c.isDub()) {
+                            subbed = true;
+                            break;
+                        }
+                    }
+                    // (The instant Filipino dub does not start the clock: the subbed streams are the default.)
+                    if (subbed) {
+                        // Something playable is in: the others get a short chance to beat it, no more.
+                        boolean sharp = false;
+                        for (StreamSource c : candidates) {
+                            if (!c.isDub() && c.getHeight() >= 1080 && c.getLatencyMs() >= 0 && c.getLatencyMs() < 1500) {
+                                sharp = true;
+                                break;
+                            }
+                        }
+                        long grace = System.currentTimeMillis() + (sharp ? PROVIDER_GRACE_FAST_MS : PROVIDER_GRACE_MS);
+                        deadline = Math.min(deadline, grace);
                     }
                 } catch (Exception ignored) {
                     // A provider that fails is simply skipped.

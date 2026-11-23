@@ -519,6 +519,7 @@ fun PlayerScreen(
         resolving = true
         sources = emptyList()
         sourceIndex = 0
+        if (retry > 0) com.biaruuu.kiro.data.stream.StreamResolver.forget(animeId, current)
         delay(350)
         pendingSeek = WatchHistory.positionFor(context, animeId, current)
         val request = StreamRequest(
@@ -556,6 +557,27 @@ fun PlayerScreen(
         if (found.isEmpty()) {
             buffering = false
             error = NO_SOURCE
+        }
+    }
+
+    // 1b. Quietly look up the next episode a while into this one, so Next starts at once.
+    LaunchedEffect(current, sources.isNotEmpty()) {
+        if (sources.isEmpty()) return@LaunchedEffect
+        delay(60_000)
+        val total = ui.base?.episodes ?: 0
+        val next = current + 1
+        if (total > 0 && next > total) return@LaunchedEffect
+        try {
+            StreamRepository.resolve(
+                context,
+                StreamRequest(
+                    animeId, next, ui.base?.displayTitle.orEmpty(), ui.base?.titleEnglish, ui.base?.titleRomaji,
+                    ui.base?.seasonYear ?: 0, ui.detail?.malId ?: 0, total,
+                ),
+            )
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (_: Exception) {
         }
     }
 

@@ -1,9 +1,9 @@
 package com.biaruuu.kiro.data
 
-import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.flow.MutableStateFlow
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 /**
@@ -67,25 +67,47 @@ object TagalogDub {
 
     private fun norm(s: String?) = s.orEmpty().lowercase().replace(Regex("[^a-z0-9]"), "")
 
-    /**
-     * Blocking lookup for the stream providers (they already run off the main thread). The exact
-     * AniList id wins; failing that, an entry for the same episode whose saved title matches one of
-     * [titles] is used (so a dub added under another entry of the same show still plays).
-     */
-    fun lookup(animeId: Int, episode: Int, titles: List<String> = emptyList()): Entry? = try {
-        val col = FirebaseFirestore.getInstance().collection(COLLECTION)
-        val exact = Tasks.await(col.document(docId(animeId, episode)).get(), 10, TimeUnit.SECONDS)
-        if (exact.exists()) parse(exact) else {
-            val wanted = titles.map { norm(it) }.filter { it.length >= 4 }
-            if (wanted.isEmpty()) null else {
-                val snap = Tasks.await(col.whereEqualTo("episode", episode).get(), 10, TimeUnit.SECONDS)
-                snap.documents.mapNotNull { parse(it) }.firstOrNull { e ->
-                    val t = norm(e.title)
-                    t.isNotEmpty() && wanted.any { it == t || t.startsWith(it) || it.startsWith(t) }
+    // ---- Live copy of the library. A realtime listener keeps it current (new and removed dubs arrive
+    // the moment the developer saves them), so looking one up while a stream is resolved costs nothing.
+    @Volatile private var index: Map<String, Entry> = emptyMap()
+    @Volatile private var live: com.google.firebase.firestore.ListenerRegistration? = null
+    private val firstSnapshot = CountDownLatch(1)
+
+    /** Starts the live listener (safe to call many times). */
+    fun warm() {
+        if (live != null) return
+        synchronized(this) {
+            if (live != null) return
+            live = FirebaseFirestore.getInstance().collection(COLLECTION).limit(2000)
+                .addSnapshotListener { snap, err ->
+                    if (snap != null) {
+                        val m = HashMap<String, Entry>()
+                        for (d in snap.documents) parse(d)?.let { m[d.id] = it }
+                        index = m
+                        firstSnapshot.countDown()
+                    } else if (err != null) {
+                        firstSnapshot.countDown()
+                    }
                 }
-            }
         }
-    } catch (_: Exception) {
-        null
+    }
+
+    /**
+     * Instant lookup for the stream providers. The exact AniList id wins; failing that, an entry for the
+     * same episode whose saved title matches one of [titles] is used (so a dub added under another entry
+     * of the same show still plays). On a cold start it waits (at most 2 seconds) for the first snapshot.
+     */
+    fun lookup(animeId: Int, episode: Int, titles: List<String> = emptyList()): Entry? {
+        warm()
+        if (index.isEmpty()) try { firstSnapshot.await(2, TimeUnit.SECONDS) } catch (_: InterruptedException) { }
+        val all = index
+        all[docId(animeId, episode)]?.let { return it }
+        val wanted = titles.map { norm(it) }.filter { it.length >= 4 }
+        if (wanted.isEmpty()) return null
+        return all.values.firstOrNull { e ->
+            if (e.episode != episode) return@firstOrNull false
+            val t = norm(e.title)
+            t.isNotEmpty() && wanted.any { it == t || t.startsWith(it) || it.startsWith(t) }
+        }
     }
 }

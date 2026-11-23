@@ -13,9 +13,8 @@ class TagalogDubProvider : StreamProvider {
     override fun resolve(request: StreamRequest): List<StreamSource> {
         val e = TagalogDub.lookup(request.animeId, request.episode, listOfNotNull(request.titleEnglish, request.titleRomaji, request.title)) ?: return emptyList()
         val headers = if (e.referer.startsWith("http")) streamHeaders(e.referer) else mapOf("User-Agent" to CHROME)
-        val checked = try { source(getName(), "Filipino", e.url, headers, "dub", emptyList(), e.quality) } catch (_: Exception) { null }
-        if (checked != null) return listOf(checked)
+        // Offered at once: it is the only copy of this audio, and the player reports it if it fails.
         val hls = e.url.substringBefore('?').endsWith(".m3u8")
-        return listOf(StreamSource("${getName()} · Filipino", e.url, e.quality, hls, emptyList(), "dub").withLatency(2500).withHeaders(headers))
+        return listOf(StreamSource("${getName()} · Filipino", e.url, e.quality, hls, emptyList(), "dub").withLatency(800).withHeaders(headers))
     }
 }

@@ -45,7 +45,7 @@ internal class Checked(val hls: Boolean, val height: Int, val ms: Int)
 internal fun check(url: String, headers: Map<String, String>): Checked? {
     val start = System.nanoTime()
     return try {
-        client(15).newCall(request(url, headers + ("Range" to "bytes=0-"))).execute().use { r ->
+        client(8).newCall(request(url, headers + ("Range" to "bytes=0-"))).execute().use { r ->
             if (!r.isSuccessful) return null
             val src = r.body?.source() ?: return null
             val ms = ((System.nanoTime() - start) / 1_000_000L).toInt()

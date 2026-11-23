@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.90.0]
+### Changed
+- Faster streams: the Filipino dub library is now kept up to date live in the background (new or removed dubs show up the moment they are saved) and is looked up instantly, so it no longer holds up every other source.
+- Streams start sooner: once a subbed stream is ready the other providers get 2 seconds (0.7 s when it is already 1080p and quick) instead of 5, and address checks give up earlier.
+- Answers are remembered for 4 minutes, so reopening an episode or tapping Retry-free Next is instant, and the next episode is looked up quietly while you watch.
+
 ## [1.89.0]
 ### Added
 - Approve new guests: when someone joins with the room code they now wait until the host accepts (or declines) them. The host sees a small "wants to join" bar with Accept and Decline, and can switch this off in Permissions.
