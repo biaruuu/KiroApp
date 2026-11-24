@@ -107,7 +107,11 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
     val browse by WatchParty.browse.collectAsState()
     val p = party
     if (p == null) {
-        Box(modifier.background(RmBg).statusBarsPadding().padding(32.dp), contentAlignment = Alignment.Center) {
+        Box(
+            modifier.background(RmBg).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
+                .statusBarsPadding().padding(32.dp),
+            contentAlignment = Alignment.Center,
+        ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("You're not in a room.", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(6.dp))
@@ -134,7 +138,10 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
         }
     }
 
-    BoxWithConstraints(modifier.background(RmBg)) {
+    // The room sits on top of the app: swallow taps that miss a control so they never reach the anime cards underneath.
+    BoxWithConstraints(
+        modifier.background(RmBg).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { },
+    ) {
         val phoneLandscape = maxHeight < 500.dp && maxWidth > maxHeight
         val wide = !phoneLandscape && maxWidth >= 720.dp
         // Only the host chooses fullscreen; guests follow it (a landscape phone is always full).

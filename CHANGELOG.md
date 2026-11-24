@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.100.2]
+### Fixed
+- In a watch party, tapping an empty spot on the room page (chat, voice, around the picture) no longer opens an anime card hidden underneath it.
+
+### Improved
+- Create and join a room now live on one page with a Create / Join switch, filled rounded fields, the same button style as the room, and a layout that stays centred and readable from small phones to tablets (the keyboard no longer covers the button).
+
 ## [1.100.1]
 ### Removed
 - Live screen share is gone again (the app and the server no longer carry it). Guests playing the same stream as the host, and the bottom-right fullscreen button, stay.
