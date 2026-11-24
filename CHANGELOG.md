@@ -8,6 +8,10 @@ matching section below as its release notes, so add an entry for each new versio
 ### Improved
 - Details page revamp in the minimalist style: a bolder title with a quiet format / date / status line over the trailer, a taller rounded Play button, action buttons (My List, Status, Rate, Share) in soft tiles that spread evenly on any screen width, a roomier three-line synopsis, a filled season picker and sort chip, and larger rounded episode thumbnails with clearer titles.
 
+## [1.101.1]
+### Reverted
+- The Home revamp from 1.101.0 is undone: the top banner, Play button, bell and Continue Watching cards look like they did before.
+
 ## [1.101.0]
 ### Improved
 - Home revamp in the minimalist style: the top banner shows a quiet rating / format / year line under the title, a larger rounded Play button, and the notification bell sits in a soft round chip so it stays readable on any artwork.
