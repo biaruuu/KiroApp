@@ -98,7 +98,7 @@ fun PartyRuntime() {
     }
     LaunchedEffect(party?.code) {
         PartyChat.listen(party?.code)
-        if (party == null) PartyVoice.clear()
+        if (party == null) { PartyVoice.clear(); com.biaruuu.kiro.data.PartyScreen.clear() }
     }
 }
 

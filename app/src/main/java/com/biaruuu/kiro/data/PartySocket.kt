@@ -176,7 +176,7 @@ object PartySocket {
             "settings",
             JSONObject().put("provider", st.provider).put("audio", st.audio).put("sub", st.sub)
                 .put("fullscreen", st.fullscreen).put("speed", st.speed.toDouble())
-                .put("subFont", st.subFont).put("subSize", st.subSize).put("subBg", st.subBg).put("subEdge", st.subEdge),
+                .put("subFont", st.subFont).put("subSize", st.subSize).put("subBg", st.subBg).put("subEdge", st.subEdge).put("src", st.src),
         ),
     )
 
@@ -350,6 +350,7 @@ object PartySocket {
                     applyState(o.optJSONObject("state"))
                     WatchParty.onBrowse(o.optJSONObject("browse"))
                 }
+                PartyScreen.onJoined(o.optBoolean("screen", false), isHost)
                 PartyVoice.onSocketOpen(o.optJSONArray("voice"))
             }
             "state" -> if (!isHost) applyState(o)
@@ -357,6 +358,9 @@ object PartySocket {
             "chat" -> PartyChat.onLive(o)
             "chat_delete" -> PartyChat.onGone(o.optString("id"))
             "voice_state", "voice_signal", "speaking" -> PartyVoice.onSocket(o.optString("type"), o)
+            "screen_state" -> PartyScreen.onState(o.optBoolean("on", false))
+            "screen_watch" -> PartyScreen.onWatch(o.optString("from"))
+            "screen_signal" -> o.optJSONObject("data")?.let { PartyScreen.onSignal(o.optString("from"), it) }
             "left" -> {
                 val create = synchronized(lock) {
                     val p = pendingCreate
@@ -410,6 +414,7 @@ object PartySocket {
                 subSize = o.optInt("subSize", -1),
                 subBg = o.optInt("subBg", -1),
                 subEdge = o.optInt("subEdge", -1),
+                src = o.optString("src"),
             )
         }
         val video = st.optJSONObject("video") ?: return

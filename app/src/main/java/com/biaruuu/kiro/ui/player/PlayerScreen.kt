@@ -428,8 +428,10 @@ fun PlayerScreen(
     }
 
     // Guest: when the host switches provider or audio, switch to the same one (the position carries over).
-    LaunchedEffect(hostSettings.provider, hostSettings.audio, sources) {
+    LaunchedEffect(hostSettings.provider, hostSettings.audio, hostSettings.src, sources) {
         if (party?.host != false || sources.isEmpty()) return@LaunchedEffect
+        val withHost = withHostSource(sources, hostSettings)
+        if (withHost.size != sources.size) { sources = withHost; return@LaunchedEffect }
         val idx = hostSourceIndex(sources, hostSettings)
         if (idx >= 0 && idx != sourceIndex) {
             pendingSeek = exo.currentPosition
@@ -496,6 +498,7 @@ fun PlayerScreen(
                 subSize = subStyle.size,
                 subBg = subStyle.background,
                 subEdge = subStyle.edge,
+                src = src?.let { encodeSrc(it) }.orEmpty(),
             ),
         )
     }
@@ -543,11 +546,13 @@ fun PlayerScreen(
         } catch (_: Exception) {
             emptyList()
         }
-        sources = found
+        // A guest plays the very stream the host plays, even if its own lookup did not find that one.
+        val list = if (latestParty?.host == false) withHostSource(found, com.biaruuu.kiro.data.WatchParty.settings.value) else found
+        sources = list
         // Always start in Japanese with subtitles (the first, best subbed stream); switching to a dub is one tap in the audio menu.
         // A guest uses the host's provider and audio, so the same subtitles are there too.
         if (latestParty?.host == false) {
-            val idx = hostSourceIndex(found, com.biaruuu.kiro.data.WatchParty.settings.value)
+            val idx = hostSourceIndex(list, com.biaruuu.kiro.data.WatchParty.settings.value)
             if (idx >= 0) sourceIndex = idx
         }
         resolving = false
@@ -2283,15 +2288,67 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
 /** The source on this phone that matches what the host uses: same provider and audio, else same audio. -1 if none. */
 private fun hostSourceIndex(list: List<StreamSource>, h: com.biaruuu.kiro.data.WatchParty.Settings): Int {
     if (list.isEmpty()) return -1
+    // 1. The very same stream address the host plays.
+    val url = hostSrc(h)?.url
+    if (url != null) {
+        val same = list.indexOfFirst { it.url == url }
+        if (same >= 0) return same
+    }
     if (h.provider.isNotBlank()) {
         val exact = list.indexOfFirst { it.providerName == h.provider && (h.audio.isBlank() || audioLanguage(it) == h.audio) }
         if (exact >= 0) return exact
+        // 2. Same provider (any of its servers) in the same language.
+        val family = h.provider.substringBefore(" · ")
+        val sameProvider = list.indexOfFirst { it.providerName.substringBefore(" · ") == family && (h.audio.isBlank() || audioLanguage(it) == h.audio) }
+        if (sameProvider >= 0) return sameProvider
     }
     if (h.audio.isNotBlank()) {
         val byAudio = list.indexOfFirst { audioLanguage(it) == h.audio }
         if (byAudio >= 0) return byAudio
     }
     return -1
+}
+
+/** The stream the host says it plays, if the address can be opened from another phone. */
+private fun hostSrc(h: com.biaruuu.kiro.data.WatchParty.Settings): com.biaruuu.kiro.data.stream.StreamSource? {
+    if (h.src.isBlank()) return null
+    return try {
+        val o = org.json.JSONObject(h.src)
+        val url = o.optString("u").takeIf { it.startsWith("http") && !it.startsWith("http://127.0.0.1") } ?: return null
+        val hd = o.optJSONObject("hd")
+        val headers = LinkedHashMap<String, String>()
+        hd?.keys()?.forEach { k -> headers[k] = hd.optString(k) }
+        val subs = ArrayList<com.biaruuu.kiro.data.stream.SubtitleTrack>()
+        val st = o.optJSONArray("st")
+        if (st != null) for (i in 0 until st.length()) {
+            val t = st.optJSONObject(i) ?: continue
+            subs.add(com.biaruuu.kiro.data.stream.SubtitleTrack(t.optString("u"), t.optString("l"), t.optString("g"), t.optString("m")))
+        }
+        com.biaruuu.kiro.data.stream.StreamSource(o.optString("n"), url, o.optInt("h", 0), o.optBoolean("l", true), subs, o.optString("a"))
+            .withHeaders(headers)
+    } catch (_: Exception) {
+        null
+    }
+}
+
+/** Host side: the stream in use as a small JSON note (cached caption files are shared by their original address). */
+private fun encodeSrc(s: com.biaruuu.kiro.data.stream.StreamSource): String {
+    if (!s.url.startsWith("http") || s.url.startsWith("http://127.0.0.1")) return ""
+    val o = org.json.JSONObject().put("n", s.providerName).put("u", s.url).put("h", s.height).put("l", s.isHls).put("a", s.audio)
+    o.put("hd", org.json.JSONObject(s.headers as Map<*, *>))
+    val st = org.json.JSONArray()
+    for (t in s.subtitles) {
+        val u = com.biaruuu.kiro.data.stream.StreamResolver.SUB_ORIGIN[t.url] ?: t.url
+        if (u.startsWith("http")) st.put(org.json.JSONObject().put("u", u).put("l", t.label).put("g", t.language).put("m", t.mimeType))
+    }
+    o.put("st", st)
+    return o.toString().takeIf { it.length <= 6000 } ?: ""
+}
+
+/** Guest side: the host's own stream goes first in the list when this phone's lookup did not return it. */
+private fun withHostSource(list: List<StreamSource>, h: com.biaruuu.kiro.data.WatchParty.Settings): List<StreamSource> {
+    val host = hostSrc(h) ?: return list
+    return if (list.any { it.url == host.url }) list else listOf(host) + list
 }
 
 /** Japanese for the original, Filipino for the developer's own dub, English for every other dub. */

@@ -68,7 +68,7 @@ object PartyVoice {
     private var source: AudioSource? = null
     private var track: AudioTrack? = null
     private var code: String? = null
-    private var iceServers: List<PeerConnection.IceServer> = emptyList()
+    internal var iceServers: List<PeerConnection.IceServer> = emptyList()
     private var oldMode = AudioManager.MODE_NORMAL
     private var oldSpeaker = false
     private var initialized = false

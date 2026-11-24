@@ -4,6 +4,14 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.100.0]
+### Added
+- **Live screen share in watch parties.** The host can tap "Share screen and browse" and everyone in the room sees the host's real screen, live, while the host picks what to watch (phone to phone video, no screen recording is stored). A notification with a Stop button shows while sharing. Needs the updated kirobackend.
+
+### Fixed
+- Guests now play the very same stream as the host: the host shares the exact stream and caption files it is using, so a guest whose own lookup returned different servers no longer ends up on another provider, audio or subtitle. If that exact stream is not available, the same provider and language is picked first.
+- The host's fullscreen button is at the bottom right of the room picture.
+
 ## [1.99.1]
 ### Improved
 - Watch party room: the host's fullscreen button now sits at the bottom left of the picture.

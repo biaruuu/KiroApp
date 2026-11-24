@@ -53,6 +53,8 @@ object WatchParty {
         val subSize: Int = -1,
         val subBg: Int = -1,
         val subEdge: Int = -1,
+        /** The exact stream the host plays (JSON), so a guest whose own lookup missed it can still play the very same one. */
+        val src: String = "",
     )
 
     val settings = MutableStateFlow(Settings())

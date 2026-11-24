@@ -269,6 +269,9 @@ public final class StreamResolver {
         }
     }
 
+    /** Cached caption file address -> the address it came from (so a host can share it with guests). */
+    public static final java.util.concurrent.ConcurrentHashMap<String, String> SUB_ORIGIN = new java.util.concurrent.ConcurrentHashMap<>();
+
     private static SubtitleTrack fetchSubtitle(java.io.File dir, StreamSource src, SubtitleTrack t) {
         String url = t.getUrl();
         if (!url.startsWith("http")) {
@@ -303,7 +306,9 @@ public final class StreamResolver {
                     }
                 }
             }
-            return new SubtitleTrack(android.net.Uri.fromFile(f).toString(), t.getLabel(), t.getLanguage(), t.getMimeType());
+            String local = android.net.Uri.fromFile(f).toString();
+            SUB_ORIGIN.put(local, url);
+            return new SubtitleTrack(local, t.getLabel(), t.getLanguage(), t.getMimeType());
         } catch (Exception e) {
             return t;
         }
