@@ -4,6 +4,10 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.98.0]
+### Added
+- New streaming provider: **Pahenime**, ported from the latest Anivexa-API update. The show is matched by its exact AniList id and the episode by its number, so it always plays the right episode (sub, and dub when the episode has dual audio). Its image-wrapped streams are unwrapped on the device.
+
 ## [1.97.0]
 ### Added
 - New streaming provider: **AniHQ**, ported from the latest Anivexa-API update. It looks the show up itself and plays VOE streams with their captions, sub and dub.
