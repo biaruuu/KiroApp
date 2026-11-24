@@ -25,7 +25,7 @@ import com.biaruuu.kiro.R
 @Composable
 fun PageTopBar(title: String, onBack: (() -> Unit)?, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
-        Box(modifier = Modifier.fillMaxWidth().height(48.dp), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.fillMaxWidth().height(52.dp), contentAlignment = Alignment.Center) {
             if (onBack != null) {
                 Box(
                     modifier = Modifier
@@ -45,13 +45,13 @@ fun PageTopBar(title: String, onBack: (() -> Unit)?, modifier: Modifier = Modifi
             Text(
                 title,
                 color = Color.White,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(horizontal = 56.dp),
             )
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF2B2B2F)))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF232328)))
     }
 }

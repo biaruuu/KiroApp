@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.99.0]
+### Improved
+- App-wide visual refresh in a calmer, more minimal style: one soft corner radius scale for cards, sheets, dialogs and fields, refined surface and outline colours, and a tidier type scale.
+- Poster cards have softer corners, a faint outline, pill tags and slightly more breathing room; section rows are spaced more evenly on every screen size.
+- The bottom bar and side rail show a quiet pill behind the active tab and are a little taller for easier tapping; page headers are slightly roomier.
+
 ## [1.98.0]
 ### Added
 - New streaming provider: **Pahenime**, ported from the latest Anivexa-API update. The show is matched by its exact AniList id and the episode by its number, so it always plays the right episode (sub, and dub when the episode has dual audio). Its image-wrapped streams are unwrapped on the device.

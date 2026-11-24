@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import com.biaruuu.kiro.ui.i18n.Text
 import androidx.compose.runtime.Composable
@@ -37,7 +38,7 @@ import com.biaruuu.kiro.ui.theme.KiroBackground
 import com.biaruuu.kiro.ui.theme.KiroAccent
 
 /** Hairline between the bar and the content, same as in the design. */
-private val DividerColor = Color(0xFF1E1E22)
+private val DividerColor = Color(0xFF232328)
 
 /** One destination. Idle uses the outline Fluent icon, selected uses the filled one in white, idle ones are muted gray. */
 data class NavDestination(
@@ -68,18 +69,26 @@ private fun NavItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Box {
+        Box(contentAlignment = Alignment.Center) {
+            // Quiet pill behind the active icon.
+            Box(
+                modifier = Modifier
+                    .width(48.dp)
+                    .height(28.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(if (selected) Color.White.copy(alpha = 0.10f) else Color.Transparent),
+            )
             Icon(
                 painter = painterResource(if (selected) destination.iconSelected else destination.icon),
                 contentDescription = null,
                 tint = tint,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(22.dp),
             )
             if (destination.badge) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .offset(x = 2.dp, y = (-1).dp)
+                        .offset(x = (-8).dp, y = 3.dp)
                         .size(6.dp)
                         .clip(CircleShape)
                         .background(KiroAccent),
@@ -92,7 +101,7 @@ private fun NavItem(
             fontSize = 10.sp,
             fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
             maxLines = 1,
-            modifier = Modifier.padding(top = 3.dp),
+            modifier = Modifier.padding(top = 2.dp),
         )
     }
 }
@@ -116,7 +125,7 @@ fun KiroBottomBar(
             modifier = Modifier
                 .navigationBarsPadding()
                 .fillMaxWidth()
-                .height(56.dp),
+                .height(60.dp),
         ) {
             destinations.forEachIndexed { index, destination ->
                 NavItem(

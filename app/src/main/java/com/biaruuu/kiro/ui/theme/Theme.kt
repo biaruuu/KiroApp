@@ -2,22 +2,29 @@ package com.biaruuu.kiro.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.biaruuu.kiro.R
 
 /** The one accent: white for active states and progress, dark ink on top of it. */
 val KiroAccent = Color.White
 val KiroOnAccent = Color.Black
 val KiroBackground = Color(0xFF121212)
-val KiroSurface = Color(0xFF1E1E22)
-val KiroSurfaceHigh = Color(0xFF2A2A30)
+val KiroSurface = Color(0xFF1B1B1F)
+val KiroSurfaceHigh = Color(0xFF26262B)
 val KiroOnSurfaceMuted = Color(0xFF9A9AA5)
+/** Hairlines and card outlines. */
+val KiroOutline = Color(0xFF2C2C32)
 
 private val KiroColors = darkColorScheme(
     primary = KiroAccent,
@@ -30,7 +37,18 @@ private val KiroColors = darkColorScheme(
     onSurfaceVariant = KiroOnSurfaceMuted,
     secondaryContainer = KiroSurfaceHigh,
     onSecondaryContainer = Color.White,
+    outline = KiroOutline,
+    outlineVariant = KiroOutline,
     error = Color(0xFFFF6B6B),
+)
+
+/** One soft radius scale for every card, sheet, dialog and field. */
+private val KiroShapes = Shapes(
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(10.dp),
+    medium = RoundedCornerShape(14.dp),
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(28.dp),
 )
 
 /**
@@ -66,13 +84,29 @@ private fun Typography.withFont(family: FontFamily): Typography = copy(
     labelSmall = labelSmall.copy(fontFamily = family),
 )
 
-private val KiroTypography = Typography().withFont(AppFont)
+/** Calmer type scale: tighter headings, roomier body, small caps-free labels. */
+private val KiroTypography = Typography().withFont(AppFont).let { t ->
+    t.copy(
+        headlineLarge = t.headlineLarge.copy(letterSpacing = (-0.5).sp),
+        headlineMedium = t.headlineMedium.copy(letterSpacing = (-0.4).sp),
+        headlineSmall = t.headlineSmall.copy(letterSpacing = (-0.3).sp),
+        titleLarge = t.titleLarge.copy(letterSpacing = (-0.2).sp),
+        titleMedium = t.titleMedium.copy(letterSpacing = 0.sp),
+        bodyLarge = t.bodyLarge.copy(lineHeight = 22.sp, letterSpacing = 0.sp),
+        bodyMedium = t.bodyMedium.copy(lineHeight = 20.sp, letterSpacing = 0.sp),
+        bodySmall = t.bodySmall.copy(lineHeight = 16.sp, letterSpacing = 0.1.sp),
+        labelLarge = t.labelLarge.copy(letterSpacing = 0.1.sp),
+        labelMedium = t.labelMedium.copy(letterSpacing = 0.2.sp),
+        labelSmall = t.labelSmall.copy(letterSpacing = 0.3.sp),
+    )
+}
 
 @Composable
 fun KiroTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = KiroColors,
         typography = KiroTypography,
+        shapes = KiroShapes,
     ) {
         // Makes plain Text() calls (no explicit style) use the app font too.
         ProvideTextStyle(KiroTypography.bodyMedium, content)

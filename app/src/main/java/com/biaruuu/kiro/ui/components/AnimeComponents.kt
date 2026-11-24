@@ -1,6 +1,7 @@
 package com.biaruuu.kiro.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -80,8 +81,9 @@ fun PosterCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(if (compact) 0.707f else PosterAspect)
-                .clip(RoundedCornerShape(8.dp))
-                .background(placeholder.copy(alpha = 0.3f)),
+                .clip(RoundedCornerShape(12.dp))
+                .background(placeholder.copy(alpha = 0.3f))
+                .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(12.dp)),
         ) {
             AsyncImage(
                 model = anime.posterUrl,
@@ -92,7 +94,7 @@ fun PosterCard(
             if (tag != null) {
                 // Small pill like the reference. Home rows pin it to the top-right corner,
                 // the search grid floats it at the bottom-right.
-                val pillShape = if (tagAtBottom) RoundedCornerShape(4.dp) else RoundedCornerShape(4.dp)
+                val pillShape = RoundedCornerShape(50)
                 Text(
                     text = tag,
                     color = Color.White,
@@ -104,18 +106,19 @@ fun PosterCard(
                         .align(if (tagAtBottom) Alignment.BottomEnd else Alignment.TopEnd)
                         .padding(6.dp)
                         .clip(pillShape)
-                        .background(Color.Black.copy(alpha = 0.55f))
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                        .background(Color.Black.copy(alpha = 0.6f))
+                        .padding(horizontal = 8.dp, vertical = 3.dp),
                 )
             }
         }
-        Spacer(Modifier.height(if (compact) 6.dp else 8.dp))
+        Spacer(Modifier.height(if (compact) 8.dp else 10.dp))
         Text(
             text = anime.displayTitle,
             style = MaterialTheme.typography.bodyLarge,
             fontSize = if (compact) 13.sp else androidx.compose.ui.unit.TextUnit.Unspecified,
-            lineHeight = 21.sp,
-            color = MaterialTheme.colorScheme.onBackground,
+            lineHeight = if (compact) 18.sp else 21.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.92f),
             maxLines = titleMaxLines,
             overflow = TextOverflow.Ellipsis,
         )
@@ -142,7 +145,7 @@ fun AnimeRow(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = dims.gutter),
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(14.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = dims.gutter),
             horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing),
@@ -182,7 +185,7 @@ fun RankedRow(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = dims.gutter),
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(14.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = dims.gutter),
             horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing),
