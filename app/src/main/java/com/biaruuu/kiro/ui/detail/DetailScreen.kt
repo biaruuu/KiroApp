@@ -338,10 +338,15 @@ private fun DetailContent(
                     Text(
                         anime.displayTitle,
                         color = Color.White,
-                        fontSize = 22.sp,
-                        lineHeight = 27.sp,
-                        fontWeight = FontWeight.Medium,
+                        fontSize = 24.sp,
+                        lineHeight = 29.sp,
+                        fontWeight = FontWeight.SemiBold,
                     )
+                    val info = metaLine(anime, detail).replace(" | ", "  ·  ")
+                    if (info.isNotEmpty()) {
+                        Spacer(Modifier.height(6.dp))
+                        Text(info, color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    }
                     val genres = genreLine(anime)
                     if (genres.isNotEmpty()) {
                         Spacer(Modifier.height(6.dp))
@@ -357,8 +362,8 @@ private fun DetailContent(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(46.dp)
-                        .clip(RoundedCornerShape(24.dp))
+                        .height(50.dp)
+                        .clip(RoundedCornerShape(16.dp))
                         .background(KiroAccent)
                         .clickable {
                             val first = released.firstOrNull()
@@ -377,11 +382,11 @@ private fun DetailContent(
                             modifier = Modifier.size(20.dp),
                         )
                         Spacer(Modifier.width(6.dp))
-                        Text("Play", color = Color.Black, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        Text("Play", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
                 Spacer(Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(if (completedByMe) 12.dp else 24.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = if (completedByMe) Arrangement.spacedBy(12.dp) else Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                     ActionButton(
                         label = "My List",
                         icon = if (inList) R.drawable.fluent_checkmark_regular else R.drawable.fluent_add_regular,
@@ -458,16 +463,16 @@ private fun DetailContent(
                         Text(
                             text,
                             color = MutedText,
-                            fontSize = 11.sp,
-                            lineHeight = 18.sp,
-                            maxLines = 2,
+                            fontSize = 12.sp,
+                            lineHeight = 19.sp,
+                            maxLines = 3,
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
                             "More",
                             color = Color.White,
-                            fontSize = 11.sp,
-                            lineHeight = 18.sp,
+                            fontSize = 12.sp,
+                            lineHeight = 19.sp,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
@@ -487,9 +492,9 @@ private fun DetailContent(
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 16.dp, vertical = 12.dp)
-                        .height(32.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .border(BorderStroke(1.dp, MutedText), RoundedCornerShape(8.dp))
+                        .height(38.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFF1B1B1F))
                         .clickable { showSeasons = true }
                         .padding(horizontal = 12.dp),
                     contentAlignment = Alignment.Center,
@@ -523,7 +528,8 @@ private fun DetailContent(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
-                    modifier = Modifier.clickable { newestFirst = !newestFirst },
+                    modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(Color(0xFF1B1B1F)).clickable { newestFirst = !newestFirst }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
@@ -636,12 +642,14 @@ private fun DetailContent(
 @Composable
 private fun ActionButton(label: String, icon: Int, tint: Color, onClick: () -> Unit) {
     Column(
-        modifier = Modifier.clip(RoundedCornerShape(6.dp)).clickable(onClick = onClick).padding(vertical = 6.dp),
+        modifier = Modifier.widthIn(min = 56.dp).clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick).padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
-        Spacer(Modifier.height(5.dp))
-        Text(label, color = Color(0xFFB4B4BA), fontSize = 10.sp, fontWeight = FontWeight.Normal)
+        Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFF1B1B1F)), contentAlignment = Alignment.Center) {
+            Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(label, color = Color(0xFFB4B4BA), fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1)
     }
 }
 
@@ -655,9 +663,9 @@ private fun CountdownRow(number: Int, label: String, image: String?) {
     ) {
         Box(
             modifier = Modifier
-                .width(120.dp)
-                .height(68.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .width(128.dp)
+                .height(72.dp)
+                .clip(RoundedCornerShape(12.dp))
                 .background(ThumbBackground),
         ) {
             if (image != null) {
@@ -693,15 +701,15 @@ private fun EpisodeRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier = Modifier
                 .align(Alignment.Top)
-                .width(120.dp)
-                .height(68.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .width(128.dp)
+                .height(72.dp)
+                .clip(RoundedCornerShape(12.dp))
                 .background(ThumbBackground),
         ) {
             val thumb = episode.thumbnailUrl ?: fallbackImage
@@ -720,8 +728,8 @@ private fun EpisodeRow(
             Text(
                 episode.heading,
                 color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
