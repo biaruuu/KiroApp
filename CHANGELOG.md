@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.100.1]
+### Removed
+- Live screen share is gone again (the app and the server no longer carry it). Guests playing the same stream as the host, and the bottom-right fullscreen button, stay.
+
+### Improved
+- Watch party redesign in the same calm style as the rest of the app: one soft rounded button style (white main action, quiet grey, soft red for danger), a Chat / Voice switch in a rounded track instead of an underline, a tidier room code chip in the header, a filled chat field, softer surfaces and rounder sheets. It scales from small phones to tablets as before.
+
 ## [1.100.0]
 ### Added
 - **Live screen share in watch parties.** The host can tap "Share screen and browse" and everyone in the room sees the host's real screen, live, while the host picks what to watch (phone to phone video, no screen recording is stored). A notification with a Stop button shows while sharing. Needs the updated kirobackend.

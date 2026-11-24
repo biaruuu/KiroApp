@@ -3,7 +3,9 @@ package com.biaruuu.kiro.ui.party
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.offset
@@ -29,9 +31,9 @@ import com.biaruuu.kiro.ui.i18n.Text
 
 /** One small set of colours for the whole watch party, so every screen of it looks the same. */
 internal val PtBg = Color(0xFF121212)
-internal val PtSurface = Color(0xFF18181B)
-internal val PtRaised = Color(0xFF222226)
-internal val PtLine = Color(0xFF26262B)
+internal val PtSurface = Color(0xFF1B1B1F)
+internal val PtRaised = Color(0xFF26262B)
+internal val PtLine = Color(0xFF232328)
 internal val PtMuted = Color(0xFF9A9AA2)
 internal val PtFaint = Color(0xFF6A6A72)
 internal val PtRed = Color(0xFFFF6B6B)
@@ -41,25 +43,62 @@ internal val PtBubble = Color(0xFF2A2A2E)
 internal val PtMine = Color(0xFF2E2E35)
 internal val PtOther = Color(0xFF1C1C20)
 
-/** A pill button: [filled] is the one main action on a screen, [danger] is red text. */
+/**
+ * The one button style of the watch party: a soft rounded rectangle, 44dp tall.
+ * [filled] is the main action (white), [danger] is a quiet red one, the rest are calm grey.
+ */
 @Composable
 internal fun PtButton(
     label: String, modifier: Modifier = Modifier, filled: Boolean = false, danger: Boolean = false, enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
-    Text(
-        label,
-        color = when {
-            !enabled -> PtFaint
-            filled -> Color.Black
-            danger -> PtRed
-            else -> Color.White
-        },
-        fontSize = 13.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center, maxLines = 1,
-        modifier = modifier.clip(RoundedCornerShape(22.dp))
-            .background(if (!enabled) PtRaised else if (filled) Color.White else PtRaised)
-            .clickable(enabled = enabled, onClick = onClick).padding(horizontal = 18.dp, vertical = 11.dp),
-    )
+    val shape = RoundedCornerShape(14.dp)
+    val bg = when {
+        !enabled -> PtRaised.copy(alpha = 0.6f)
+        filled -> Color.White
+        danger -> PtRed.copy(alpha = 0.14f)
+        else -> PtRaised
+    }
+    Box(
+        modifier.heightIn(min = 44.dp).clip(shape).background(bg).clickable(enabled = enabled, onClick = onClick).padding(horizontal = 20.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label,
+            color = when {
+                !enabled -> PtFaint
+                filled -> Color.Black
+                danger -> PtRed
+                else -> Color.White
+            },
+            fontSize = 14.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, maxLines = 1,
+        )
+    }
+}
+
+/** Two or three choices in one rounded track; the chosen one is lifted. Used for the Chat / Voice switch. */
+@Composable
+internal fun PtSegmented(
+    labels: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier, badge: (Int) -> String? = { null },
+) {
+    Row(modifier.clip(RoundedCornerShape(14.dp)).background(PtSurface).padding(3.dp)) {
+        labels.forEachIndexed { i, label ->
+            val on = i == selected
+            Row(
+                Modifier.weight(1f).heightIn(min = 38.dp).clip(RoundedCornerShape(11.dp))
+                    .background(if (on) PtRaised else Color.Transparent).clickable { onSelect(i) },
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center,
+            ) {
+                Text(label, color = if (on) Color.White else PtMuted, fontSize = 14.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium)
+                badge(i)?.let {
+                    Spacer(Modifier.width(6.dp))
+                    PtDot(PtGreen, 6)
+                    Spacer(Modifier.width(3.dp))
+                    Text(it, color = PtGreen, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                }
+            }
+        }
+    }
 }
 
 /** A round icon-only button with a comfortable 44dp tap area. */
@@ -113,5 +152,5 @@ internal fun PtDot(color: Color, size: Int = 7) {
 @Composable
 internal fun PtGap(w: Int) { Spacer(Modifier.width(w.dp)) }
 
-internal fun Modifier.ptCard(radius: Int = 18): Modifier =
+internal fun Modifier.ptCard(radius: Int = 16): Modifier =
     this.clip(RoundedCornerShape(radius.dp)).background(PtSurface)

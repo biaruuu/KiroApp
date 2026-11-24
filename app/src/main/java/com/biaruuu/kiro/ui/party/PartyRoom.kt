@@ -98,7 +98,7 @@ fun PartyRuntime() {
     }
     LaunchedEffect(party?.code) {
         PartyChat.listen(party?.code)
-        if (party == null) { PartyVoice.clear(); com.biaruuu.kiro.data.PartyScreen.clear() }
+        if (party == null) PartyVoice.clear()
     }
 }
 
@@ -421,7 +421,7 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
             )
             // iMessage-style: an outlined rounded field, with the blue send arrow appearing inside it.
             Row(
-                Modifier.weight(1f).heightIn(min = 44.dp).clip(RoundedCornerShape(22.dp)).border(1.dp, Color(0xFF3A3A40), RoundedCornerShape(22.dp)),
+                Modifier.weight(1f).heightIn(min = 46.dp).clip(RoundedCornerShape(23.dp)).background(PtSurface),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(

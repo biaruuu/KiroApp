@@ -172,8 +172,8 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
                             Text("${members.size}", color = RmMuted, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1)
                             Text("  ·  ", color = PtFaint, fontSize = 12.sp)
                             Text(
-                                p.code, color = RmMuted, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp, maxLines = 1,
-                                modifier = Modifier.clip(RoundedCornerShape(6.dp)).clickable {
+                                p.code, color = RmMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp, maxLines = 1,
+                                modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(PtRaised).padding(horizontal = 7.dp, vertical = 2.dp).clickable {
                                     val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                     cm.setPrimaryClip(ClipData.newPlainText("Kiro room code", p.code))
                                     Toast.makeText(context, "Code copied", Toast.LENGTH_SHORT).show()
@@ -198,42 +198,6 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
             }
         }
 
-        // ---- Live screen share: the host's phone sends its screen to everyone.
-        val shareCtx = LocalContext.current
-        val sharingNow by com.biaruuu.kiro.data.PartyScreen.sharing.collectAsState()
-        val mineSharing by com.biaruuu.kiro.data.PartyScreen.mine.collectAsState()
-        LaunchedEffect(Unit) { com.biaruuu.kiro.data.PartyScreen.attach(shareCtx); if (!p.host) com.biaruuu.kiro.data.PartyScreen.ensure() }
-        var browseAfterShare by remember { mutableStateOf(false) }
-        val shareLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-            androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
-        ) { res ->
-            val data = res.data
-            if (res.resultCode == android.app.Activity.RESULT_OK && data != null) {
-                com.biaruuu.kiro.data.ScreenShareService.start(shareCtx)
-                val t0 = System.currentTimeMillis()
-                val h = android.os.Handler(android.os.Looper.getMainLooper())
-                // The capture may only start once the notification is up.
-                h.post(object : Runnable {
-                    override fun run() {
-                        if (com.biaruuu.kiro.data.ScreenShareService.running || System.currentTimeMillis() - t0 > 3000) {
-                            com.biaruuu.kiro.data.PartyScreen.start(shareCtx, data)
-                        } else h.postDelayed(this, 80)
-                    }
-                })
-            }
-            if (browseAfterShare) { browseAfterShare = false; onBrowse() }
-        }
-        fun askShare(thenBrowse: Boolean) {
-            browseAfterShare = thenBrowse
-            try {
-                val mpm = shareCtx.getSystemService(android.content.Context.MEDIA_PROJECTION_SERVICE) as android.media.projection.MediaProjectionManager
-                shareLauncher.launch(mpm.createScreenCaptureIntent())
-            } catch (_: Exception) {
-                browseAfterShare = false
-                if (thenBrowse) onBrowse()
-            }
-        }
-
         // ---- The player layer. It stays in the same place in the tree, so rotating or going fullscreen never restarts it. ----
         val playerMod = when {
             full -> Modifier.fillMaxSize()
@@ -253,8 +217,6 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
                         fullscreen = full,
                     )
                 }
-            } else if (!p.host && sharingNow) {
-                ScreenView()
             } else if (!p.host && browse != null) {
                 BrowseMirror(browse!!)
             } else {
@@ -270,20 +232,7 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
                         color = RmMuted, fontSize = 13.sp, textAlign = TextAlign.Center, lineHeight = 18.sp,
                     )
                     Spacer(Modifier.height(14.dp))
-                    if (p.host) {
-                        if (mineSharing) {
-                            Text("Your screen is live for everyone.", color = Color.White, fontSize = 12.sp)
-                            Spacer(Modifier.height(8.dp))
-                            RmButton("Stop sharing", onClick = { com.biaruuu.kiro.data.PartyScreen.stop() })
-                            Spacer(Modifier.height(8.dp))
-                            RmButton("Browse anime", filled = true, onClick = onBrowse)
-                        } else {
-                            // Sharing the screen is what lets guests see the host browse, live.
-                            RmButton("Share screen and browse", filled = true, onClick = { askShare(true) })
-                            Spacer(Modifier.height(8.dp))
-                            RmButton("Browse without sharing", onClick = onBrowse)
-                        }
-                    }
+                    if (p.host) RmButton("Browse anime", filled = true, onClick = onBrowse)
                     if (full) {
                         Spacer(Modifier.height(8.dp))
                         RmButton("Back", onClick = { if (manualFull) manualFull = false else onBack() })
@@ -308,7 +257,7 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
                 contentAlignment = Alignment.BottomCenter,
             ) {
                 Column(
-                    Modifier.widthIn(max = 520.dp).fillMaxWidth().clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
+                    Modifier.widthIn(max = 520.dp).fillMaxWidth().clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                         .background(RmCard).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
                         .navigationBarsPadding().imePadding().padding(horizontal = 20.dp, vertical = 10.dp)
                         .verticalScroll(rememberScrollState()),
@@ -336,29 +285,12 @@ private fun RoomPanel(
             val asks by WatchParty.requests.collectAsState()
             if (asks.isNotEmpty()) JoinAsk(asks)
             if (r != null && r.animeId > 0 && !compact) NowPlaying(r, room.hostName)
-            Row(Modifier.fillMaxWidth().heightIn(min = 44.dp)) {
-                val vStates by PartyVoice.states.collectAsState()
-                val inVoice = vStates.size
-                listOf("Chat" to 0, "Voice" to 1).forEach { (label, i) ->
-                    val on = tab == i
-                    Box(Modifier.weight(1f).heightIn(min = 44.dp).clickable { onTab(i) }, contentAlignment = Alignment.Center) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(label, color = if (on) Color.White else RmMuted, fontSize = 14.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium)
-                            if (i == 1 && inVoice > 0) {
-                                Spacer(Modifier.width(6.dp))
-                                PtDot(RmGreen, 6)
-                                Spacer(Modifier.width(3.dp))
-                                Text("$inVoice", color = RmGreen, fontSize = 11.sp, fontWeight = FontWeight.Medium)
-                            }
-                        }
-                        Box(
-                            Modifier.align(Alignment.BottomCenter).size(width = 28.dp, height = 2.dp).clip(RoundedCornerShape(1.dp))
-                                .background(if (on) Color.White else Color.Transparent),
-                        )
-                    }
-                }
-            }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(RmHair))
+            val vStates by PartyVoice.states.collectAsState()
+            PtSegmented(
+                labels = listOf("Chat", "Voice"), selected = tab, onSelect = onTab,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                badge = { i -> if (i == 1 && vStates.isNotEmpty()) "${vStates.size}" else null },
+            )
             if (tab == 0) {
                 PartyChatPane(Modifier.weight(1f).fillMaxWidth(), onInvite = onInvite)
             } else {
@@ -395,45 +327,6 @@ private fun JoinAsk(asks: List<WatchParty.JoinRequest>) {
 }
 
 /** Guests: what the host is looking at in Kiro, shown where the video will be (like watching their screen). */
-/** The host's live screen (video from the host's phone). */
-@Composable
-private fun ScreenView() {
-    val track by com.biaruuu.kiro.data.PartyScreen.video.collectAsState()
-    val view = remember { mutableStateOf<org.webrtc.SurfaceViewRenderer?>(null) }
-    Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
-        androidx.compose.ui.viewinterop.AndroidView(
-            modifier = Modifier.fillMaxSize(),
-            factory = { c ->
-                org.webrtc.SurfaceViewRenderer(c).apply {
-                    init(com.biaruuu.kiro.data.PartyScreen.eglContext(), null)
-                    setScalingType(org.webrtc.RendererCommon.ScalingType.SCALE_ASPECT_FIT)
-                    setEnableHardwareScaler(true)
-                    view.value = this
-                }
-            },
-        )
-        val v = view.value
-        DisposableEffect(v, track) {
-            val t = track
-            if (v != null && t != null) t.addSink(v)
-            onDispose { if (v != null && t != null) try { t.removeSink(v) } catch (_: Throwable) {} }
-        }
-        DisposableEffect(Unit) { onDispose { try { view.value?.release() } catch (_: Throwable) {} } }
-        if (track == null) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                androidx.compose.material3.CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(22.dp))
-                Spacer(Modifier.height(10.dp))
-                Text("Connecting to the host's screen…", color = RmMuted, fontSize = 12.sp)
-            }
-        } else {
-            Text(
-                "LIVE", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp,
-                modifier = Modifier.align(Alignment.TopStart).padding(8.dp).clip(RoundedCornerShape(50)).background(Color(0xCCE5484D)).padding(horizontal = 8.dp, vertical = 3.dp),
-            )
-        }
-    }
-}
-
 @Composable
 private fun BrowseMirror(b: WatchParty.Browse) {
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.Center) {
