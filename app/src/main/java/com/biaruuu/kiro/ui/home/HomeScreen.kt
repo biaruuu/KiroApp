@@ -81,7 +81,7 @@ fun HomeScreen(
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 32.dp),
+            contentPadding = PaddingValues(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(dims.rowSpacing),
         ) {
             if (current.content.hero.isNotEmpty()) {
@@ -122,7 +122,7 @@ fun HomeScreen(
                 Modifier
                     .fillMaxWidth()
                     .windowInsetsTopHeight(WindowInsets.statusBars)
-                    .background(com.biaruuu.kiro.ui.theme.KiroBackground)
+                    .background(Color.Black)
                     .align(Alignment.TopCenter),
             )
         }

@@ -91,15 +91,14 @@ fun ContinueWatchingRow(
         ) {
             items(items, key = { it.animeId }) { e ->
                 Column(
-                    modifier = Modifier.width(if (dims.windowClass == com.biaruuu.kiro.ui.theme.WindowClass.Compact) 236.dp else 300.dp).clip(RoundedCornerShape(12.dp)).clickable { onContinue(e.animeId, e.episode) },
+                    modifier = Modifier.width(260.dp).clickable { onContinue(e.animeId, e.episode) },
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(16f / 9f)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFF262628))
-                            .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(12.dp)),
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFF262628)),
                     ) {
                         AsyncImage(
                             model = e.thumb ?: e.image,
@@ -110,16 +109,17 @@ fun ContinueWatchingRow(
                         Box(
                             modifier = Modifier
                                 .align(Alignment.Center)
-                                .size(40.dp)
+                                .size(36.dp)
                                 .clip(CircleShape)
-                                .background(Color.Black.copy(alpha = 0.5f)),
+                                .background(Color.Black.copy(alpha = 0.45f))
+                                .border(1.dp, Color.White.copy(alpha = 0.8f), CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.fluent_play_filled),
                                 contentDescription = "Continue",
                                 tint = Color.White,
-                                modifier = Modifier.size(18.dp),
+                                modifier = Modifier.size(20.dp),
                             )
                         }
                         if (e.progress() > 0f) {
@@ -139,7 +139,7 @@ fun ContinueWatchingRow(
                             }
                         }
                     }
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(8.dp))
                     Text(
                         e.title,
                         color = MaterialTheme.colorScheme.onBackground,
@@ -149,9 +149,9 @@ fun ContinueWatchingRow(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        "Episode ${e.episode}" + if (e.progress() > 0f) "  ·  ${(e.progress() * 100).toInt()}%" else "",
+                        "Episode ${e.episode}",
                         color = Color(0xFF8E8E93),
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                     )
                 }
             }

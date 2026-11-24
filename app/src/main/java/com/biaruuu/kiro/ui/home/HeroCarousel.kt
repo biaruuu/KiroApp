@@ -158,10 +158,7 @@ fun HeroCarousel(
                     fontWeight = FontWeight.Medium,
                     letterSpacing = 4.sp,
                 )
-                IconButton(
-                    onClick = onNotifications,
-                    modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.32f)),
-                ) {
+                IconButton(onClick = onNotifications) {
                     // Plain white bell like the reference. A faint offset copy underneath keeps
                     // it readable on bright artwork without putting a dark disc behind it.
                     Box(contentAlignment = Alignment.Center) {
@@ -169,7 +166,7 @@ fun HeroCarousel(
                             painter = painterResource(R.drawable.fluent_alert_regular),
                             contentDescription = "Notifications",
                             tint = Color.White,
-                            modifier = Modifier.size(22.dp),
+                            modifier = Modifier.size(24.dp),
                         )
                         if (hasUnread) {
                             Box(
@@ -263,20 +260,6 @@ private fun PhoneHeroPage(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            val line = remember(anime.id) { meta(anime) }
-            if (line.isNotEmpty()) {
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    text = line,
-                    style = TextStyle(shadow = TextShadow),
-                    color = Color.White.copy(alpha = 0.78f),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
             Spacer(Modifier.height(18.dp))
             PlayButton(onClick = { onPlay(anime) })
         }
@@ -334,20 +317,21 @@ private fun WideHeroPage(
 private fun PlayButton(onClick: () -> Unit) {
     Button(
         onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.White,
             contentColor = Color.Black,
         ),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 26.dp),
-        modifier = Modifier.height(44.dp),
+        modifier = Modifier
+            .width(108.dp)
+            .height(38.dp),
     ) {
         Icon(
             painter = painterResource(R.drawable.fluent_play_filled),
             contentDescription = null,
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(20.dp),
         )
-        Spacer(Modifier.width(8.dp))
-        Text("Play", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+        Spacer(Modifier.width(6.dp))
+        Text("Play", fontWeight = FontWeight.Medium, fontSize = 16.sp)
     }
 }

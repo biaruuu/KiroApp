@@ -4,13 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.102.1]
+### Reverted
+- The Home revamp from 1.101.0 is undone: the top banner, Play button, bell and Continue Watching cards look like they did before.
+
 ## [1.102.0]
 ### Improved
 - Details page revamp in the minimalist style: a bolder title with a quiet format / date / status line over the trailer, a taller rounded Play button, action buttons (My List, Status, Rate, Share) in soft tiles that spread evenly on any screen width, a roomier three-line synopsis, a filled season picker and sort chip, and larger rounded episode thumbnails with clearer titles.
-
-## [1.101.1]
-### Reverted
-- The Home revamp from 1.101.0 is undone: the top banner, Play button, bell and Continue Watching cards look like they did before.
 
 ## [1.101.0]
 ### Improved
