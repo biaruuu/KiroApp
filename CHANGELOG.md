@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.97.0]
+### Added
+- New streaming provider: **AniHQ**, ported from the latest Anivexa-API update. It looks the show up itself and plays VOE streams with their captions, sub and dub.
+
+### Improved
+- Anikoto now follows the latest Anivexa-API fixes: it skips look-alike entries from another season or part (for example "Show Season 2" for "Show"), and if the site changes domain it finds the new one on the next try.
+
 ## [1.96.0]
 ### Improved
 - Chat is now live over the watch party WebSocket: messages, edits and deletions reach everyone at once, while Firestore still keeps the saved history. Both are merged, so nothing shows twice.

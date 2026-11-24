@@ -27,6 +27,35 @@ private fun avNorm(s: String?) = s.orEmpty().lowercase().replace(Regex("[^a-z0-9
 private fun avTitles(r: StreamRequest) =
     listOfNotNull(r.titleRomaji, r.titleEnglish, r.title).filter { it.isNotBlank() }.distinct()
 
+/** Season / part numbers a title spells out ("Season 2", "2nd Season", "Part 3", "Cour 2", "Final Season"). */
+private fun avMarkers(title: String): Set<String> {
+    val t = title.lowercase()
+    val words = mapOf("one" to 1, "first" to 1, "two" to 2, "second" to 2, "three" to 3, "third" to 3, "four" to 4, "fourth" to 4,
+        "five" to 5, "fifth" to 5, "six" to 6, "sixth" to 6, "seven" to 7, "seventh" to 7, "eight" to 8, "ninth" to 9, "nine" to 9, "ten" to 10, "tenth" to 10)
+    fun num(x: String) = x.toIntOrNull() ?: x.removeSuffix("st").removeSuffix("nd").removeSuffix("rd").removeSuffix("th").toIntOrNull() ?: words[x]
+    val out = HashSet<String>()
+    val tok = "(\\d+(?:st|nd|rd|th)?|one|first|two|second|three|third|four|fourth|five|fifth|six|sixth|seven|seventh|eight|nine|ninth|ten|tenth)"
+    for ((kind, re) in listOf(
+        "s" to Regex("\\bseason\\s*$tok\\b"), "s" to Regex("\\b$tok\\s+season\\b"),
+        "p" to Regex("\\bpart\\s*$tok\\b"), "p" to Regex("\\b$tok\\s+part\\b"),
+        "p" to Regex("\\bcour\\s*$tok\\b"), "p" to Regex("\\b$tok\\s+cour\\b"),
+    )) for (m in re.findAll(t)) num(m.groupValues[1])?.let { out.add("$kind$it") }
+    if (Regex("\\bfinal season\\b").containsMatchIn(t)) out.add("final")
+    if (Regex("\\b(movie|film)\\b").containsMatchIn(t)) out.add("movie")
+    if (Regex("\\b(ova|oad)\\b").containsMatchIn(t)) out.add("ova")
+    return out
+}
+
+/** True when every wanted title disagrees with the candidate about season / part (a missing marker on the candidate is allowed). */
+private fun avMarkersConflict(wanted: List<String>, candidate: List<String>): Boolean {
+    val found = candidate.flatMap { avMarkers(it) }.toSet()
+    if (wanted.isEmpty()) return false
+    return wanted.all { w ->
+        val exp = avMarkers(w)
+        (found.isNotEmpty() && exp.isEmpty()) || (exp.isNotEmpty() && found.isNotEmpty() && exp.intersect(found).isEmpty())
+    }
+}
+
 private fun avUnent(s: String) = s.replace("&amp;", "&").replace("&quot;", "\"").replace("&#039;", "'").replace("&#39;", "'")
     .replace("&lt;", "<").replace("&gt;", ">")
 
@@ -102,7 +131,11 @@ class AnikotoProvider : StreamProvider {
             }
         }
         val wanted = avTitles(req).map { avNorm(it) }
-        val ordered = found.entries.sortedByDescending { e ->
+        val titlesOf = avTitles(req)
+        val ordered = found.entries.filterNot { e ->
+            // "Show Season 2" must not be taken for "Show" (or the reverse): drop cards whose season/part marker clashes.
+            avMarkersConflict(titlesOf, listOf(e.value, e.key.replace('-', ' ')))
+        }.sortedByDescending { e ->
             val n = avNorm(e.value).ifEmpty { avNorm(e.key) }
             when {
                 wanted.any { it == n } -> 3
@@ -121,7 +154,7 @@ class AnikotoProvider : StreamProvider {
 
     override fun resolve(request: StreamRequest): List<StreamSource> {
         val b = host() ?: return emptyList()
-        val show = find(request, b) ?: return emptyList()
+        val show = find(request, b) ?: run { base = null; return emptyList() } // the domain may have rotated: look again next time
         val jobs = ArrayList<Callable<List<StreamSource>>>()
         for (audio in AUDIO) {
             val ep = show.eps.firstOrNull { it.number == request.episode && (if (audio == "dub") it.dub else it.sub) } ?: continue
@@ -609,5 +642,218 @@ internal object FlixCloud {
         val f = File(dir, "$stamp.m3u8")
         f.writeText(master2)
         return f.toURI().toString()
+    }
+}
+
+
+// ------------------------------------------------------------------------------------------ VOE
+
+/** VOE embeds (voe.sx): the page carries one obfuscated JSON blob holding the HLS address and captions. */
+internal object Voe {
+    class Details(val hls: String, val tracks: JSONArray?, val origin: String)
+
+    fun matches(url: String) = Regex("^https?://(?:www\\.)?[a-z0-9.-]*voe[a-z0-9.-]*/e/[A-Za-z0-9_-]+", RegexOption.IGNORE_CASE).containsMatchIn(url)
+
+    private fun decode(raw: String): JSONObject? = try {
+        val rot = raw.map { c ->
+            when (c) {
+                in 'a'..'z' -> ((c - 'a' + 13) % 26 + 'a'.code).toChar()
+                in 'A'..'Z' -> ((c - 'A' + 13) % 26 + 'A'.code).toChar()
+                else -> c
+            }
+        }.joinToString("")
+        var step = rot
+        for (t in listOf("@$", "^^", "~@", "%?", "*~", "!!", "#&")) step = step.replace(t, "_")
+        step = step.replace("_", "")
+        step = String(Base64.decode(step, Base64.DEFAULT), Charsets.ISO_8859_1)
+        step = step.map { (it.code - 3).toChar() }.joinToString("").reversed()
+        JSONObject(String(Base64.decode(step, Base64.DEFAULT), Charsets.UTF_8))
+    } catch (_: Exception) {
+        null
+    }
+
+    fun extract(embed: String, referer: String): Details? {
+        var current = embed
+        val headers = mapOf("User-Agent" to CHROME, "Accept" to "text/html,application/xhtml+xml,*/*", "Referer" to referer)
+        repeat(6) {
+            val body = avText(current, headers) ?: return null
+            Regex("window\\.location\\.href\\s*=\\s*['\"]([^'\"]+)['\"]").find(body)?.let { current = URI(current).resolve(it.groupValues[1]).toString(); return@repeat }
+            if (body.contains("Redirecting", true) && body.contains("permanentToken")) {
+                Regex("https?://[^'\"]+/e/[^'\"]+").find(body)?.let { current = it.value; return@repeat }
+            }
+            val blob = Regex("<script[^>]*type\\s*=\\s*[\"']application/json[\"'][^>]*>\\s*(\\[[\\s\\S]*?\\])\\s*</script>", RegexOption.IGNORE_CASE).find(body)
+                ?.groupValues?.get(1) ?: return null
+            val first = try { JSONArray(blob).optString(0, "") } catch (_: Exception) { "" }
+            val cfg = decode(first) ?: return null
+            val hls = cfg.optString("source", "").takeIf { it.startsWith("http") } ?: return null
+            val o = URI(current).let { "${it.scheme}://${it.host}" }
+            return Details(hls, cfg.optJSONArray("captions"), o)
+        }
+        return null
+    }
+}
+
+// ------------------------------------------------------------------------------------------- AniHQ
+
+/** AniHQ (anihq.cc), ported from the Anivexa-API project's providers/anihq.js: a WordPress site that embeds VOE. */
+class AniHQProvider : StreamProvider {
+    override fun getName() = "AniHQ"
+
+    private class Cand(val url: String, val slug: String, val baseSlug: String, val audio: String?, val titles: List<String>, val score: Double)
+    private class Variant(val cand: Cand, val episodes: Map<Int, String>)
+
+    companion object {
+        private const val SITE = "https://anihq.cc"
+        @Volatile private var nonce: String? = null
+        @Volatile private var nonceAt = 0L
+        private val cache = ConcurrentHashMap<Int, Map<String, Variant?>>()
+    }
+
+    private fun ajaxHeaders(ref: String = "$SITE/") =
+        mapOf("User-Agent" to CHROME, "Accept" to "application/json, text/plain, */*", "Referer" to ref, "X-Requested-With" to "XMLHttpRequest")
+
+    private fun nonce(force: Boolean = false): String? {
+        if (!force) nonce?.let { if (System.currentTimeMillis() - nonceAt < 300_000) return it }
+        val html = avText("$SITE/", mapOf("User-Agent" to CHROME, "Accept" to "text/html,*/*")) ?: return nonce
+        val n = Regex("search_actions\\\\?[\"']\\s*:\\s*\\\\?[\"']([a-z0-9_-]+)", RegexOption.IGNORE_CASE).find(html)?.groupValues?.get(1)
+        if (n != null) { nonce = n; nonceAt = System.currentTimeMillis() }
+        return n ?: nonce
+    }
+
+    private fun stripAudio(s: String) = s.replace(Regex("\\s+english\\s+(?:subbed|dubbed)\\s*$", RegexOption.IGNORE_CASE), "").replace(Regex("\\s+"), " ").trim()
+
+    private fun parse(html: String): List<Cand> {
+        val out = ArrayList<Cand>()
+        for (m in Regex("<a\\b([^>]*)>([\\s\\S]*?)</a>", RegexOption.IGNORE_CASE).findAll(html)) {
+            val href = Regex("href=[\"']([^\"']+)[\"']").find(m.groupValues[1])?.groupValues?.get(1) ?: continue
+            val path = try { URI(avUnent(href)).let { u -> if (u.host != null && !u.host.endsWith("anihq.cc")) null else u.path } } catch (_: Exception) { null } ?: continue
+            if (!path.startsWith("/anime-show/")) continue
+            val slug = path.trimEnd('/').substringAfterLast('/')
+            val audio = Regex("-english-(subbed|dubbed)$").find(slug)?.groupValues?.get(1)?.let { if (it == "dubbed") "dub" else "sub" }
+            val baseSlug = slug.replace(Regex("-english-(?:subbed|dubbed)$"), "")
+            val titles = LinkedHashSet<String>()
+            Regex("title=[\"']([^\"']*)[\"']").find(m.groupValues[1])?.let { titles.add(stripAudio(avUnent(it.groupValues[1]))) }
+            for (sp in Regex("<span\\b[^>]*class=[\"'][^\"']*group-data-\\[language=[^\"']*[\"'][^>]*>([\\s\\S]*?)</span>").findAll(m.groupValues[2])) {
+                titles.add(stripAudio(avUnent(sp.groupValues[1].replace(Regex("<[^>]*>"), "").trim())))
+            }
+            titles.add(baseSlug.replace('-', ' '))
+            val list = titles.filter { it.isNotBlank() }
+            if (list.isEmpty()) continue
+            out.add(Cand("$SITE$path", slug, baseSlug, audio, list, 0.0))
+        }
+        return out
+    }
+
+    private fun search(q: String, retry: Boolean = true): List<Cand> {
+        val n = nonce() ?: return emptyList()
+        val url = "$SITE/wp-admin/admin-ajax.php?action=instant_search&query=${avEnc(q)}&nonce=${avEnc(n)}"
+        val json = getJson(url, ajaxHeaders())
+        if (json == null) {
+            if (retry) { nonce(true); return search(q, false) }
+            return emptyList()
+        }
+        if (!json.optBoolean("success")) return emptyList()
+        return parse(json.optJSONObject("data")?.optString("html", "").orEmpty())
+    }
+
+    private fun score(c: Cand, wanted: List<String>): Cand? {
+        if (avMarkersConflict(wanted, c.titles)) return null
+        var best = 0.0
+        for (w in wanted.map { avNorm(it) }.filter { it.isNotEmpty() }) for (t in c.titles.map { avNorm(it) }.filter { it.isNotEmpty() }) {
+            val sc = when {
+                w == t -> 1.0
+                w.startsWith(t) || t.startsWith(w) -> 0.8 * minOf(w.length, t.length) / maxOf(w.length, t.length) + 0.2
+                w.contains(t) || t.contains(w) -> 0.6 * minOf(w.length, t.length) / maxOf(w.length, t.length) + 0.1
+                else -> 0.0
+            }
+            if (sc > best) best = sc
+        }
+        return if (best >= 0.6) Cand(c.url, c.slug, c.baseSlug, c.audio, c.titles, best) else null
+    }
+
+    private fun inspect(c: Cand, audio: String): Variant? {
+        val posts = try { JSONArray(avText("$SITE/wp-json/wp/v2/anime?slug=${avEnc(c.baseSlug)}", mapOf("User-Agent" to CHROME, "Accept" to "application/json")) ?: return null) } catch (_: Exception) { return null }
+        var post: JSONObject? = null
+        for (i in 0 until posts.length()) posts.optJSONObject(i)?.let { if (it.optString("slug") == c.baseSlug) post = it }
+        val p = post ?: return null
+        val classes = p.optJSONArray("class_list")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty()
+        if (!classes.contains(if (audio == "dub") "anime_attribute-dub" else "anime_attribute-sub")) return null
+        val id = p.optString("id")
+        fun page(n: Int) = getJson("$SITE/wp-admin/admin-ajax.php?action=get_episodes&anime_id=$id&page=$n&order=desc", ajaxHeaders(c.url))
+            ?.takeIf { it.optBoolean("success") }?.optJSONObject("data")
+        val first = page(1) ?: return null
+        val eps = HashMap<Int, String>()
+        fun add(d: JSONObject) {
+            val rows = d.optJSONArray("episodes") ?: return
+            for (i in 0 until rows.length()) {
+                val r = rows.optJSONObject(i) ?: continue
+                val num = r.optString("meta_number").toDoubleOrNull()?.toInt()
+                    ?: Regex("\\d+").find(r.optString("number"))?.value?.toIntOrNull() ?: continue
+                val u = r.optString("url").let { avUnent(it) }
+                val path = try { URI(u).path } catch (_: Exception) { null } ?: continue
+                if (path.startsWith("/watch/")) eps[num] = "$SITE$path"
+            }
+        }
+        add(first)
+        val pages = first.optInt("max_episodes_page", 1).coerceIn(1, 60)
+        if (pages > 1) {
+            val jobs = (2..pages).map { n -> Callable { page(n) } }
+            for (f in POOL.invokeAll(jobs, 15, java.util.concurrent.TimeUnit.SECONDS)) runCatching { f.get() }.getOrNull()?.let { add(it) }
+        }
+        return if (eps.isEmpty()) null else Variant(c, eps)
+    }
+
+    private fun variants(req: StreamRequest): Map<String, Variant?> {
+        cache[req.animeId]?.let { return it }
+        val wanted = avTitles(req)
+        if (wanted.isEmpty()) return emptyMap()
+        val found = LinkedHashMap<String, Cand>()
+        val jobs = wanted.take(4).map { t -> Callable { search(t) } }
+        for (f in POOL.invokeAll(jobs, 15, java.util.concurrent.TimeUnit.SECONDS)) {
+            for (c in runCatching { f.get() }.getOrNull().orEmpty()) score(c, wanted)?.let { if (c.slug !in found) found[c.slug] = it }
+        }
+        val out = HashMap<String, Variant?>()
+        for (audio in AUDIO) {
+            val ranked = found.values.filter { it.audio == null || it.audio == audio }.sortedByDescending { it.score }.take(4)
+            val inspected = POOL.invokeAll(ranked.map { c -> Callable { inspect(c, audio) } }, 20, java.util.concurrent.TimeUnit.SECONDS)
+                .mapNotNull { runCatching { it.get() }.getOrNull() }
+            out[audio] = inspected.maxWithOrNull(compareBy<Variant> { it.cand.score }.thenBy { it.episodes.size })
+        }
+        if (out.values.any { it != null }) cache[req.animeId] = out
+        return out
+    }
+
+    override fun resolve(request: StreamRequest): List<StreamSource> {
+        val v = variants(request)
+        val jobs = ArrayList<Callable<List<StreamSource>>>()
+        for (audio in AUDIO) {
+            val watch = v[audio]?.episodes?.get(request.episode) ?: continue
+            jobs.add(Callable { forEpisode(watch, v[audio]!!.cand.url, audio) })
+        }
+        return gather(jobs, 26)
+    }
+
+    private fun forEpisode(watch: String, ref: String, audio: String): List<StreamSource> {
+        val html = avText(watch, mapOf("User-Agent" to CHROME, "Accept" to "text/html,*/*", "Referer" to ref)) ?: return emptyList()
+        val embeds = ArrayList<String>()
+        for (m in Regex("<iframe\\b([^>]*)>", RegexOption.IGNORE_CASE).findAll(html)) {
+            for (a in listOf("src", "data-src", "data-lazy-src", "data-aniturbo-src")) {
+                val raw = Regex("$a=[\"']([^\"']+)[\"']").find(m.groupValues[1])?.groupValues?.get(1) ?: continue
+                val u = try { URI(watch).resolve(avUnent(raw)).toString() } catch (_: Exception) { continue }
+                if (u.startsWith("http") && u !in embeds) embeds.add(u)
+            }
+        }
+        val out = ArrayList<StreamSource>()
+        for (e in embeds.sortedByDescending { Voe.matches(it) }.take(2)) {
+            if (Voe.matches(e)) {
+                val d = Voe.extract(e, watch) ?: continue
+                source(getName(), "VOE", d.hls, streamHeaders(d.origin + "/"), audio, subtitlesOf(d.tracks))?.let { out.add(it) }
+            } else {
+                val d = try { MegaPlay.extract(e) } catch (_: Exception) { null } ?: continue
+                for ((url, _) in d.sources) source(getName(), "Embed", url, streamHeaders(d.origin + "/"), audio, subtitlesOf(d.tracks))?.let { out.add(it) }
+            }
+            if (out.isNotEmpty()) break
+        }
+        return out
     }
 }

@@ -114,6 +114,7 @@ public final class StreamResolver {
         providers.add(new MiruroProvider());
         providers.add(new AnikotoProvider());
         providers.add(new ReanimeProvider());
+        providers.add(new AniHQProvider());
         providers.add(new AnimePaheProvider());
         providers.add(new AniZoneProvider());
         providers.add(new GojoProvider());
