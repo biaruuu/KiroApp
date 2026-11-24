@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.101.0]
+### Improved
+- Home revamp in the minimalist style: the top banner shows a quiet rating / format / year line under the title, a larger rounded Play button, and the notification bell sits in a soft round chip so it stays readable on any artwork.
+- Continue Watching cards are rounder with a faint outline, a smaller play mark, and show the episode with how far you got (for example "Episode 4 · 62%"). They are narrower on phones and wider on tablets.
+- The strip under the clock while scrolling now matches the page colour, and rows have a little more room at the bottom.
+
 ## [1.100.2]
 ### Fixed
 - In a watch party, tapping an empty spot on the room page (chat, voice, around the picture) no longer opens an anime card hidden underneath it.
