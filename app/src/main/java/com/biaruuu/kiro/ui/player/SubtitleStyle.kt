@@ -147,7 +147,7 @@ object SubtitleStyleStore {
 }
 
 /** Applies the style to the player's caption view; our choices win over the file's own styling. */
-fun SubtitleView.applyKiroStyle(context: Context, style: SubtitleStyle) {
+fun SubtitleView.applyKiroStyle(context: Context, style: SubtitleStyle, scale: Float = 1f) {
     setApplyEmbeddedStyles(false)
     setApplyEmbeddedFontSizes(false)
     setStyle(
@@ -164,9 +164,9 @@ fun SubtitleView.applyKiroStyle(context: Context, style: SubtitleStyle) {
     // Same as the reference: size x 1.1 in dp, 32dp from the sides and 28dp above the bottom.
     setFixedTextSize(
         android.util.TypedValue.COMPLEX_UNIT_DIP,
-        SubtitleOptions.sizes[style.size].second * SubtitleOptions.TEXT_SCALE,
+        SubtitleOptions.sizes[style.size].second * SubtitleOptions.TEXT_SCALE * scale,
     )
     val d = context.resources.displayMetrics.density
     setBottomPaddingFraction(0f)
-    setPadding((32 * d).toInt(), 0, (32 * d).toInt(), (28 * d).toInt())
+    setPadding((32 * d * scale).toInt(), 0, (32 * d * scale).toInt(), (28 * d * scale).toInt())
 }

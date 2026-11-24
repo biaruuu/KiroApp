@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.99.1]
+### Improved
+- Watch party room: the host's fullscreen button now sits at the bottom left of the picture.
+- The "now playing" strip under the picture shows only the title and episode, so the chat has more room.
+- Captions on the small room picture are about half the size so they fit it; fullscreen keeps your chosen size.
+- Guests see a cleaner live view of what the host is browsing (the anime page or tab they are on) until playback starts.
+
 ## [1.99.0]
 ### Improved
 - App-wide visual refresh in a calmer, more minimal style: one soft corner radius scale for cards, sheets, dialogs and fields, refined surface and outline colours, and a tidier type scale.

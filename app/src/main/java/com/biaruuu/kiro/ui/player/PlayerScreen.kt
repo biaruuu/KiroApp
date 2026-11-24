@@ -699,8 +699,10 @@ fun PlayerScreen(
             edge = partyHostStyle.subEdge.coerceIn(0, SubtitleOptions.edges.lastIndex),
         )
     } else subStyle
-    LaunchedEffect(playerView, shownSubStyle) {
-        playerView?.subtitleView?.applyKiroStyle(context, shownSubStyle)
+    // The small picture on the room page gets smaller captions so they fit it, like a mini player.
+    val capScale = if (party != null && !fullscreen) 0.5f else 1f
+    LaunchedEffect(playerView, shownSubStyle, capScale) {
+        playerView?.subtitleView?.applyKiroStyle(context, shownSubStyle, capScale)
     }
 
     DisposableEffect(exo) {

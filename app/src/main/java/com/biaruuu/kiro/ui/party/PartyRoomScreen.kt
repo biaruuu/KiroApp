@@ -240,7 +240,7 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
             }
             if (p.host && hasVideo && !full && !imeOpen) {
                 Box(
-                    Modifier.align(Alignment.TopStart).padding(8.dp).size(36.dp).clip(CircleShape).background(Color(0x73000000))
+                    Modifier.align(Alignment.BottomStart).padding(8.dp).size(36.dp).clip(CircleShape).background(Color(0x73000000))
                         .clickable { manualFull = true },
                     contentAlignment = Alignment.Center,
                 ) { Icon(painterResource(R.drawable.fluent_fullscreen_regular), "Fullscreen", tint = Color.White, modifier = Modifier.size(20.dp)) }
@@ -349,7 +349,7 @@ private fun BrowseMirror(b: WatchParty.Browse) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             PtDot(RmGreen, 6)
             Spacer(Modifier.width(6.dp))
-            Text("Host's screen", color = RmMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.5.sp)
+            Text("LIVE · Host's screen", color = RmMuted, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.5.sp)
         }
         Spacer(Modifier.height(10.dp))
         if (b.animeId > 0) {
@@ -379,12 +379,6 @@ private fun BrowseMirror(b: WatchParty.Browse) {
                         fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis,
                     )
                     if (meta.isNotBlank()) Text(meta, color = RmMuted, fontSize = 12.sp, maxLines = 1)
-                    val genres = a?.genres.orEmpty().take(3).joinToString(", ")
-                    if (genres.isNotBlank()) Text(genres, color = PtFaint, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    if (summary.isNotBlank()) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(summary, color = RmMuted, fontSize = 12.sp, lineHeight = 16.sp, maxLines = 3, overflow = TextOverflow.Ellipsis)
-                    }
                 }
             }
         } else {
@@ -403,52 +397,23 @@ private fun BrowseMirror(b: WatchParty.Browse) {
     }
 }
 
-/** About the anime that is playing: poster, title, episode, score, genres and a short summary. */
+/** What is playing: just the title and the episode. */
 @Composable
 private fun NowPlaying(r: WatchParty.Remote, hostName: String) {
-    val tall = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp >= 720
     val vm: com.biaruuu.kiro.ui.detail.DetailViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
         key = "detail-${r.animeId}", factory = com.biaruuu.kiro.ui.detail.DetailViewModel.Factory(r.animeId),
     )
     val ui by vm.state.collectAsState()
     val a = ui.base
-    var open by remember(r.animeId) { mutableStateOf(false) }
-    val summary = remember(a?.description) { (a?.description ?: "").replace(Regex("<[^>]*>"), " ").replace(Regex("\\s+"), " ").trim() }
-    val meta = listOfNotNull(
-        a?.averageScore?.takeIf { it > 0 }?.let { "★ %.1f".format(it / 10f) },
-        a?.format?.takeIf { it.isNotBlank() }?.replace('_', ' '),
-        a?.seasonYear?.takeIf { it > 0 }?.toString(),
-    ).joinToString("  ·  ")
-    Row(
-        Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp)
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { open = !open },
-        verticalAlignment = Alignment.Top,
-    ) {
-        val poster = a?.posterUrl
-        if (!poster.isNullOrBlank()) {
-            coil.compose.AsyncImage(
-                model = poster, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                modifier = Modifier.width(54.dp).height(78.dp).clip(RoundedCornerShape(8.dp)).background(PtRaised),
-            )
-            Spacer(Modifier.width(12.dp))
-        }
-        Column(Modifier.weight(1f)) {
-            Text(
-                a?.displayTitle?.takeIf { it.isNotBlank() } ?: r.title.ifBlank { "Now playing" }, color = Color.White, fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                "Episode ${r.episode}" + hostName.ifBlank { r.hostName }.let { if (it.isBlank()) "" else "  ·  Hosted by $it" },
-                color = RmMuted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
-            if (meta.isNotBlank()) Text(meta, color = RmMuted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            val genres = a?.genres.orEmpty().take(3).joinToString(", ")
-            if (genres.isNotBlank()) Text(genres, color = PtFaint, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (summary.isNotBlank() && (tall || open)) {
-                Spacer(Modifier.height(4.dp))
-                Text(summary, color = RmMuted, fontSize = 12.sp, lineHeight = 17.sp, maxLines = if (open) 12 else 2, overflow = TextOverflow.Ellipsis)
-            }
-        }
+    Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 10.dp)) {
+        Text(
+            a?.displayTitle?.takeIf { it.isNotBlank() } ?: r.title.ifBlank { "Now playing" }, color = Color.White, fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            "Episode ${r.episode}" + hostName.ifBlank { r.hostName }.let { if (it.isBlank()) "" else "  ·  Hosted by $it" },
+            color = RmMuted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
