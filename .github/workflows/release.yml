@@ -97,7 +97,6 @@ jobs:
         if: steps.version.outputs.exists == 'false'
         env:
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
-          KIRO_WS_SECRET: ${{ secrets.KIRO_WS_SECRET }}
         run: ./gradlew assembleRelease --stacktrace
 
       - name: Name the APK

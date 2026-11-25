@@ -18,14 +18,11 @@ android {
         applicationId = "com.biaruuu.kiro"
         minSdk = 26
         targetSdk = 35
-        versionCode = 184
-        versionName = "1.102.2"
+        versionCode = 183
+        versionName = "1.102.1"
         // TMDB key: GitHub secret TMDB_API_KEY in CI, or -PTMDB_API_KEY / env var locally.
         val tmdbKey = (System.getenv("TMDB_API_KEY") ?: project.findProperty("TMDB_API_KEY") as String? ?: "").trim()
         buildConfigField("String", "TMDB_API_KEY", "\"$tmdbKey\"")
-        // Shared secret used to sign the watch party connection (GitHub secret KIRO_WS_SECRET = the server's APP_SECRET).
-        val wsSecret = (System.getenv("KIRO_WS_SECRET") ?: project.findProperty("KIRO_WS_SECRET") as String? ?: "").trim()
-        buildConfigField("String", "KIRO_WS_SECRET", "\"$wsSecret\"")
 
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")

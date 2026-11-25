@@ -33,21 +33,6 @@ object PartySocket {
     private const val TAG = "PartySocket"
     private const val SERVER = "kiro-watchparty.onrender.com"
     private const val WS_URL = "wss://$SERVER/ws"
-
-    /** The connection address, signed with the current time so the server can tell it comes from this app. */
-    private fun signedUrl(): String {
-        val secret = com.biaruuu.kiro.BuildConfig.KIRO_WS_SECRET
-        if (secret.isEmpty()) return WS_URL
-        return try {
-            val ts = System.currentTimeMillis().toString()
-            val mac = javax.crypto.Mac.getInstance("HmacSHA256")
-            mac.init(javax.crypto.spec.SecretKeySpec(secret.toByteArray(), "HmacSHA256"))
-            val sig = mac.doFinal(ts.toByteArray()).joinToString("") { "%02x".format(it) }
-            "$WS_URL?ts=$ts&sig=$sig"
-        } catch (_: Exception) {
-            WS_URL
-        }
-    }
     private const val HEALTH_URL = "https://$SERVER/health"
 
     private val client: OkHttpClient by lazy {
@@ -228,7 +213,7 @@ object PartySocket {
             if (!wanted) return
             socket?.cancel()
             gen = ++generation
-            socket = client.newWebSocket(Request.Builder().url(signedUrl()).build(), Listener(gen))
+            socket = client.newWebSocket(Request.Builder().url(WS_URL).build(), Listener(gen))
         }
     }
 
