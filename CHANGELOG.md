@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.102.2]
+### Security
+- The watch party connection is now signed by the app (a time-stamped HMAC with a build secret, `KIRO_WS_SECRET`), so the server can tell real app connections from scripts. It does nothing until the secret is set in GitHub and on the server.
+- App data can no longer be pulled out with `adb backup` (`allowBackup` off).
+- The server (kirobackend) now refuses browser connections, has no public data or CORS, limits connections, requests, room creation and wrong room codes per IP and blocks repeat offenders, and its `/health` page no longer shows room counts. See the server README.
+
 ## [1.102.1]
 ### Reverted
 - The Home revamp from 1.101.0 is undone: the top banner, Play button, bell and Continue Watching cards look like they did before.
