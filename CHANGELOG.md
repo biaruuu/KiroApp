@@ -4,6 +4,10 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.102.3]
+### Reverted
+- The security changes from 1.102.2 are undone (signed connection and backups setting); the app and the server are back as they were before.
+
 ## [1.102.1]
 ### Reverted
 - The Home revamp from 1.101.0 is undone: the top banner, Play button, bell and Continue Watching cards look like they did before.
