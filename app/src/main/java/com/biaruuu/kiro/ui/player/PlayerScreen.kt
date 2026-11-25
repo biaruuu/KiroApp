@@ -702,12 +702,37 @@ fun PlayerScreen(
             size = partyHostStyle.subSize.coerceIn(0, SubtitleOptions.sizes.lastIndex),
             background = partyHostStyle.subBg.coerceIn(0, SubtitleOptions.backgrounds.lastIndex),
             edge = partyHostStyle.subEdge.coerceIn(0, SubtitleOptions.edges.lastIndex),
+            fade = subStyle.fade,
         )
     } else subStyle
     // The small picture on the room page gets smaller captions so they fit it, like a mini player.
     val capScale = if (party != null && !fullscreen) 0.5f else 1f
     LaunchedEffect(playerView, shownSubStyle, capScale) {
         playerView?.subtitleView?.applyKiroStyle(context, shownSubStyle, capScale)
+    }
+
+    // Fade each new caption line in.
+    DisposableEffect(exo, playerView, shownSubStyle.fade) {
+        val view = playerView?.subtitleView
+        var last = ""
+        val fadeListener = object : Player.Listener {
+            override fun onCues(cueGroup: androidx.media3.common.text.CueGroup) {
+                if (view == null) return
+                val text = cueGroup.cues.joinToString("\n") { it.text?.toString().orEmpty() }
+                if (text.isNotEmpty() && text != last && shownSubStyle.fade) {
+                    view.animate().cancel()
+                    view.alpha = 0f
+                    view.animate().alpha(1f).setDuration(220).start()
+                }
+                last = text
+            }
+        }
+        exo.addListener(fadeListener)
+        onDispose {
+            exo.removeListener(fadeListener)
+            view?.animate()?.cancel()
+            view?.alpha = 1f
+        }
     }
 
     DisposableEffect(exo) {
@@ -2276,7 +2301,14 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
         item { SectionLabel("Size") }
         item { Chips(SubtitleOptions.sizes.map { it.first }, style.size) { onChange(style.copy(size = it)) } }
         item { SectionLabel("Background") }
-        item { Chips(SubtitleOptions.backgrounds.map { it.first }, style.background) { onChange(style.copy(background = it)) } }
+        item {
+            Chips(SubtitleOptions.backgrounds.map { it.first }, style.background) {
+                // The dark box reads best without an outline.
+                onChange(style.copy(background = it, edge = if (it == SubtitleOptions.DARK_BOX) 0 else style.edge))
+            }
+        }
+        item { SectionLabel("Animation") }
+        item { Chips(listOf("Fade", "None"), if (style.fade) 0 else 1) { onChange(style.copy(fade = it == 0)) } }
         item { SectionLabel("Text style") }
         item { Chips(SubtitleOptions.edges.map { it.first }, style.edge) { onChange(style.copy(edge = it)) } }
         item { Spacer(Modifier.height(16.dp)) }
@@ -2390,6 +2422,7 @@ private fun CaptionPreview(style: SubtitleStyle) {
             style = TextStyle(shadow = shadow),
             modifier = Modifier
                 .padding(bottom = 14.dp, start = 12.dp, end = 12.dp)
+                .clip(RoundedCornerShape(if (style.background == SubtitleOptions.DARK_BOX) 5.dp else 0.dp))
                 .background(Color(bg))
                 .padding(horizontal = 6.dp, vertical = 2.dp),
         )

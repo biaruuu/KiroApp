@@ -23,6 +23,8 @@ data class SubtitleStyle(
     val size: Int = 1,
     val background: Int = 0,
     val edge: Int = 2,
+    /** Each new caption line fades in instead of popping on. */
+    val fade: Boolean = true,
 )
 
 object SubtitleOptions {
@@ -59,7 +61,9 @@ object SubtitleOptions {
         "Transparent" to Color.TRANSPARENT,
         "Semi-Transparent" to Color.argb(0x73, 0, 0, 0),
         "Solid" to Color.BLACK,
+        "Dark Box" to Color.argb(0xD2, 0x1C, 0x1C, 0x1F),
     )
+    const val DARK_BOX = 3
     val edges = listOf(
         "None" to CaptionStyleCompat.EDGE_TYPE_NONE,
         "Subtle Shadow" to CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW,
@@ -133,6 +137,7 @@ object SubtitleStyleStore {
             size = p.getInt("sub_size_idx", 1).coerceIn(0, SubtitleOptions.sizes.lastIndex),
             background = p.getInt("sub_bg_idx", 0).coerceIn(0, SubtitleOptions.backgrounds.lastIndex),
             edge = p.getInt("sub_edge_idx", 2).coerceIn(0, SubtitleOptions.edges.lastIndex),
+            fade = p.getBoolean("sub_fade", true),
         )
     }
 
@@ -142,6 +147,7 @@ object SubtitleStyleStore {
             .putInt("sub_size_idx", style.size)
             .putInt("sub_bg_idx", style.background)
             .putInt("sub_edge_idx", style.edge)
+            .putBoolean("sub_fade", style.fade)
             .apply()
     }
 }
