@@ -13,7 +13,12 @@ object UpdateChecker {
 
     class Release(val version: String, val notes: String, val apkUrl: String, val published: String = "")
 
-    private const val API = "https://api.github.com/repos/biaruuu/KiroApp/releases"
+    // New builds are published to the public Kirodownload repo; the older KiroApp releases are still read so
+    // nobody misses an update while the move happens.
+    private val APIS = listOf(
+        "https://api.github.com/repos/biaruuu/Kirodownload/releases",
+        "https://api.github.com/repos/biaruuu/KiroApp/releases",
+    )
     private const val PREFS = "kiro_update"
 
     /** "latest" (open the update page) or "current" (show what changed in this version); consumed by the UI. */
@@ -21,23 +26,30 @@ object UpdateChecker {
 
     val currentVersion: String get() = BuildConfig.VERSION_NAME.substringBefore('-')
 
-    suspend fun latest(): Release? = fetch("$API/latest")
+    suspend fun latest(): Release? =
+        APIS.mapNotNull { fetch("$it/latest") }.fold(null as Release?) { best, r -> if (best == null || isNewer(r.version, best.version)) r else best }
 
     /** Newest published versions first, for the Notifications page. */
     suspend fun recent(limit: Int = 12): List<Release> = withContext(Dispatchers.IO) {
-        try {
-            val req = Request.Builder().url("$API?per_page=$limit").header("Accept", "application/vnd.github+json").build()
-            HttpClientProvider.get().newCall(req).execute().use { r ->
-                if (!r.isSuccessful) return@withContext emptyList()
-                val arr = org.json.JSONArray(r.body?.string().orEmpty())
-                (0 until arr.length()).mapNotNull { parse(arr.getJSONObject(it)) }
-                    .filter { !it.version.contains('-') }
+        val all = ArrayList<Release>()
+        for (api in APIS) {
+            try {
+                val req = Request.Builder().url("$api?per_page=$limit").header("Accept", "application/vnd.github+json").build()
+                HttpClientProvider.get().newCall(req).execute().use { r ->
+                    if (!r.isSuccessful) return@use
+                    val arr = org.json.JSONArray(r.body?.string().orEmpty())
+                    (0 until arr.length()).mapNotNull { parse(arr.getJSONObject(it)) }
+                        .filter { !it.version.contains('-') }
+                        .forEach { all.add(it) }
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
             }
-        } catch (e: kotlinx.coroutines.CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            emptyList()
         }
+        all.distinctBy { it.version }
+            .sortedWith { a, b -> if (a.version == b.version) 0 else if (isNewer(a.version, b.version)) -1 else 1 }
+            .take(limit)
     }
 
     private fun parse(json: JSONObject): Release? {
@@ -57,7 +69,10 @@ object UpdateChecker {
     private val etags = HashMap<String, String>()
     private val cached = HashMap<String, Release>()
 
-    suspend fun forVersion(version: String): Release? = fetch("$API/tags/v$version")
+    suspend fun forVersion(version: String): Release? {
+        for (api in APIS) fetch("$api/tags/v$version")?.let { return it }
+        return null
+    }
 
     private suspend fun fetch(url: String): Release? = withContext(Dispatchers.IO) {
         try {

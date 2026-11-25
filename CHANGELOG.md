@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.103.0]
+### Changed
+- Updates are now looked up in the public Kirodownload releases first, then in the older KiroApp releases, so the app source can be made private later without breaking update checks.
+- New builds are published to the Kirodownload repo once the `RELEASES_TOKEN` secret is set (until then they still go to this repo).
+
 ## [1.102.3]
 ### Reverted
 - The security changes from 1.102.2 are undone (signed connection and backups setting); the app and the server are back as they were before.
