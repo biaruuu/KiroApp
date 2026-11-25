@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.104.1]
+### Changed
+- Dark Box is now the default caption look, with a cleaner, more minimal box and no outline.
+- Captions scale with the video: they grow in full screen and on tablets and shrink in the watch-party mini player, with wider side margins so lines wrap neatly.
+- Captions appear faster: the fade-in is now a quick 0.09 s so a line is never held back.
+
 ## [1.104.0]
 ### Added
 - New "Dark Box" caption background: white text on a dark, slightly transparent box behind each line.

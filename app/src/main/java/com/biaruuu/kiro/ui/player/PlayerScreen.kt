@@ -721,8 +721,8 @@ fun PlayerScreen(
                 val text = cueGroup.cues.joinToString("\n") { it.text?.toString().orEmpty() }
                 if (text.isNotEmpty() && text != last && shownSubStyle.fade) {
                     view.animate().cancel()
-                    view.alpha = 0f
-                    view.animate().alpha(1f).setDuration(220).start()
+                    view.alpha = 0.35f
+                    view.animate().alpha(1f).setDuration(90).start()
                 }
                 last = text
             }
