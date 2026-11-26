@@ -52,6 +52,7 @@ import coil.compose.AsyncImage
 import com.biaruuu.kiro.ui.components.rememberTmdbMeta
 import com.biaruuu.kiro.ui.components.TitleLogo
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Brush
 import com.biaruuu.kiro.R
 import com.biaruuu.kiro.core.NativeCore
