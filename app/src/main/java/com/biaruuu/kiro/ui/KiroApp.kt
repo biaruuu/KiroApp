@@ -73,7 +73,7 @@ private val Destinations = listOf(
     NavDestination("Home", R.drawable.fluent_home_regular, R.drawable.fluent_home_filled),
     NavDestination("Search", R.drawable.fluent_search_regular, R.drawable.fluent_search_filled),
     NavDestination("Schedule", R.drawable.fluent_calendar_regular, R.drawable.fluent_calendar_filled),
-    NavDestination("Your Library", R.drawable.fluent_inbox_regular, R.drawable.fluent_inbox_regular),
+    NavDestination("Library", R.drawable.fluent_inbox_regular, R.drawable.fluent_inbox_regular),
     NavDestination("Me", R.drawable.fluent_emoji_regular, R.drawable.fluent_emoji_filled),
 )
 
@@ -342,6 +342,7 @@ private fun KiroScaffold() {
                     onPlay = onAnimeClick,
                     onContinue = { id, ep -> openRoute("p:$id:$ep") },
                     onNotifications = { backStack.add("s:notifications") },
+                    onSchedule = { selectTab(TAB_SCHEDULE) },
                     hasUnread = hasUnread,
                     modifier = contentModifier,
                 )

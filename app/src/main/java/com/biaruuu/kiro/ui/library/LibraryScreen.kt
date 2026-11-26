@@ -101,7 +101,7 @@ private const val TAB_COMPLETED = 2
 private const val TAB_DOWNLOAD = 3
 private const val TAB_RATED = 4
 private const val TAB_STATUS_FIRST = 5 // Watching, Plan to watch, On hold, Dropped follow Rated
-private val Tabs = listOf("Recently Watched", "My List", "Completed", "Download", "Rated") +
+private val Tabs = listOf("Recently Watched", "Favourites", "Completed", "Download", "Rated") +
     com.biaruuu.kiro.data.ShowStatus.ALL.map { com.biaruuu.kiro.data.ShowStatus.label(it) }
 
 /** What a long-press → "Remove" will act on. */
@@ -301,8 +301,8 @@ fun LibraryScreen(
             TAB_WATCHED -> "Remove from Recently Watched?" to "\"${target.title}\" will no longer appear under Continue Watching."
             TAB_COMPLETED -> "Remove from Completed?" to "\"${target.title}\" will be marked as not watched."
             TAB_DOWNLOAD -> "Delete downloads?" to "All downloaded episodes of \"${target.title}\" will be deleted from your phone."
-            TAB_LIST -> "Remove from My List?" to "\"${target.title}\" will be removed from your list."
-            in TAB_STATUS_FIRST until TAB_STATUS_FIRST + 4 -> "Clear status?" to "\"${target.title}\" will no longer be marked ${com.biaruuu.kiro.data.ShowStatus.label(com.biaruuu.kiro.data.ShowStatus.ALL[target.tab - TAB_STATUS_FIRST])}. It stays in My List."
+            TAB_LIST -> "Remove from Favourites?" to "\"${target.title}\" will be removed from your list."
+            in TAB_STATUS_FIRST until TAB_STATUS_FIRST + 4 -> "Clear status?" to "\"${target.title}\" will no longer be marked ${com.biaruuu.kiro.data.ShowStatus.label(com.biaruuu.kiro.data.ShowStatus.ALL[target.tab - TAB_STATUS_FIRST])}. It stays in Favourites."
             else -> "Remove your rating?" to "Your rating for \"${target.title}\" will be cleared."
         }
         AlertDialog(
@@ -672,7 +672,7 @@ private fun sizeLabel(bytes: Long): String =
     if (bytes >= 1_000_000_000L) String.format(java.util.Locale.US, "%.1f GB", bytes / 1e9)
     else String.format(java.util.Locale.US, "%d MB", (bytes / 1_000_000L).coerceAtLeast(if (bytes > 0) 1 else 0))
 
-/** One card per downloaded series, in the same look as My List. Tapping opens its episodes. */
+/** One card per downloaded series, in the same look as Favourites. Tapping opens its episodes. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DownloadPosterGrid(

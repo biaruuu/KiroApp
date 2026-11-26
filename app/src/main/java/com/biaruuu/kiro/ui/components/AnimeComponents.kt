@@ -162,10 +162,7 @@ fun AnimeRow(
     }
 }
 
-/**
- * "Top 10" row: the same quiet poster row as the others, with a small rank pill in the corner of
- * each poster instead of big outlined numerals.
- */
+/** "Top 10" row: a big outlined number sits behind the left edge of each poster. */
 @Composable
 fun RankedRow(
     title: String,
@@ -179,7 +176,7 @@ fun RankedRow(
             text = title,
             style = MaterialTheme.typography.titleLarge,
             fontSize = dims.sectionTitle,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -188,29 +185,37 @@ fun RankedRow(
         Spacer(Modifier.height(14.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = dims.gutter),
-            horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             itemsIndexed(items, key = { _, anime -> anime.id }, contentType = { _, _ -> "ranked" }) { index, anime ->
-                Box(modifier = Modifier.width(dims.cardWidth)) {
+                val rank = index + 1
+                val numberWidth = if (rank >= 10) 96.dp else 58.dp
+                Box(modifier = Modifier.width(dims.cardWidth + numberWidth)) {
+                    Text(
+                        text = "$rank",
+                        style = androidx.compose.ui.text.TextStyle(
+                            color = Color(0xFF8E8E93),
+                            drawStyle = androidx.compose.ui.graphics.drawscope.Stroke(
+                                width = 5f,
+                                join = androidx.compose.ui.graphics.StrokeJoin.Round,
+                            ),
+                            letterSpacing = if (rank >= 10) (-10).sp else 0.sp,
+                        ),
+                        fontSize = 130.sp,
+                        lineHeight = 130.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .offset(y = (-14).dp),
+                    )
                     PosterCard(
                         anime = anime,
                         onClick = { onAnimeClick(anime) },
                         titleMaxLines = 1,
                         compact = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Text(
-                        text = "${index + 1}",
-                        color = Color.White,
-                        fontSize = 11.sp,
-                        lineHeight = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(6.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(Color.Black.copy(alpha = 0.55f))
-                            .padding(horizontal = 7.dp, vertical = 2.dp),
+                        modifier = Modifier.width(dims.cardWidth).align(Alignment.CenterEnd),
                     )
                 }
             }

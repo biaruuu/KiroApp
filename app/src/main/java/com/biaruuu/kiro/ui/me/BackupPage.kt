@@ -93,7 +93,7 @@ fun BackupPage() {
         Text("On this phone", color = Dim, fontSize = 14.sp)
         Spacer(Modifier.height(8.dp))
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Card).padding(14.dp)) {
-            Stat("My List", now.listCount)
+            Stat("Favourites", now.listCount)
             Stat("Rated", now.ratedCount)
             Stat("Completed", now.watchedCount)
             Stat("With a status", now.statusCount)
@@ -123,7 +123,7 @@ fun BackupPage() {
             title = { Text("Restore backup?", color = Color.White) },
             text = {
                 Text(
-                    "This backup has ${d.listCount} in My List, ${d.ratedCount} rated, ${d.watchedCount} completed and ${d.statusCount} with a status. " +
+                    "This backup has ${d.listCount} in Favourites, ${d.ratedCount} rated, ${d.watchedCount} completed and ${d.statusCount} with a status. " +
                         "They are merged with your library; nothing you have is deleted.",
                     color = Color(0xFFD0D0D4),
                 )

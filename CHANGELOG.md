@@ -4,6 +4,13 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.105.0]
+### Changed
+- Home revamp: a taller hero with the title logo, genres and year, a short description, and "View episodes" and "Favourites" buttons; round Schedule and notification buttons on top.
+- "Top 10 trending now" shows big outlined rank numbers behind each poster and refreshes by itself every 5 minutes while the app is open.
+- The bottom bar is now a floating dark pill with an outline and a deeper pill behind the active tab.
+- "My List" is now called "Favourites" everywhere.
+
 ## [1.104.1]
 ### Changed
 - Dark Box is now the default caption look, with a cleaner, more minimal box and no outline.

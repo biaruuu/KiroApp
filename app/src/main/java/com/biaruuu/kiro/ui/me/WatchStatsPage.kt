@@ -140,7 +140,7 @@ fun WatchStatsPage() {
                 "Every finished episode: +15 XP",
                 "Every completed series: +100 XP",
                 "Every day you watch: +20 XP",
-                "Ratings +5 XP, My List +2 XP each",
+                "Ratings +5 XP, Favourites +2 XP each",
                 "Daily quests, streak milestones and badges give bonus XP",
             ).forEach { Text("• $it", color = Dim, fontSize = 13.sp, lineHeight = 20.sp) }
             Spacer(Modifier.height(8.dp))
@@ -301,7 +301,7 @@ private fun RecentActivityCard(events: List<Event>) {
                         when (e.kind) {
                             "watched" -> "Watched"
                             "completed" -> "Finished"
-                            "added" -> "Added to My List"
+                            "added" -> "Added to Favourites"
                             else -> "Rated"
                         } + if (e.detail.isNotEmpty()) " · ${e.detail}" else "",
                         color = Dim, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -339,7 +339,7 @@ private fun LibraryCard() {
         SectionTitle("Your library", action = "View all") { com.biaruuu.kiro.data.DeepLink.request.value = "t:library" }
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Count("My List", data.list.size, Modifier.weight(1f))
+            Count("Favourites", data.list.size, Modifier.weight(1f))
             Count("Completed", data.done.size, Modifier.weight(1f))
             Count("Rated", data.rated, Modifier.weight(1f))
             Count("Downloads", downloads.count { it.completed }, Modifier.weight(1f))
@@ -358,13 +358,13 @@ private fun LibraryCard() {
         }
         if (data.list.isNotEmpty()) {
             Spacer(Modifier.height(16.dp))
-            Text("My List", color = Dim, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            Text("Favourites", color = Dim, fontSize = 12.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.height(8.dp))
             PosterStrip(data.list.take(14).map { it.id to it.posterUrl })
         }
         if (data.done.isEmpty() && data.list.isEmpty()) {
             Spacer(Modifier.height(12.dp))
-            Text("Add shows to My List or finish a series and they show up here.", color = Dim, fontSize = 13.sp)
+            Text("Add shows to Favourites or finish a series and they show up here.", color = Dim, fontSize = 13.sp)
         }
     }
 }

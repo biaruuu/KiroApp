@@ -178,7 +178,7 @@ fun VersionPage() {
 private val Arrangement_Center = androidx.compose.foundation.layout.Arrangement.Center
 
 private val Faq = listOf(
-    "How do I save an anime to My List?" to "Log in, open an anime and tap My List. Guests can browse, but nothing is saved without an account.",
+    "How do I save an anime to Favourites?" to "Log in, open an anime and tap Favourites. Guests can browse, but nothing is saved without an account.",
     "How do I rate an anime?" to "Open the anime, tap Rate, pick a score (tap the left half of a star for a half star) and press Confirm.",
     "My library isn't showing on my other device." to "Make sure you are logged in with the same account and connected to the internet. Changes sync in real time.",
     "An episode won't play." to "Check your connection, then try again or pick another episode. Some episodes may not be available yet.",

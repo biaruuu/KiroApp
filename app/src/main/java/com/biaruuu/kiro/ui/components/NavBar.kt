@@ -2,6 +2,7 @@ package com.biaruuu.kiro.ui.components
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -106,7 +107,7 @@ private fun NavItem(
     }
 }
 
-/** Phone bottom bar: flat, dark, with a thin top divider. */
+/** Phone bottom bar: a floating dark pill with a thin outline; the active tab gets a deeper pill. */
 @Composable
 fun KiroBottomBar(
     destinations: List<NavDestination>,
@@ -114,28 +115,70 @@ fun KiroBottomBar(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.background(KiroBackground)) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(DividerColor),
-        )
+    val shape = RoundedCornerShape(32.dp)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(KiroBackground)
+            .navigationBarsPadding()
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 10.dp),
+    ) {
         Row(
             modifier = Modifier
-                .navigationBarsPadding()
                 .fillMaxWidth()
-                .height(60.dp),
+                .height(66.dp)
+                .clip(shape)
+                .background(Color(0xFF141416))
+                .border(1.dp, Color(0xFF2C2C30), shape)
+                .padding(horizontal = 6.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             destinations.forEachIndexed { index, destination ->
-                NavItem(
-                    destination = destination,
-                    selected = index == selectedIndex,
-                    onClick = { onSelect(index) },
+                val selected = index == selectedIndex
+                val tint = if (selected) Color.White else Color(0xFFB4B4BA)
+                Column(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight(),
-                )
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(26.dp))
+                        .background(if (selected) Color(0xFF050506) else Color.Transparent)
+                        .selectable(
+                            selected = selected,
+                            onClick = { onSelect(index) },
+                            role = Role.Tab,
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() },
+                        ),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(if (selected) destination.iconSelected else destination.icon),
+                            contentDescription = null,
+                            tint = tint,
+                            modifier = Modifier.size(24.dp),
+                        )
+                        if (destination.badge) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 4.dp, y = (-2).dp)
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(KiroAccent),
+                            )
+                        }
+                    }
+                    Text(
+                        text = destination.label,
+                        color = tint,
+                        fontSize = 11.sp,
+                        fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                        maxLines = 1,
+                        modifier = Modifier.padding(top = 3.dp),
+                    )
+                }
             }
         }
     }

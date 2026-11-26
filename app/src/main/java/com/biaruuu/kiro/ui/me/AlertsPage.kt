@@ -176,7 +176,7 @@ fun AlertsPage() {
                 }
                 SectionTitle("Alerts per show")
                 if (shows.isEmpty()) {
-                    Text("Add shows to My List or start watching to choose alerts for them.", color = Muted, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 4.dp))
+                    Text("Add shows to Favourites or start watching to choose alerts for them.", color = Muted, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 4.dp))
                 }
             }
             if (shows.isNotEmpty()) {

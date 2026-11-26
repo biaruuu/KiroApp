@@ -388,7 +388,7 @@ private fun DetailContent(
                 Spacer(Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = if (completedByMe) Arrangement.spacedBy(12.dp) else Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                     ActionButton(
-                        label = "My List",
+                        label = "Favourites",
                         icon = if (inList) R.drawable.fluent_checkmark_regular else R.drawable.fluent_add_regular,
                         tint = if (inList) KiroAccent else Color(0xFF9A9AA2),
                     ) {
@@ -399,7 +399,7 @@ private fun DetailContent(
                         inList = MyListStore.toggle(context, anime)
                         com.biaruuu.kiro.ui.i18n.I18nToast.make(
                             context,
-                            if (inList) "Added to My List" else "Removed from My List",
+                            if (inList) "Added to Favourites" else "Removed from Favourites",
                             Toast.LENGTH_SHORT,
                         ).show()
                     }

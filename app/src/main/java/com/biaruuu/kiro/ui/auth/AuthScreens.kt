@@ -159,7 +159,7 @@ private fun GuestConfirm(onBack: () -> Unit) {
                 )
                 Spacer(Modifier.height(14.dp))
                 Text(
-                    "You won't save your progress. As a guest, your My List, ratings, Continue Watching and watched episodes are not saved or synced.",
+                    "You won't save your progress. As a guest, your Favourites, ratings, Continue Watching and watched episodes are not saved or synced.",
                     color = Color(0xFFB4B4BA),
                     fontSize = 14.sp,
                     lineHeight = 21.sp,

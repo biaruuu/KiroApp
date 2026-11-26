@@ -24,6 +24,25 @@ class HomeViewModel : ViewModel() {
 
     init {
         load()
+        // Keep the Top 10 live: quietly reload every few minutes while the app is open.
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(REFRESH_MS)
+                if (_state.value is HomeUiState.Success) {
+                    try {
+                        _state.value = HomeUiState.Success(AniListRepository.loadHome())
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (_: Exception) {
+                        // keep showing what we have
+                    }
+                }
+            }
+        }
+    }
+
+    private companion object {
+        const val REFRESH_MS = 5 * 60 * 1000L
     }
 
     fun load() {
