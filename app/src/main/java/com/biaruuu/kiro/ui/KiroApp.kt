@@ -77,6 +77,9 @@ private val Destinations = listOf(
     NavDestination("Me", R.drawable.fluent_emoji_regular, R.drawable.fluent_emoji_filled),
 )
 
+/** Schedule has no tab of its own: it opens from the Home and Search screens. */
+private val ShownDestinations = Destinations.withIndex().filter { it.index != TAB_SCHEDULE }.map { it.index to it.value }
+
 @Composable
 fun KiroApp() {
     // Sizes are recomputed whenever the window changes (rotation, split-screen, foldables).
@@ -301,9 +304,9 @@ private fun KiroScaffold() {
         bottomBar = {
             if (!useRail) {
                 KiroBottomBar(
-                    destinations = Destinations,
-                    selectedIndex = tab,
-                    onSelect = selectTab,
+                    destinations = ShownDestinations.map { it.second },
+                    selectedIndex = ShownDestinations.indexOfFirst { it.first == tab },
+                    onSelect = { selectTab(ShownDestinations[it].first) },
                 )
             }
         },
@@ -311,9 +314,9 @@ private fun KiroScaffold() {
         Row(modifier = Modifier.fillMaxSize()) {
             if (useRail) {
                 KiroSideRail(
-                    destinations = Destinations,
-                    selectedIndex = tab,
-                    onSelect = selectTab,
+                    destinations = ShownDestinations.map { it.second },
+                    selectedIndex = ShownDestinations.indexOfFirst { it.first == tab },
+                    onSelect = { selectTab(ShownDestinations[it].first) },
                     width = dims.navRailWidth,
                 )
             }
@@ -350,6 +353,7 @@ private fun KiroScaffold() {
                 TAB_SEARCH -> SearchScreen(
                     gridState = searchGridState,
                     onAnimeClick = onAnimeClick,
+                    onSchedule = { selectTab(TAB_SCHEDULE) },
                     modifier = contentModifier,
                 )
 

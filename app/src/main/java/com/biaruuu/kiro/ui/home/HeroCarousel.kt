@@ -105,6 +105,7 @@ fun HeroCarousel(
     onSchedule: () -> Unit = {},
 ) {
     val dims = LocalDimens.current
+    val ui = com.biaruuu.kiro.ui.theme.rememberUi()
     val wide = dims.windowClass != WindowClass.Compact
     val screenHeightDp = LocalConfiguration.current.screenHeightDp
     val statusBar = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -128,7 +129,7 @@ fun HeroCarousel(
         // The hero runs behind the status bar, so add it on top of the design height. Never
         // take more than most of the screen (matters in landscape).
         val height = if (wide) minOf(maxWidth / dims.heroAspect + statusBar, (screenHeightDp * 0.88f).dp)
-        else minOf(maxWidth * 1.5f, (screenHeightDp * 0.72f).dp)
+        else minOf(maxWidth * 1.36f, (screenHeightDp * 0.66f).dp)
 
         Box(
             modifier = Modifier
@@ -152,15 +153,15 @@ fun HeroCarousel(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(horizontal = dims.gutter, vertical = 10.dp),
+                    .padding(horizontal = ui.dp(20f), vertical = ui.dp(10f)),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(ui.dp(44f))
                         .clip(CircleShape)
-                        .background(Color(0xFF1C1C1F).copy(alpha = 0.78f))
+                        .background(Color(0xFF1C1C1F).copy(alpha = 0.8f))
                         .clickable(onClick = onSchedule),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -168,14 +169,14 @@ fun HeroCarousel(
                         painter = painterResource(R.drawable.fluent_calendar_regular),
                         contentDescription = "Schedule",
                         tint = Color.White,
-                        modifier = Modifier.size(22.dp),
+                        modifier = Modifier.size(ui.dp(20f)),
                     )
                 }
                 Box(
                     modifier = Modifier
-                        .size(width = 58.dp, height = 44.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFF1C1C1F).copy(alpha = 0.78f))
+                        .size(width = ui.dp(58f), height = ui.dp(44f))
+                        .clip(RoundedCornerShape(ui.dp(14f)))
+                        .background(Color(0xFF1C1C1F).copy(alpha = 0.8f))
                         .clickable(onClick = onNotifications),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -183,14 +184,14 @@ fun HeroCarousel(
                         painter = painterResource(R.drawable.fluent_alert_regular),
                         contentDescription = "Notifications",
                         tint = Color.White,
-                        modifier = Modifier.size(22.dp),
+                        modifier = Modifier.size(ui.dp(20f)),
                     )
                     if (hasUnread) {
                         Box(
                             Modifier
                                 .align(Alignment.TopEnd)
-                                .padding(top = 9.dp, end = 15.dp)
-                                .size(9.dp)
+                                .padding(top = ui.dp(9f), end = ui.dp(16f))
+                                .size(ui.dp(8f))
                                 .clip(CircleShape)
                                 .background(Color(0xFFFF4D4F)),
                         )
@@ -201,15 +202,15 @@ fun HeroCarousel(
             Row(
                 modifier = Modifier
                     .align(if (wide) Alignment.BottomStart else Alignment.BottomCenter)
-                    .padding(bottom = 16.dp, start = if (wide) dims.gutter else 0.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    .padding(bottom = ui.dp(18f), start = if (wide) dims.gutter else 0.dp),
+                horizontalArrangement = Arrangement.spacedBy(ui.dp(6f)),
             ) {
                 repeat(heroes.size) { index ->
                     val selected = index == pagerState.currentPage
                     Box(
                         modifier = Modifier
-                            .height(6.dp)
-                            .width(if (selected) 24.dp else 6.dp)
+                            .height(ui.dp(5f))
+                            .width(if (selected) ui.dp(16f) else ui.dp(5f))
                             .clip(CircleShape)
                             .background(if (selected) Color.White else Color.White.copy(alpha = 0.35f)),
                     )
@@ -227,6 +228,7 @@ private fun PhoneHeroPage(
     onPlay: (Anime) -> Unit,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val ui = com.biaruuu.kiro.ui.theme.rememberUi()
     var inList by remember(anime.id) { mutableStateOf(com.biaruuu.kiro.data.MyListStore.isInList(context, anime.id)) }
     val line = remember(anime.id) {
         (anime.genres.take(3) + listOfNotNull(anime.seasonYear.takeIf { it > 0 }?.toString()))
@@ -255,22 +257,22 @@ private fun PhoneHeroPage(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 40.dp),
+                .padding(horizontal = ui.dp(20f))
+                .padding(bottom = ui.dp(46f)),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             TitleLogo(
                 logoUrl = meta?.logoUrl,
                 contentDescription = anime.displayTitle,
                 alignment = Alignment.Center,
-                maxHeight = 110.dp,
-                modifier = Modifier.fillMaxWidth(0.78f),
+                maxHeight = ui.dp(80f),
+                modifier = Modifier.fillMaxWidth(0.62f),
             ) {
                 Text(
                     text = anime.displayTitle,
                     style = TextStyle(shadow = TextShadow),
-                    fontSize = dims.heroTitle,
-                    lineHeight = dims.heroTitle * 1.3f,
+                    fontSize = ui.sp(26f),
+                    lineHeight = ui.sp(32f),
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White,
                     textAlign = TextAlign.Center,
@@ -279,11 +281,11 @@ private fun PhoneHeroPage(
                 )
             }
             if (line.isNotEmpty()) {
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(ui.dp(12f)))
                 Text(
                     text = line,
-                    color = Color(0xFFD6D6DC),
-                    fontSize = 14.sp,
+                    color = Color(0xFFC9C9D0),
+                    fontSize = ui.sp(13f),
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
@@ -291,24 +293,25 @@ private fun PhoneHeroPage(
                 )
             }
             if (blurb.isNotEmpty()) {
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(ui.dp(10f)))
                 Text(
                     text = blurb,
-                    color = Color(0xFFB4B4BC),
-                    fontSize = 14.sp,
-                    lineHeight = 19.sp,
+                    color = Color(0xFFA6A6AE),
+                    fontSize = ui.sp(12.5f),
+                    lineHeight = ui.sp(18f),
                     textAlign = TextAlign.Center,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Spacer(Modifier.height(18.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+            Spacer(Modifier.height(ui.dp(22f)))
+            Row(horizontalArrangement = Arrangement.spacedBy(ui.dp(10f)), modifier = Modifier.fillMaxWidth()) {
                 HeroButton(
                     label = "View episodes",
                     icon = R.drawable.fluent_play_filled,
                     filled = true,
                     onClick = { onPlay(anime) },
+                    ui = ui,
                     modifier = Modifier.weight(1f),
                 )
                 HeroButton(
@@ -327,6 +330,7 @@ private fun PhoneHeroPage(
                             ).show()
                         }
                     },
+                    ui = ui,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -340,13 +344,14 @@ private fun HeroButton(
     icon: Int,
     filled: Boolean,
     onClick: () -> Unit,
+    ui: com.biaruuu.kiro.ui.theme.Ui,
     modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier
-            .height(50.dp)
-            .clip(RoundedCornerShape(25.dp))
-            .background(if (filled) Color.White else Color(0xFF3C3C41).copy(alpha = 0.75f))
+            .height(ui.dp(44f))
+            .clip(RoundedCornerShape(50))
+            .background(if (filled) Color.White else Color(0xFF3C3C41).copy(alpha = 0.7f))
             .clickable(onClick = onClick),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
@@ -355,13 +360,13 @@ private fun HeroButton(
             painter = painterResource(icon),
             contentDescription = null,
             tint = if (filled) Color.Black else Color.White,
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(ui.dp(18f)),
         )
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(ui.dp(7f)))
         Text(
             label,
             color = if (filled) Color.Black else Color.White,
-            fontSize = 16.sp,
+            fontSize = ui.sp(15f),
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
         )

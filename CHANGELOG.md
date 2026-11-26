@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.105.1]
+### Changed
+- Home is now sized from the screen width, so the hero, buttons, Top 10 numbers and bottom bar are smaller and match the reference on any phone, whatever the system font size.
+- Smaller, tighter hero buttons, page dots, and 2:3 posters with thin outlined rank numbers in the Top 10 row.
+- Schedule no longer has a bottom tab; open it from the calendar button on Home or the one next to the search field.
+
 ## [1.105.0]
 ### Changed
 - Home revamp: a taller hero with the title logo, genres and year, a short description, and "View episodes" and "Favourites" buttons; round Schedule and notification buttons on top.

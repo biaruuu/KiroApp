@@ -115,33 +115,34 @@ fun KiroBottomBar(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(32.dp)
+    val ui = com.biaruuu.kiro.ui.theme.rememberUi()
+    val shape = RoundedCornerShape(50)
     Box(
         modifier = modifier
             .fillMaxWidth()
             .background(KiroBackground)
             .navigationBarsPadding()
-            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 10.dp),
+            .padding(start = ui.dp(14f), end = ui.dp(14f), top = ui.dp(6f), bottom = ui.dp(8f)),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(66.dp)
+                .height(ui.dp(62f))
                 .clip(shape)
-                .background(Color(0xFF141416))
+                .background(Color(0xFF151517))
                 .border(1.dp, Color(0xFF2C2C30), shape)
-                .padding(horizontal = 6.dp, vertical = 6.dp),
+                .padding(ui.dp(5f)),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             destinations.forEachIndexed { index, destination ->
                 val selected = index == selectedIndex
-                val tint = if (selected) Color.White else Color(0xFFB4B4BA)
+                val tint = if (selected) Color.White else Color(0xFFB8B8BE)
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .clip(RoundedCornerShape(26.dp))
-                        .background(if (selected) Color(0xFF050506) else Color.Transparent)
+                        .clip(RoundedCornerShape(50))
+                        .background(if (selected) Color(0xFF060607) else Color.Transparent)
                         .selectable(
                             selected = selected,
                             onClick = { onSelect(index) },
@@ -157,14 +158,14 @@ fun KiroBottomBar(
                             painter = painterResource(if (selected) destination.iconSelected else destination.icon),
                             contentDescription = null,
                             tint = tint,
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(ui.dp(21f)),
                         )
                         if (destination.badge) {
                             Box(
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
                                     .offset(x = 4.dp, y = (-2).dp)
-                                    .size(7.dp)
+                                    .size(6.dp)
                                     .clip(CircleShape)
                                     .background(KiroAccent),
                             )
@@ -173,10 +174,10 @@ fun KiroBottomBar(
                     Text(
                         text = destination.label,
                         color = tint,
-                        fontSize = 11.sp,
+                        fontSize = ui.sp(11f),
                         fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
                         maxLines = 1,
-                        modifier = Modifier.padding(top = 3.dp),
+                        modifier = Modifier.padding(top = ui.dp(3f)),
                     )
                 }
             }

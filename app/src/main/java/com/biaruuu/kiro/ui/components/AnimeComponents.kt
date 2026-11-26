@@ -162,7 +162,7 @@ fun AnimeRow(
     }
 }
 
-/** "Top 10" row: a big outlined number sits behind the left edge of each poster. */
+/** "Top 10" row: a big outlined number beside each poster, sized from the screen width. */
 @Composable
 fun RankedRow(
     title: String,
@@ -170,52 +170,52 @@ fun RankedRow(
     onAnimeClick: (Anime) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val dims = LocalDimens.current
+    val ui = com.biaruuu.kiro.ui.theme.rememberUi()
+    val posterWidth = ui.dp(106f)
+    val posterHeight = posterWidth / PosterAspect
+    val stroke = with(androidx.compose.ui.platform.LocalDensity.current) { 1.6.dp.toPx() }
     Column(modifier = modifier) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleLarge,
-            fontSize = dims.sectionTitle,
+            fontSize = ui.sp(19f),
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = dims.gutter),
+            modifier = Modifier.padding(horizontal = ui.dp(20f)),
         )
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(ui.dp(14f)))
         LazyRow(
-            contentPadding = PaddingValues(horizontal = dims.gutter),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            contentPadding = PaddingValues(horizontal = ui.dp(16f)),
+            horizontalArrangement = Arrangement.spacedBy(ui.dp(4f)),
         ) {
             itemsIndexed(items, key = { _, anime -> anime.id }, contentType = { _, _ -> "ranked" }) { index, anime ->
                 val rank = index + 1
-                val numberWidth = if (rank >= 10) 96.dp else 58.dp
-                Box(modifier = Modifier.width(dims.cardWidth + numberWidth)) {
-                    Text(
-                        text = "$rank",
-                        style = androidx.compose.ui.text.TextStyle(
-                            color = Color(0xFF8E8E93),
-                            drawStyle = androidx.compose.ui.graphics.drawscope.Stroke(
-                                width = 5f,
-                                join = androidx.compose.ui.graphics.StrokeJoin.Round,
+                Row(verticalAlignment = Alignment.Top) {
+                    Box(modifier = Modifier.height(posterHeight), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "$rank",
+                            style = androidx.compose.ui.text.TextStyle(
+                                color = Color(0xFF8E8E93),
+                                drawStyle = androidx.compose.ui.graphics.drawscope.Stroke(
+                                    width = stroke,
+                                    join = androidx.compose.ui.graphics.StrokeJoin.Round,
+                                ),
+                                letterSpacing = if (rank >= 10) ui.sp(-14f) else ui.sp(0f),
+                                platformStyle = androidx.compose.ui.text.PlatformTextStyle(includeFontPadding = false),
                             ),
-                            letterSpacing = if (rank >= 10) (-10).sp else 0.sp,
-                        ),
-                        fontSize = 130.sp,
-                        lineHeight = 130.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        softWrap = false,
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                            .offset(y = (-14).dp),
-                    )
+                            fontSize = ui.sp(148f),
+                            lineHeight = ui.sp(148f),
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
                     PosterCard(
                         anime = anime,
                         onClick = { onAnimeClick(anime) },
                         titleMaxLines = 1,
-                        compact = true,
-                        modifier = Modifier.width(dims.cardWidth).align(Alignment.CenterEnd),
+                        modifier = Modifier.width(posterWidth),
                     )
                 }
             }

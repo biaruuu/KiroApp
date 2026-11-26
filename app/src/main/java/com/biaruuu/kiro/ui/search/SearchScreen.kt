@@ -131,6 +131,7 @@ fun SearchScreen(
     gridState: LazyGridState,
     onAnimeClick: (Anime) -> Unit,
     modifier: Modifier = Modifier,
+    onSchedule: () -> Unit = {},
     viewModel: SearchViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -176,6 +177,7 @@ fun SearchScreen(
                     viewModel.clearQuery()
                     focusManager.clearFocus()
                 },
+                onSchedule = onSchedule,
             )
             Divider()
             if (!focused) {
@@ -268,6 +270,7 @@ private fun SearchField(
     onClear: () -> Unit,
     onSearch: () -> Unit,
     onCancel: () -> Unit,
+    onSchedule: () -> Unit,
 ) {
     val dims = LocalDimens.current
     Row(
@@ -337,6 +340,25 @@ private fun SearchField(
                 }
             },
         )
+        if (!focused) {
+            // Schedule lives here now that it has no tab of its own.
+            Box(
+                modifier = Modifier
+                    .padding(start = 10.dp)
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(FieldBackground)
+                    .clickable(onClick = onSchedule),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.fluent_calendar_regular),
+                    contentDescription = "Schedule",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
         if (focused) {
             Text(
                 text = "Cancel",
