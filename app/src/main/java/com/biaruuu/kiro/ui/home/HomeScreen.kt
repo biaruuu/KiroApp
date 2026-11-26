@@ -78,7 +78,7 @@ fun HomeScreen(
             modifier = modifier,
         )
 
-        is HomeUiState.Success -> Box(modifier = modifier.fillMaxSize()) {
+        is HomeUiState.Success -> Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),

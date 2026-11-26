@@ -236,20 +236,20 @@ private fun PhoneHeroPage(
     }
     val blurb = remember(anime.id) { NativeCore.cleanDescription(anime.description).replace('\n', ' ').trim() }
 
-    Box(modifier = Modifier.fillMaxSize().background(KiroBackground)) {
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         com.biaruuu.kiro.ui.components.HdArtwork(anime, Modifier.fillMaxSize(), anime.displayTitle)
-        Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.18f)))
+        Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.32f)))
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .fillMaxHeight(0.62f)
+                .fillMaxHeight(0.7f)
                 .background(
                     Brush.verticalGradient(
                         0f to Color.Transparent,
-                        0.5f to KiroBackground.copy(alpha = 0.7f),
-                        0.85f to KiroBackground,
-                        1f to KiroBackground,
+                        0.35f to Color.Black.copy(alpha = 0.55f),
+                        0.65f to Color.Black.copy(alpha = 0.93f),
+                        1f to Color.Black,
                     ),
                 ),
         )

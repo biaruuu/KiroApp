@@ -307,6 +307,7 @@ private fun KiroScaffold() {
                     destinations = ShownDestinations.map { it.second },
                     selectedIndex = ShownDestinations.indexOfFirst { it.first == tab },
                     onSelect = { selectTab(ShownDestinations[it].first) },
+                    backdrop = if (tab == TAB_HOME) Color.Black else KiroBackground,
                 )
             }
         },
@@ -330,7 +331,7 @@ private fun KiroScaffold() {
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .background(KiroBackground)
+                    .background(if (tab == TAB_HOME) Color.Black else KiroBackground)
                     .padding(bottom = innerPadding.calculateBottomPadding()),
                 transitionSpec = {
                     androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(220)) togetherWith

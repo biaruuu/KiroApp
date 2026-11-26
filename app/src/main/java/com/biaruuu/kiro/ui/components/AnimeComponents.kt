@@ -172,8 +172,8 @@ fun RankedRow(
     modifier: Modifier = Modifier,
 ) {
     val ui = com.biaruuu.kiro.ui.theme.rememberUi()
-    val posterWidth = ui.dp(106f)
-    val posterHeight = posterWidth / PosterAspect
+    val posterWidth = ui.dp(122f)
+    val posterHeight = posterWidth * 1.5f
     val stroke = with(androidx.compose.ui.platform.LocalDensity.current) { 1.6.dp.toPx() }
     Column(modifier = modifier) {
         Text(
@@ -205,19 +205,33 @@ fun RankedRow(
                                 letterSpacing = if (rank >= 10) ui.sp(-14f) else ui.sp(0f),
                                 platformStyle = androidx.compose.ui.text.PlatformTextStyle(includeFontPadding = false),
                             ),
-                            fontSize = ui.sp(148f),
-                            lineHeight = ui.sp(148f),
+                            fontSize = ui.sp(172f),
+                            lineHeight = ui.sp(172f),
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             softWrap = false,
                         )
                     }
-                    PosterCard(
-                        anime = anime,
-                        onClick = { onAnimeClick(anime) },
-                        titleMaxLines = 1,
-                        modifier = Modifier.width(posterWidth),
-                    )
+                    Column(modifier = Modifier.width(posterWidth).clickable { onAnimeClick(anime) }) {
+                        AsyncImage(
+                            model = anime.posterUrl,
+                            contentDescription = anime.displayTitle,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(posterHeight)
+                                .clip(RoundedCornerShape(ui.dp(10f)))
+                                .background(Color(0xFF1C1C1F)),
+                        )
+                        Text(
+                            text = anime.displayTitle,
+                            color = Color(0xFF8E8E93),
+                            fontSize = ui.sp(12f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = ui.dp(8f)),
+                        )
+                    }
                 }
             }
         }

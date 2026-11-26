@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.105.2]
+### Changed
+- Home now uses a true black background like the reference, with a darker hero fade so the title, genres and buttons stay readable over bright artwork.
+- Top 10 posters are bigger (2:3) with larger outlined numbers, and the anime name under each poster is now small and grey.
+
 ## [1.105.1]
 ### Changed
 - Home is now sized from the screen width, so the hero, buttons, Top 10 numbers and bottom bar are smaller and match the reference on any phone, whatever the system font size.

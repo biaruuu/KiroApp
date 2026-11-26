@@ -114,13 +114,14 @@ fun KiroBottomBar(
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    backdrop: Color = KiroBackground,
 ) {
     val ui = com.biaruuu.kiro.ui.theme.rememberUi()
     val shape = RoundedCornerShape(50)
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(KiroBackground)
+            .background(backdrop)
             .navigationBarsPadding()
             .padding(start = ui.dp(14f), end = ui.dp(14f), top = ui.dp(6f), bottom = ui.dp(8f)),
     ) {
