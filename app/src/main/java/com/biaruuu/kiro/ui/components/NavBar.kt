@@ -130,38 +130,20 @@ fun KiroBottomBar(
                 .fillMaxWidth()
                 .height(ui.dp(62f))
                 .clip(shape)
-                .background(Color(0xFF1C1C1E).copy(alpha = 0.58f))
-                .background(
-                    androidx.compose.ui.graphics.Brush.verticalGradient(
-                        listOf(Color.White.copy(alpha = 0.14f), Color.White.copy(alpha = 0.04f)),
-                    ),
-                )
-                .border(
-                    1.dp,
-                    androidx.compose.ui.graphics.Brush.linearGradient(
-                        listOf(Color.White.copy(alpha = 0.42f), Color.White.copy(alpha = 0.07f), Color.White.copy(alpha = 0.2f)),
-                    ),
-                    shape,
-                )
+                .background(Color(0xFF151517))
+                .border(1.dp, Color(0xFF2C2C30), shape)
                 .padding(ui.dp(5f)),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             destinations.forEachIndexed { index, destination ->
                 val selected = index == selectedIndex
-                val tint = if (selected) Color.White else Color.White.copy(alpha = 0.64f)
+                val tint = if (selected) Color.White else Color(0xFFB8B8BE)
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
                         .clip(RoundedCornerShape(50))
-                        .background(if (selected) Color.White.copy(alpha = 0.16f) else Color.Transparent)
-                        .then(
-                            if (selected) {
-                                Modifier.border(1.dp, Color.White.copy(alpha = 0.22f), RoundedCornerShape(50))
-                            } else {
-                                Modifier
-                            },
-                        )
+                        .background(if (selected) Color(0xFF060607) else Color.Transparent)
                         .selectable(
                             selected = selected,
                             onClick = { onSelect(index) },

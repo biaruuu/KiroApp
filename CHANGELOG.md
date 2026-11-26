@@ -4,9 +4,9 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
-## [1.107.0]
+## [1.107.1]
 ### Changed
-- Liquid-glass bottom bar: a translucent frosted pill with a soft light edge and a glass highlight behind the active tab. On Home and Search the content now scrolls underneath it.
+- Removed the liquid-glass bottom bar; it is back to the solid dark pill, and Home and Search no longer scroll under it.
 
 ## [1.106.4]
 ### Changed

@@ -622,7 +622,7 @@ private fun ResultsGrid(
         LazyVerticalGrid(
             state = gridState,
             columns = GridCells.Fixed(columns),
-            contentPadding = PaddingValues(start = dims.gutter, end = dims.gutter, bottom = 110.dp),
+            contentPadding = PaddingValues(start = dims.gutter, end = dims.gutter, bottom = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing),
             verticalArrangement = Arrangement.spacedBy(18.dp),
             modifier = Modifier.fillMaxSize(),
