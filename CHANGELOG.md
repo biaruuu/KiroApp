@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.111.0]
+
+### Added
+- Home hero now shows the genres and year, a short description tagline, and a Favourites button beside Play.
+
 ## [1.110.0]
 
 ### Changed

@@ -260,8 +260,81 @@ private fun PhoneHeroPage(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Spacer(Modifier.height(18.dp))
-            PlayButton(onClick = { onPlay(anime) })
+            val info = remember(anime.id) { genreLine(anime) }
+            if (info.isNotEmpty()) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = info,
+                    style = TextStyle(shadow = TextShadow),
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            val line = remember(anime.id) { tagline(anime.description) }
+            if (line.isNotEmpty()) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = line,
+                    style = TextStyle(shadow = TextShadow),
+                    color = Color.White.copy(alpha = 0.72f),
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+            HeroButtons(anime, onPlay)
+        }
+    }
+}
+
+/** "Action  ·  Adventure  ·  Drama  ·  2016" */
+private fun genreLine(anime: Anime): String =
+    (anime.genres.take(3) + listOfNotNull(anime.seasonYear.takeIf { it > 0 }?.toString()))
+        .joinToString("  ·  ")
+
+/** Play + Favourites side by side; Favourites toggles the show in the user's list. */
+@Composable
+private fun HeroButtons(anime: Anime, onPlay: (Anime) -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var inList by androidx.compose.runtime.remember(anime.id) {
+        androidx.compose.runtime.mutableStateOf(com.biaruuu.kiro.data.MyListStore.isInList(context, anime.id))
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        PlayButton(onClick = { onPlay(anime) })
+        Button(
+            onClick = {
+                if (!com.biaruuu.kiro.data.CloudSync.allowed(context)) {
+                    com.biaruuu.kiro.data.CloudSync.requireLogin(context)
+                } else {
+                    inList = com.biaruuu.kiro.data.MyListStore.toggle(context, anime)
+                    com.biaruuu.kiro.ui.i18n.I18nToast.make(
+                        context,
+                        if (inList) "Added to Favourites" else "Removed from Favourites",
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            },
+            shape = RoundedCornerShape(20.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.White.copy(alpha = 0.18f),
+                contentColor = Color.White,
+            ),
+            modifier = Modifier.height(38.dp),
+        ) {
+            Icon(
+                painter = painterResource(if (inList) R.drawable.fluent_checkmark_regular else R.drawable.fluent_add_regular),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text("Favourites", fontWeight = FontWeight.Medium, fontSize = 15.sp)
         }
     }
 }
@@ -303,7 +376,7 @@ private fun WideHeroPage(
                 overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(20.dp))
-            PlayButton(onClick = { onPlay(anime) })
+            HeroButtons(anime, onPlay)
         }
         com.biaruuu.kiro.ui.components.HdArtwork(
             anime,
