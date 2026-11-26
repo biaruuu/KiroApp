@@ -3,6 +3,7 @@ package com.biaruuu.kiro.ui.search
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.offset
@@ -98,11 +99,12 @@ import kotlinx.coroutines.launch
 import java.text.NumberFormat
 
 // Colours sampled from the reference screens.
-private val HeaderBackground = Color(0xFF121212)
-private val FieldBackground = Color(0xFF18181B)
-private val DividerColor = Color(0xFF333335)
+private val HeaderBackground = Color.Black
+private val FieldBackground = Color(0xFF151517)
+private val FieldBorder = Color(0xFF2C2C30)
+private val DividerColor = Color(0xFF222226)
 private val MutedText = Color(0xFF8E8E93)
-private val SheetBackground = Color(0xFF18181B)
+private val SheetBackground = Color(0xFF151517)
 
 // These match AniList's genre names exactly. "All" is added in front and means "no genre".
 private val GENRES = listOf(
@@ -151,7 +153,7 @@ fun SearchScreen(
         focusManager.clearFocus()
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize().background(Color.Black)) {
         // Black strip behind the system status bar, as in the reference.
         Spacer(
             Modifier
@@ -256,8 +258,7 @@ private fun Divider() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(1.dp)
-            .background(DividerColor),
+            .height(0.dp),
     )
 }
 
@@ -272,11 +273,11 @@ private fun SearchField(
     onCancel: () -> Unit,
     onSchedule: () -> Unit,
 ) {
-    val dims = LocalDimens.current
+    val ui = com.biaruuu.kiro.ui.theme.rememberUi()
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = dims.gutter, vertical = 12.dp),
+            .padding(horizontal = ui.dp(16f), vertical = ui.dp(10f)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BasicTextField(
@@ -293,15 +294,16 @@ private fun SearchField(
             keyboardActions = KeyboardActions(onSearch = { onSearch() }),
             modifier = Modifier
                 .weight(1f)
-                .height(40.dp)
-                .clip(RoundedCornerShape(20.dp))
+                .height(ui.dp(44f))
+                .clip(RoundedCornerShape(50))
                 .background(FieldBackground)
+                .border(1.dp, FieldBorder, RoundedCornerShape(50))
                 .onFocusChanged { onFocusChange(it.isFocused) },
             decorationBox = { inner ->
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 10.dp),
+                        .padding(horizontal = ui.dp(14f)),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
@@ -344,10 +346,11 @@ private fun SearchField(
             // Schedule lives here now that it has no tab of its own.
             Box(
                 modifier = Modifier
-                    .padding(start = 10.dp)
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(20.dp))
+                    .padding(start = ui.dp(10f))
+                    .size(ui.dp(44f))
+                    .clip(RoundedCornerShape(50))
                     .background(FieldBackground)
+                    .border(1.dp, FieldBorder, RoundedCornerShape(50))
                     .clickable(onClick = onSchedule),
                 contentAlignment = Alignment.Center,
             ) {
@@ -389,7 +392,7 @@ private fun SearchOverlay(
 ) {
     val dims = LocalDimens.current
     val q = query.trim()
-    LazyColumn(modifier = Modifier.fillMaxSize().background(com.biaruuu.kiro.ui.theme.KiroBackground)) {
+    LazyColumn(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         if (q.isEmpty()) {
             if (recents.isNotEmpty()) {
                 item(key = "recent-title") {
@@ -471,15 +474,14 @@ private fun SearchOverlay(
     }
 }
 
-/** Genre text tabs. The white line slides to the picked one; "All" clears the genre filter. */
+/** Genre chips: the picked one is a white pill, the rest are quiet outlined pills. "All" clears the filter. */
 @Composable
 private fun GenreTabs(
     selected: String,
     onSelect: (String) -> Unit,
     onSelectAll: () -> Unit,
 ) {
-    val dims = LocalDimens.current
-    val density = LocalDensity.current
+    val ui = com.biaruuu.kiro.ui.theme.rememberUi()
     val tabs = remember { listOf(ALL) + GENRES }
     val index = tabs.indexOf(selected).coerceAtLeast(0)
     val scroll = rememberScrollState()
@@ -487,60 +489,52 @@ private fun GenreTabs(
     val widths = remember { mutableStateListOf<Float>().apply { repeat(tabs.size) { add(0f) } } }
     var viewport by remember { mutableIntStateOf(0) }
 
-    val lineX by animateFloatAsState(lefts[index], label = "genre-line-x")
-    val lineW by animateFloatAsState(widths[index], label = "genre-line-w")
-
     LaunchedEffect(index, viewport, widths[index]) {
         if (viewport > 0 && widths[index] > 0f) {
             scroll.animateScrollTo((lefts[index] + widths[index] / 2f - viewport / 2f).roundToInt().coerceAtLeast(0))
         }
     }
 
-    Box(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(44.dp)
             .onSizeChanged { viewport = it.width }
-            .horizontalScroll(scroll),
+            .horizontalScroll(scroll)
+            .padding(vertical = ui.dp(6f)),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(modifier = Modifier.fillMaxHeight()) {
-            Spacer(Modifier.width(dims.gutter))
-            tabs.forEachIndexed { i, tab ->
-                val isSelected = i == index
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .onGloballyPositioned {
-                            lefts[i] = it.positionInParent().x
-                            widths[i] = it.size.width.toFloat()
-                        }
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                        ) {
-                            if (tab == ALL) onSelectAll() else if (!isSelected) onSelect(tab)
-                        },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = tab,
-                        color = if (isSelected) Color.White else MutedText,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                    )
-                }
-                Spacer(Modifier.width(if (i == tabs.lastIndex) dims.gutter else 24.dp))
+        Spacer(Modifier.width(ui.dp(16f)))
+        tabs.forEachIndexed { i, tab ->
+            val isSelected = i == index
+            Box(
+                modifier = Modifier
+                    .onGloballyPositioned {
+                        lefts[i] = it.positionInParent().x
+                        widths[i] = it.size.width.toFloat()
+                    }
+                    .height(ui.dp(34f))
+                    .clip(RoundedCornerShape(50))
+                    .background(if (isSelected) Color.White else FieldBackground)
+                    .border(1.dp, if (isSelected) Color.White else FieldBorder, RoundedCornerShape(50))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                    ) {
+                        if (tab == ALL) onSelectAll() else if (!isSelected) onSelect(tab)
+                    }
+                    .padding(horizontal = ui.dp(16f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = tab,
+                    color = if (isSelected) Color.Black else Color(0xFFC4C4CA),
+                    fontSize = ui.sp(13f),
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                    maxLines = 1,
+                )
             }
+            Spacer(Modifier.width(if (i == tabs.lastIndex) ui.dp(16f) else ui.dp(8f)))
         }
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .offset { IntOffset(lineX.roundToInt(), 0) }
-                .width(with(density) { lineW.toDp() })
-                .height(2.dp)
-                .background(Color.White),
-        )
     }
 }
 
@@ -585,7 +579,7 @@ private fun ResultsGrid(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
+                        .height(44.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
@@ -668,7 +662,7 @@ private fun SortSheet(
         sheetState = sheetState,
         containerColor = SheetBackground,
         scrimColor = Color.Black.copy(alpha = 0.72f),
-        shape = RectangleShape,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         tonalElevation = 0.dp,
         dragHandle = null,
     ) {

@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.106.0]
+### Changed
+- Search revamp: pure black, minimal layout like Home. A rounded outlined search field with the Schedule button beside it, genre chips (the picked one is a white pill) instead of underlined tabs, a quieter results header, and a rounded sort sheet.
+- Sizes scale with the screen width so Search fits any phone.
+
 ## [1.105.3]
 ### Changed
 - Top 10: the anime name under each poster is now brighter, larger and can use two lines, so it is easy to read.
