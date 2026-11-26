@@ -62,6 +62,13 @@ fun HomeScreen(
         com.biaruuu.kiro.data.WatchedStore.completed(appContext).take(1).forEach { recent.add(Triple(it.at, it.id, it.title)) }
         recent.sortedByDescending { it.first }.map { it.second to it.third }.distinctBy { it.first }
     }
+    // Anime with a Filipino dub, from the developer's library; it updates live.
+    val dubbed by com.biaruuu.kiro.data.TagalogDub.shows.collectAsState()
+    LaunchedEffect(Unit) {
+        if (com.biaruuu.kiro.data.auth.AuthRepository.isConfigured(appContext)) {
+            runCatching { com.biaruuu.kiro.data.TagalogDub.warm() }
+        }
+    }
     var because by remember { mutableStateOf<List<com.biaruuu.kiro.data.BecauseYouWatched.Row>>(emptyList()) }
     LaunchedEffect(seeds) {
         because = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -99,6 +106,11 @@ fun HomeScreen(
             if (history.isNotEmpty()) {
                 item(key = "continue", contentType = "continue") {
                     ContinueWatchingRow(items = history, onContinue = onContinue)
+                }
+            }
+            if (dubbed.isNotEmpty()) {
+                item(key = "tagalog-dubbed", contentType = "row") {
+                    AnimeRow(title = "Tagalog Dubbed", items = dubbed, onAnimeClick = onAnimeClick)
                 }
             }
             current.content.sections.forEachIndexed { index, section ->

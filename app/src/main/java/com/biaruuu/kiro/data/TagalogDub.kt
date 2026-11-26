@@ -27,6 +27,21 @@ object TagalogDub {
     private const val COLLECTION = "tagdub"
     val entries = MutableStateFlow<List<Entry>>(emptyList())
 
+    /** One card per anime that has at least one Filipino dub episode, newest first. Live: a new dub appears here at once. */
+    val shows = MutableStateFlow<List<Anime>>(emptyList())
+
+    private fun toShows(all: Collection<Entry>): List<Anime> =
+        all.groupBy { it.anilistId }.values
+            .sortedByDescending { list -> list.maxOf { it.createdAt } }
+            .map { list ->
+                val e = list.maxByOrNull { it.createdAt }!!
+                val poster = list.firstOrNull { it.poster.isNotBlank() }?.poster
+                Anime(
+                    e.anilistId, e.title, e.title, null, poster, poster, null, null, null,
+                    0, list.maxOf { it.episode }, null, 0, emptyList(), null,
+                )
+            }
+
     fun docId(animeId: Int, episode: Int) = "${animeId}_$episode"
 
     private fun parse(d: com.google.firebase.firestore.DocumentSnapshot): Entry? {
@@ -89,6 +104,7 @@ object TagalogDub {
                         val m = HashMap<String, Entry>()
                         for (d in snap.documents) parse(d)?.let { m[d.id] = it }
                         index = m
+                        shows.value = toShows(m.values)
                         firstSnapshot.countDown()
                     } else if (err != null) {
                         firstSnapshot.countDown()

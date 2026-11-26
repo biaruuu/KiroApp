@@ -476,6 +476,72 @@ private fun ReportsTab() {
     }
 }
 
+/** The live prompt: sent over the WebSocket, it fades in on every open phone at once, with your verified name. */
+@Composable
+private fun LiveAnnounceCard() {
+    val context = LocalContext.current
+    val profile by ProfileRepository.profile.collectAsState()
+    val live by com.biaruuu.kiro.data.GlobalSocket.current.collectAsState()
+    val online by com.biaruuu.kiro.data.GlobalSocket.online.collectAsState()
+    val connected by com.biaruuu.kiro.data.GlobalSocket.connected.collectAsState()
+    val prefs = remember { context.getSharedPreferences("kiro_global", android.content.Context.MODE_PRIVATE) }
+    var token by remember { mutableStateOf(prefs.getString("admin_token", "").orEmpty()) }
+    var text by remember { mutableStateOf("") }
+    var seconds by remember { mutableIntStateOf(12) }
+    var busy by remember { mutableStateOf(false) }
+    var status by remember { mutableStateOf<String?>(null) }
+
+    AdmCard {
+        AdmSectionTitle(
+            "Live prompt",
+            if (connected) "Shows on every open phone right now ($online online), with your verified name and like / dislike buttons."
+            else "Connecting to the server...",
+        )
+        Spacer(Modifier.height(10.dp))
+        UnderlineField(
+            value = token, onChange = { token = it; prefs.edit().putString("admin_token", it.trim()).apply() }, hint = "Admin token (ADMIN_TOKEN on the server)",
+            keyboardType = KeyboardType.Password, imeAction = ImeAction.Next, onImeAction = {}, autoFocus = false,
+            transformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+        )
+        Spacer(Modifier.height(10.dp))
+        UnderlineField(
+            value = text, onChange = { if (it.length <= 240) text = it }, hint = "Message",
+            keyboardType = KeyboardType.Text, imeAction = ImeAction.Default, onImeAction = {}, autoFocus = false, singleLine = false,
+        )
+        Text("${text.length}/240", color = Muted, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("Stays", color = Muted, fontSize = 12.sp)
+            listOf(8, 12, 20, 30).forEach { sec ->
+                Box(Modifier.clickable { seconds = sec }) {
+                    AdmTag("${sec}s", strong = sec == seconds)
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        PrimaryButton(
+            label = "Send live prompt",
+            enabled = connected && token.isNotBlank() && text.isNotBlank() && profile.username.isNotBlank(),
+            busy = busy,
+            onClick = {
+                busy = true
+                status = null
+                com.biaruuu.kiro.data.GlobalSocket.announce(token.trim(), text.trim(), profile.username, seconds * 1000L) { err ->
+                    busy = false
+                    status = err ?: "Sent."
+                    if (err == null) text = ""
+                }
+            },
+        )
+        status?.let { Text(it, color = if (it == "Sent.") Muted else AdmRed, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp)) }
+        live?.let { l ->
+            Spacer(Modifier.height(8.dp))
+            Text("Live now: ${l.likes} likes, ${l.dislikes} dislikes", color = AdmSoft, fontSize = 12.sp)
+            AdmTextAction("Hide it now", Muted) { com.biaruuu.kiro.data.GlobalSocket.hide(token.trim()) }
+        }
+    }
+}
+
 @Composable
 private fun AnnounceTab() {
     val context = LocalContext.current
@@ -489,6 +555,7 @@ private fun AnnounceTab() {
         contentPadding = AdmListPad,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        item { LiveAnnounceCard() }
         item {
             AdmCard {
                 AdmSectionTitle(if (editing == null) "New announcement" else "Edit announcement", "Appears in every user's Notifications, right away for anyone with Kiro open.")

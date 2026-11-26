@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.108.0]
+### Added
+- "Tagalog Dubbed" row on Home, above Top 10 trending: every anime that has a Filipino dub added in the Admin panel appears there at once.
+- Live prompt: the developer can send a message that fades in on every open phone in real time over the WebSocket, with the verified developer name, a time-left line and Like / Dislike buttons whose totals update live for everyone.
+- Admin > Announce > Live prompt to send it, with the live like and dislike totals.
+
 ## [1.107.1]
 ### Changed
 - Removed the liquid-glass bottom bar; it is back to the solid dark pill, and Home and Search no longer scroll under it.

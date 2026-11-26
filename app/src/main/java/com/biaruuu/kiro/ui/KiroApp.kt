@@ -95,7 +95,37 @@ fun KiroApp() {
             }
         }
 
-        if (showSplash) SplashScreen() else AuthGate { KiroScaffold() }
+        if (showSplash) SplashScreen() else AuthGate {
+            Box(Modifier.fillMaxSize()) {
+                KiroScaffold()
+                com.biaruuu.kiro.ui.components.LiveAnnouncementOverlay()
+                LiveChannel()
+            }
+        }
+    }
+}
+
+/** Keeps the live channel to the server open while the app is on screen. */
+@Composable
+private fun LiveChannel() {
+    val context = LocalContext.current
+    val owner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(owner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            when (event) {
+                androidx.lifecycle.Lifecycle.Event.ON_START -> com.biaruuu.kiro.data.GlobalSocket.start(context)
+                androidx.lifecycle.Lifecycle.Event.ON_STOP -> com.biaruuu.kiro.data.GlobalSocket.stop()
+                else -> Unit
+            }
+        }
+        owner.lifecycle.addObserver(observer)
+        if (owner.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)) {
+            com.biaruuu.kiro.data.GlobalSocket.start(context)
+        }
+        onDispose {
+            owner.lifecycle.removeObserver(observer)
+            com.biaruuu.kiro.data.GlobalSocket.stop()
+        }
     }
 }
 
