@@ -2,11 +2,6 @@ package com.biaruuu.kiro.ui.home
 
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import com.biaruuu.kiro.ui.theme.pressScale
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -103,10 +98,8 @@ fun HeroCarousel(
     onNotifications: () -> Unit,
     modifier: Modifier = Modifier,
     hasUnread: Boolean = false,
-    onSchedule: () -> Unit = {},
 ) {
     val dims = LocalDimens.current
-    val ui = com.biaruuu.kiro.ui.theme.rememberUi()
     val wide = dims.windowClass != WindowClass.Compact
     val screenHeightDp = LocalConfiguration.current.screenHeightDp
     val statusBar = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -129,8 +122,7 @@ fun HeroCarousel(
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         // The hero runs behind the status bar, so add it on top of the design height. Never
         // take more than most of the screen (matters in landscape).
-        val height = if (wide) minOf(maxWidth / dims.heroAspect + statusBar, (screenHeightDp * 0.88f).dp)
-        else minOf(maxWidth * 1.36f, (screenHeightDp * 0.66f).dp)
+        val height = minOf(maxWidth / dims.heroAspect + statusBar, (screenHeightDp * 0.88f).dp)
 
         Box(
             modifier = Modifier
@@ -154,48 +146,38 @@ fun HeroCarousel(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(horizontal = ui.dp(20f), vertical = ui.dp(10f)),
+                    .padding(horizontal = dims.gutter, vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(ui.dp(44f))
-                        .clip(CircleShape)
-                        .background(Color(0xFF1C1C1F).copy(alpha = 0.8f))
-                        .clickable(onClick = onSchedule),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.fluent_calendar_regular),
-                        contentDescription = "Schedule",
-                        tint = Color.White,
-                        modifier = Modifier.size(ui.dp(20f)),
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .size(width = ui.dp(58f), height = ui.dp(44f))
-                        .clip(RoundedCornerShape(ui.dp(14f)))
-                        .background(Color(0xFF1C1C1F).copy(alpha = 0.8f))
-                        .clickable(onClick = onNotifications),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.fluent_alert_regular),
-                        contentDescription = "Notifications",
-                        tint = Color.White,
-                        modifier = Modifier.size(ui.dp(20f)),
-                    )
-                    if (hasUnread) {
-                        Box(
-                            Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(top = ui.dp(9f), end = ui.dp(16f))
-                                .size(ui.dp(8f))
-                                .clip(CircleShape)
-                                .background(Color(0xFFFF4D4F)),
+                Text(
+                    text = "KIRO",
+                    style = TextStyle(shadow = TextShadow),
+                    color = Color.White,
+                    fontSize = dims.wordmark,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 4.sp,
+                )
+                IconButton(onClick = onNotifications) {
+                    // Plain white bell like the reference. A faint offset copy underneath keeps
+                    // it readable on bright artwork without putting a dark disc behind it.
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(R.drawable.fluent_alert_regular),
+                            contentDescription = "Notifications",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp),
                         )
+                        if (hasUnread) {
+                            Box(
+                                Modifier
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 1.dp, y = (-1).dp)
+                                    .size(10.dp)
+                                    .clip(androidx.compose.foundation.shape.CircleShape)
+                                    .background(Color(0xFFFF4D4F)),
+                            )
+                        }
                     }
                 }
             }
@@ -203,15 +185,15 @@ fun HeroCarousel(
             Row(
                 modifier = Modifier
                     .align(if (wide) Alignment.BottomStart else Alignment.BottomCenter)
-                    .padding(bottom = ui.dp(18f), start = if (wide) dims.gutter else 0.dp),
-                horizontalArrangement = Arrangement.spacedBy(ui.dp(6f)),
+                    .padding(bottom = 14.dp, start = if (wide) dims.gutter else 0.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 repeat(heroes.size) { index ->
                     val selected = index == pagerState.currentPage
                     Box(
                         modifier = Modifier
-                            .height(ui.dp(5f))
-                            .width(if (selected) ui.dp(16f) else ui.dp(5f))
+                            .height(4.dp)
+                            .width(if (selected) 16.dp else 4.dp)
                             .clip(CircleShape)
                             .background(if (selected) Color.White else Color.White.copy(alpha = 0.35f)),
                     )
@@ -221,36 +203,33 @@ fun HeroCarousel(
     }
 }
 
-/** Phone: full-bleed cover art, a fade into the page, then logo, genres, blurb and two buttons. */
+/** Phone: full-bleed cover art with a flat dim layer and centred text. No gradients. */
 @Composable
 private fun PhoneHeroPage(
     anime: Anime,
     dims: Dimens,
     onPlay: (Anime) -> Unit,
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val ui = com.biaruuu.kiro.ui.theme.rememberUi()
-    var inList by remember(anime.id) { mutableStateOf(com.biaruuu.kiro.data.MyListStore.isInList(context, anime.id)) }
-    val line = remember(anime.id) {
-        (anime.genres.take(3) + listOfNotNull(anime.seasonYear.takeIf { it > 0 }?.toString()))
-            .joinToString("  •  ")
-    }
-    val blurb = remember(anime.id) { NativeCore.cleanDescription(anime.description).replace('\n', ' ').trim() }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+    Box(modifier = Modifier.fillMaxSize().background(KiroBackground)) {
         com.biaruuu.kiro.ui.components.HdArtwork(anime, Modifier.fillMaxSize(), anime.displayTitle)
-        Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.32f)))
+        // One flat, even dim over the artwork keeps the white title readable.
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.28f)),
+        )
+        // Soft fade behind the title, tagline and Play button into the page background.
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .fillMaxHeight(0.7f)
+                .fillMaxHeight(0.5f)
                 .background(
                     Brush.verticalGradient(
                         0f to Color.Transparent,
-                        0.35f to Color.Black.copy(alpha = 0.55f),
-                        0.65f to Color.Black.copy(alpha = 0.93f),
-                        1f to Color.Black,
+                        0.55f to KiroBackground.copy(alpha = 0.55f),
+                        1f to KiroBackground,
                     ),
                 ),
         )
@@ -258,22 +237,22 @@ private fun PhoneHeroPage(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(horizontal = ui.dp(20f))
-                .padding(bottom = ui.dp(46f)),
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 40.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             TitleLogo(
                 logoUrl = meta?.logoUrl,
                 contentDescription = anime.displayTitle,
                 alignment = Alignment.Center,
-                maxHeight = ui.dp(80f),
-                modifier = Modifier.fillMaxWidth(0.62f),
+                maxHeight = 96.dp,
+                modifier = Modifier.fillMaxWidth(0.72f),
             ) {
                 Text(
                     text = anime.displayTitle,
                     style = TextStyle(shadow = TextShadow),
-                    fontSize = ui.sp(26f),
-                    lineHeight = ui.sp(32f),
+                    fontSize = dims.heroTitle,
+                    lineHeight = dims.heroTitle * 1.3f,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White,
                     textAlign = TextAlign.Center,
@@ -281,98 +260,9 @@ private fun PhoneHeroPage(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            if (line.isNotEmpty()) {
-                Spacer(Modifier.height(ui.dp(12f)))
-                Text(
-                    text = line,
-                    color = Color(0xFFC9C9D0),
-                    fontSize = ui.sp(13f),
-                    fontWeight = FontWeight.Medium,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            if (blurb.isNotEmpty()) {
-                Spacer(Modifier.height(ui.dp(10f)))
-                Text(
-                    text = blurb,
-                    color = Color(0xFFA6A6AE),
-                    fontSize = ui.sp(12.5f),
-                    lineHeight = ui.sp(18f),
-                    textAlign = TextAlign.Center,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Spacer(Modifier.height(ui.dp(22f)))
-            Row(horizontalArrangement = Arrangement.spacedBy(ui.dp(10f)), modifier = Modifier.fillMaxWidth()) {
-                HeroButton(
-                    label = "View episodes",
-                    icon = R.drawable.fluent_play_filled,
-                    filled = true,
-                    onClick = { onPlay(anime) },
-                    ui = ui,
-                    modifier = Modifier.weight(1.27f),
-                )
-                HeroButton(
-                    label = "Favourites",
-                    icon = if (inList) R.drawable.fluent_checkmark_regular else R.drawable.fluent_add_regular,
-                    filled = false,
-                    onClick = {
-                        if (!com.biaruuu.kiro.data.CloudSync.allowed(context)) {
-                            com.biaruuu.kiro.data.CloudSync.requireLogin(context)
-                        } else {
-                            inList = com.biaruuu.kiro.data.MyListStore.toggle(context, anime)
-                            com.biaruuu.kiro.ui.i18n.I18nToast.make(
-                                context,
-                                if (inList) "Added to Favourites" else "Removed from Favourites",
-                                android.widget.Toast.LENGTH_SHORT,
-                            ).show()
-                        }
-                    },
-                    ui = ui,
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            Spacer(Modifier.height(18.dp))
+            PlayButton(onClick = { onPlay(anime) })
         }
-    }
-}
-
-@Composable
-private fun HeroButton(
-    label: String,
-    icon: Int,
-    filled: Boolean,
-    onClick: () -> Unit,
-    ui: com.biaruuu.kiro.ui.theme.Ui,
-    modifier: Modifier = Modifier,
-) {
-    val source = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    Row(
-        modifier = modifier
-            .pressScale(source)
-            .height(ui.dp(44f))
-            .clip(RoundedCornerShape(50))
-            .background(if (filled) Color.White else Color(0xFF3C3C41).copy(alpha = 0.7f))
-            .clickable(interactionSource = source, indication = null, onClick = onClick),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            painter = painterResource(icon),
-            contentDescription = null,
-            tint = if (filled) Color.Black else Color.White,
-            modifier = Modifier.size(ui.dp(18f)),
-        )
-        Spacer(Modifier.width(ui.dp(7f)))
-        Text(
-            label,
-            color = if (filled) Color.Black else Color.White,
-            fontSize = ui.sp(15f),
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-        )
     }
 }
 

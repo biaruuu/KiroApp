@@ -163,7 +163,7 @@ public final class AniListApi {
             List<HomeSection> sections = new ArrayList<>();
             // Ranked "Top 10" row, right under the hero.
             if (!trending.isEmpty()) {
-                sections.add(new HomeSection("Top 10 trending now", trending, true));
+                sections.add(new HomeSection("Trending Now", trending, true));
             }
             addSection(sections, "Airing This Season", mediaList(data, "season"));
             addSection(sections, "Popular Right Now", mediaList(data, "popular"));

@@ -84,7 +84,7 @@ import com.biaruuu.kiro.ui.theme.KiroAccent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private val Bg = Color(0xFF0A0A0B)
+private val Bg = Color(0xFF121212)
 private val DividerColor = Color(0xFF333335)
 private val MutedText = Color(0xFF8E8E93)
 private val SheetBackground = Color(0xFF18181B)
@@ -340,13 +340,8 @@ private fun DetailContent(
                         color = Color.White,
                         fontSize = 22.sp,
                         lineHeight = 27.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Medium,
                     )
-                    val info = metaLine(anime, detail).replace(" | ", "  ·  ")
-                    if (info.isNotEmpty()) {
-                        Spacer(Modifier.height(6.dp))
-                        Text(info, color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                    }
                     val genres = genreLine(anime)
                     if (genres.isNotEmpty()) {
                         Spacer(Modifier.height(6.dp))
@@ -362,8 +357,8 @@ private fun DetailContent(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
-                        .clip(RoundedCornerShape(50))
+                        .height(46.dp)
+                        .clip(RoundedCornerShape(24.dp))
                         .background(KiroAccent)
                         .clickable {
                             val first = released.firstOrNull()
@@ -382,11 +377,11 @@ private fun DetailContent(
                             modifier = Modifier.size(20.dp),
                         )
                         Spacer(Modifier.width(6.dp))
-                        Text("Play", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Play", color = Color.Black, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     }
                 }
                 Spacer(Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = if (completedByMe) Arrangement.spacedBy(12.dp) else Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(if (completedByMe) 12.dp else 24.dp), verticalAlignment = Alignment.CenterVertically) {
                     ActionButton(
                         label = "Favourites",
                         icon = if (inList) R.drawable.fluent_checkmark_regular else R.drawable.fluent_add_regular,
@@ -463,16 +458,16 @@ private fun DetailContent(
                         Text(
                             text,
                             color = MutedText,
-                            fontSize = 12.sp,
-                            lineHeight = 19.sp,
-                            maxLines = 3,
+                            fontSize = 11.sp,
+                            lineHeight = 18.sp,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
                             "More",
                             color = Color.White,
-                            fontSize = 12.sp,
-                            lineHeight = 19.sp,
+                            fontSize = 11.sp,
+                            lineHeight = 18.sp,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
@@ -492,9 +487,9 @@ private fun DetailContent(
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 16.dp, vertical = 12.dp)
-                        .height(38.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF1B1B1F))
+                        .height(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .border(BorderStroke(1.dp, MutedText), RoundedCornerShape(8.dp))
                         .clickable { showSeasons = true }
                         .padding(horizontal = 12.dp),
                     contentAlignment = Alignment.Center,
@@ -528,8 +523,7 @@ private fun DetailContent(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
-                    modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(Color(0xFF1B1B1F)).clickable { newestFirst = !newestFirst }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    modifier = Modifier.clickable { newestFirst = !newestFirst },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
@@ -642,14 +636,12 @@ private fun DetailContent(
 @Composable
 private fun ActionButton(label: String, icon: Int, tint: Color, onClick: () -> Unit) {
     Column(
-        modifier = Modifier.widthIn(min = 56.dp).clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick).padding(vertical = 4.dp),
+        modifier = Modifier.clip(RoundedCornerShape(6.dp)).clickable(onClick = onClick).padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.size(46.dp).clip(CircleShape).background(Color(0xFF1A1A1C)), contentAlignment = Alignment.Center) {
-            Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
-        }
-        Spacer(Modifier.height(6.dp))
-        Text(label, color = Color(0xFFB4B4BA), fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+        Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.height(5.dp))
+        Text(label, color = Color(0xFFB4B4BA), fontSize = 10.sp, fontWeight = FontWeight.Normal)
     }
 }
 
@@ -663,9 +655,9 @@ private fun CountdownRow(number: Int, label: String, image: String?) {
     ) {
         Box(
             modifier = Modifier
-                .width(128.dp)
-                .height(72.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .width(120.dp)
+                .height(68.dp)
+                .clip(RoundedCornerShape(8.dp))
                 .background(ThumbBackground),
         ) {
             if (image != null) {
@@ -701,15 +693,15 @@ private fun EpisodeRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier = Modifier
                 .align(Alignment.Top)
-                .width(128.dp)
-                .height(72.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .width(120.dp)
+                .height(68.dp)
+                .clip(RoundedCornerShape(8.dp))
                 .background(ThumbBackground),
         ) {
             val thumb = episode.thumbnailUrl ?: fallbackImage
@@ -728,8 +720,8 @@ private fun EpisodeRow(
             Text(
                 episode.heading,
                 color = Color.White,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )

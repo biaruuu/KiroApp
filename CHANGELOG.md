@@ -4,6 +4,15 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.110.0]
+
+### Changed
+- Back to the original Kiro look (from 4a8889e): hero, Top 10 row, cards, Library, Me, Details, Search, colours, buttons and the 5-tab bottom navigation bar (Schedule tab is back).
+- Video player captions are back to the original style and size; Dark Box and Fade stay as optional choices.
+
+### Kept
+- Tagalog Dubbed row on Home, live global announcements, "Favourites" wording.
+
 ## [1.109.0]
 ### Changed
 - General revamp in the same black, minimal style: Library (pill chips with scroll arrows instead of underlined tabs), Me (settings in rounded groups with icons) and the Details page (round action buttons, pill Play button, smaller title).

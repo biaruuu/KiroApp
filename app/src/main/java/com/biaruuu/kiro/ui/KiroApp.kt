@@ -73,12 +73,9 @@ private val Destinations = listOf(
     NavDestination("Home", R.drawable.fluent_home_regular, R.drawable.fluent_home_filled),
     NavDestination("Search", R.drawable.fluent_search_regular, R.drawable.fluent_search_filled),
     NavDestination("Schedule", R.drawable.fluent_calendar_regular, R.drawable.fluent_calendar_filled),
-    NavDestination("Library", R.drawable.fluent_inbox_regular, R.drawable.fluent_inbox_regular),
+    NavDestination("Your Library", R.drawable.fluent_inbox_regular, R.drawable.fluent_inbox_regular),
     NavDestination("Me", R.drawable.fluent_emoji_regular, R.drawable.fluent_emoji_filled),
 )
-
-/** Schedule has no tab of its own: it opens from the Home and Search screens. */
-private val ShownDestinations = Destinations.withIndex().filter { it.index != TAB_SCHEDULE }.map { it.index to it.value }
 
 @Composable
 fun KiroApp() {
@@ -334,10 +331,9 @@ private fun KiroScaffold() {
         bottomBar = {
             if (!useRail) {
                 KiroBottomBar(
-                    destinations = ShownDestinations.map { it.second },
-                    selectedIndex = ShownDestinations.indexOfFirst { it.first == tab },
-                    onSelect = { selectTab(ShownDestinations[it].first) },
-                    backdrop = if (tab == TAB_SCHEDULE) KiroBackground else Color.Black,
+                    destinations = Destinations,
+                    selectedIndex = tab,
+                    onSelect = selectTab,
                 )
             }
         },
@@ -345,9 +341,9 @@ private fun KiroScaffold() {
         Row(modifier = Modifier.fillMaxSize()) {
             if (useRail) {
                 KiroSideRail(
-                    destinations = ShownDestinations.map { it.second },
-                    selectedIndex = ShownDestinations.indexOfFirst { it.first == tab },
-                    onSelect = { selectTab(ShownDestinations[it].first) },
+                    destinations = Destinations,
+                    selectedIndex = tab,
+                    onSelect = selectTab,
                     width = dims.navRailWidth,
                 )
             }
@@ -361,7 +357,7 @@ private fun KiroScaffold() {
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .background(if (tab == TAB_SCHEDULE) KiroBackground else Color.Black)
+                    .background(KiroBackground)
                     .padding(bottom = innerPadding.calculateBottomPadding()),
                 transitionSpec = {
                     androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(220)) togetherWith
@@ -376,7 +372,6 @@ private fun KiroScaffold() {
                     onPlay = onAnimeClick,
                     onContinue = { id, ep -> openRoute("p:$id:$ep") },
                     onNotifications = { backStack.add("s:notifications") },
-                    onSchedule = { selectTab(TAB_SCHEDULE) },
                     hasUnread = hasUnread,
                     modifier = contentModifier,
                 )
@@ -384,7 +379,6 @@ private fun KiroScaffold() {
                 TAB_SEARCH -> SearchScreen(
                     gridState = searchGridState,
                     onAnimeClick = onAnimeClick,
-                    onSchedule = { selectTab(TAB_SCHEDULE) },
                     modifier = contentModifier,
                 )
 

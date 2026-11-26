@@ -5,7 +5,6 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -60,7 +59,7 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
     val profile by ProfileRepository.profile.collectAsState()
     val shownName = profile.username.ifBlank { signedIn?.name.orEmpty() }
 
-    Box(modifier = modifier.background(Color.Black).statusBarsPadding(), contentAlignment = Alignment.TopCenter) {
+    Box(modifier = modifier.statusBarsPadding(), contentAlignment = Alignment.TopCenter) {
         Column(
             modifier = Modifier
                 .widthIn(max = 560.dp)
@@ -121,44 +120,34 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
 
             if (com.biaruuu.kiro.data.Admin.isAdmin(state)) {
                 Spacer(Modifier.height(20.dp))
-                GroupCard { SettingsRow(R.drawable.fluent_shield_regular, "Admin panel") { onOpen("admin") } }
+                SettingsRow(R.drawable.fluent_shield_regular, "Admin panel") { onOpen("admin") }
             }
             Group("Your space")
-            GroupCard {
-                if (signedIn != null) SettingsRow(R.drawable.fluent_sparkle_regular, "Customize profile") { onOpen("customize") }
-                SettingsRow(R.drawable.fluent_play_circle_regular, "Watch stats") { onOpen("stats") }
-                SettingsRow(R.drawable.fluent_trophy_regular, "Achievements") { onOpen("achievements") }
-                SettingsRow(R.drawable.fluent_people_regular, "Watch party") { onOpen("party") }
+            if (signedIn != null) SettingsRow(R.drawable.fluent_sparkle_regular, "Customize profile") { onOpen("customize") }
+            SettingsRow(R.drawable.fluent_play_circle_regular, "Watch stats") { onOpen("stats") }
+            SettingsRow(R.drawable.fluent_trophy_regular, "Achievements") { onOpen("achievements") }
+            SettingsRow(R.drawable.fluent_people_regular, "Watch party") { onOpen("party") }
 
-            }
             Group("Alerts")
-            GroupCard {
-                SettingsRow(R.drawable.fluent_alert_regular, "Notification", badge = hasUnread) { onOpen("notifications") }
-                SettingsRow(R.drawable.fluent_calendar_regular, "Notification control") { onOpen("alerts") }
+            SettingsRow(R.drawable.fluent_alert_regular, "Notification", badge = hasUnread) { onOpen("notifications") }
+            SettingsRow(R.drawable.fluent_calendar_regular, "Notification control") { onOpen("alerts") }
 
-            }
             Group("Library and data")
-            GroupCard {
-                SettingsRow(R.drawable.fluent_arrow_download_regular, "Storage") { onOpen("storage") }
-                SettingsRow(R.drawable.fluent_inbox_regular, "Backup and restore") { onOpen("backup") }
-                SettingsRow(R.drawable.fluent_arrow_download_regular, "Download") { onOpen("download") }
+            SettingsRow(R.drawable.fluent_arrow_download_regular, "Storage") { onOpen("storage") }
+            SettingsRow(R.drawable.fluent_inbox_regular, "Backup and restore") { onOpen("backup") }
+            SettingsRow(R.drawable.fluent_arrow_download_regular, "Download") { onOpen("download") }
 
-            }
             Group("Preferences")
-            GroupCard {
-                SettingsRow(R.drawable.fluent_play_circle_regular, "Play") { onOpen("play") }
-                SettingsRow(R.drawable.fluent_language_regular, "Language") { onOpen("language") }
+            SettingsRow(R.drawable.fluent_play_circle_regular, "Play") { onOpen("play") }
+            SettingsRow(R.drawable.fluent_language_regular, "Language") { onOpen("language") }
 
-            }
             Group("About")
-            GroupCard {
-                SettingsRow(R.drawable.fluent_help_circle_regular, "Help Center") { onOpen("help") }
-                SettingsRow(R.drawable.fluent_headset_regular, "Contact us") { onOpen("contact") }
-                SettingsRow(R.drawable.fluent_terms_regular, "Terms of Use") { onOpen("terms") }
-                SettingsRow(R.drawable.fluent_shield_regular, "Privacy Policy") { onOpen("privacy") }
-                SettingsRow(R.drawable.fluent_phone_regular, "Version", value = BuildConfig.VERSION_NAME.substringBefore('-')) {
+            SettingsRow(R.drawable.fluent_help_circle_regular, "Help Center") { onOpen("help") }
+            SettingsRow(R.drawable.fluent_headset_regular, "Contact us") { onOpen("contact") }
+            SettingsRow(R.drawable.fluent_terms_regular, "Terms of Use") { onOpen("terms") }
+            SettingsRow(R.drawable.fluent_shield_regular, "Privacy Policy") { onOpen("privacy") }
+            SettingsRow(R.drawable.fluent_phone_regular, "Version", value = BuildConfig.VERSION_NAME.substringBefore('-')) {
                 onOpen("version")
-            }
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -185,23 +174,7 @@ private fun Chevron() {
 
 @Composable
 private fun Group(title: String) {
-    Text(
-        title.uppercase(), color = Color(0xFF6A6A70), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp,
-        modifier = Modifier.padding(top = 26.dp, bottom = 8.dp, start = 4.dp),
-    )
-}
-
-/** A rounded dark card that holds one group of rows. */
-@Composable
-private fun GroupCard(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFF111113))
-            .border(1.dp, Color(0xFF1F1F23), RoundedCornerShape(20.dp)),
-        content = content,
-    )
+    Text(title, color = Color(0xFF6A6A70), fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 28.dp, bottom = 4.dp))
 }
 
 @Composable
@@ -209,14 +182,12 @@ private fun SettingsRow(@DrawableRes icon: Int, label: String, value: String? = 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(54.dp)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp),
+            .height(48.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
     ) {
-        Icon(painter = painterResource(icon), contentDescription = null, tint = Color(0xFFB8B8BE), modifier = Modifier.size(20.dp))
-        Spacer(Modifier.size(14.dp))
         Text(label, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Normal, modifier = Modifier.weight(1f))
         if (value != null) {
             Text(value, color = Muted, fontSize = 13.sp)

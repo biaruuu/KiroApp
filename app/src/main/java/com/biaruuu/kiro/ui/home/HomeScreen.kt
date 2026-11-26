@@ -45,7 +45,6 @@ fun HomeScreen(
     onNotifications: () -> Unit,
     modifier: Modifier = Modifier,
     hasUnread: Boolean = false,
-    onSchedule: () -> Unit = {},
     viewModel: HomeViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -85,11 +84,11 @@ fun HomeScreen(
             modifier = modifier,
         )
 
-        is HomeUiState.Success -> Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
+        is HomeUiState.Success -> Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 32.dp),
+            contentPadding = PaddingValues(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(dims.rowSpacing),
         ) {
             if (current.content.hero.isNotEmpty()) {
@@ -98,7 +97,6 @@ fun HomeScreen(
                         heroes = current.content.hero,
                         onPlay = onPlay,
                         onNotifications = onNotifications,
-                        onSchedule = onSchedule,
                         hasUnread = hasUnread,
                     )
                 }

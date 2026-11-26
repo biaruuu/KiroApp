@@ -21,10 +21,10 @@ import java.util.concurrent.ConcurrentHashMap
 data class SubtitleStyle(
     val font: String = SubtitleOptions.DEFAULT_FONT,
     val size: Int = 1,
-    val background: Int = SubtitleOptions.DARK_BOX,
-    val edge: Int = 0,
-    /** Each new caption line fades in instead of popping on. */
-    val fade: Boolean = true,
+    val background: Int = 0,
+    val edge: Int = 2,
+    /** Optional: each new caption line fades in instead of popping on. */
+    val fade: Boolean = false,
 )
 
 object SubtitleOptions {
@@ -135,9 +135,9 @@ object SubtitleStyleStore {
         return SubtitleStyle(
             font = font,
             size = p.getInt("sub_size_idx", 1).coerceIn(0, SubtitleOptions.sizes.lastIndex),
-            background = p.getInt("sub_bg_idx", SubtitleOptions.DARK_BOX).coerceIn(0, SubtitleOptions.backgrounds.lastIndex),
-            edge = p.getInt("sub_edge_idx", 0).coerceIn(0, SubtitleOptions.edges.lastIndex),
-            fade = p.getBoolean("sub_fade", true),
+            background = p.getInt("sub_bg_idx", 0).coerceIn(0, SubtitleOptions.backgrounds.lastIndex),
+            edge = p.getInt("sub_edge_idx", 2).coerceIn(0, SubtitleOptions.edges.lastIndex),
+            fade = p.getBoolean("sub_fade", false),
         )
     }
 
@@ -167,15 +167,12 @@ fun SubtitleView.applyKiroStyle(context: Context, style: SubtitleStyle, scale: F
             SubtitleOptions.typeface(context, style.font),
         ),
     )
-    // Size follows the picture: a fraction of the view height, so captions grow in full screen, on
-    // tablets and shrink with the room's small player, with no fixed dp that is too big or too small.
-    setFractionalTextSize(SubtitleOptions.sizes[style.size].second * SubtitleOptions.TEXT_SCALE / 360f)
-    setBottomPaddingFraction(0.06f)
-    if (getTag(R.id.kiro_caption_pad) == null) {
-        setTag(R.id.kiro_caption_pad, true)
-        addOnLayoutChangeListener { v, l, _, r, _, _, _, _, _ ->
-            val side = ((r - l) * 0.1f).toInt()
-            if (v.paddingLeft != side) v.setPadding(side, 0, side, 0)
-        }
-    }
+    // Same as the reference: size x 1.1 in dp, 32dp from the sides and 28dp above the bottom.
+    setFixedTextSize(
+        android.util.TypedValue.COMPLEX_UNIT_DIP,
+        SubtitleOptions.sizes[style.size].second * SubtitleOptions.TEXT_SCALE * scale,
+    )
+    val d = context.resources.displayMetrics.density
+    setBottomPaddingFraction(0f)
+    setPadding((32 * d * scale).toInt(), 0, (32 * d * scale).toInt(), (28 * d * scale).toInt())
 }

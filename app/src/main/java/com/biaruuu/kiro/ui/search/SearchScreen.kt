@@ -3,7 +3,6 @@ package com.biaruuu.kiro.ui.search
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.offset
@@ -50,7 +49,6 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -76,8 +74,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import com.biaruuu.kiro.ui.theme.pressScale
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -102,12 +98,11 @@ import kotlinx.coroutines.launch
 import java.text.NumberFormat
 
 // Colours sampled from the reference screens.
-private val HeaderBackground = Color.Black
-private val FieldBackground = Color(0xFF151517)
-private val FieldBorder = Color(0xFF2C2C30)
-private val DividerColor = Color(0xFF222226)
+private val HeaderBackground = Color(0xFF121212)
+private val FieldBackground = Color(0xFF18181B)
+private val DividerColor = Color(0xFF333335)
 private val MutedText = Color(0xFF8E8E93)
-private val SheetBackground = Color(0xFF151517)
+private val SheetBackground = Color(0xFF18181B)
 
 // These match AniList's genre names exactly. "All" is added in front and means "no genre".
 private val GENRES = listOf(
@@ -136,7 +131,6 @@ fun SearchScreen(
     gridState: LazyGridState,
     onAnimeClick: (Anime) -> Unit,
     modifier: Modifier = Modifier,
-    onSchedule: () -> Unit = {},
     viewModel: SearchViewModel = viewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -156,7 +150,7 @@ fun SearchScreen(
         focusManager.clearFocus()
     }
 
-    Column(modifier = modifier.fillMaxSize().background(Color.Black)) {
+    Column(modifier = modifier.fillMaxSize()) {
         // Black strip behind the system status bar, as in the reference.
         Spacer(
             Modifier
@@ -182,7 +176,6 @@ fun SearchScreen(
                     viewModel.clearQuery()
                     focusManager.clearFocus()
                 },
-                onSchedule = onSchedule,
             )
             Divider()
             if (!focused) {
@@ -261,7 +254,8 @@ private fun Divider() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(0.dp),
+            .height(1.dp)
+            .background(DividerColor),
     )
 }
 
@@ -274,13 +268,12 @@ private fun SearchField(
     onClear: () -> Unit,
     onSearch: () -> Unit,
     onCancel: () -> Unit,
-    onSchedule: () -> Unit,
 ) {
-    val ui = com.biaruuu.kiro.ui.theme.rememberUi()
+    val dims = LocalDimens.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = ui.dp(16f), vertical = ui.dp(10f)),
+            .padding(horizontal = dims.gutter, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BasicTextField(
@@ -297,16 +290,15 @@ private fun SearchField(
             keyboardActions = KeyboardActions(onSearch = { onSearch() }),
             modifier = Modifier
                 .weight(1f)
-                .height(ui.dp(44f))
-                .clip(RoundedCornerShape(50))
+                .height(40.dp)
+                .clip(RoundedCornerShape(20.dp))
                 .background(FieldBackground)
-                .border(1.dp, FieldBorder, RoundedCornerShape(50))
                 .onFocusChanged { onFocusChange(it.isFocused) },
             decorationBox = { inner ->
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = ui.dp(14f)),
+                        .padding(horizontal = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
@@ -345,26 +337,6 @@ private fun SearchField(
                 }
             },
         )
-        if (!focused) {
-            // Schedule lives here now that it has no tab of its own.
-            Box(
-                modifier = Modifier
-                    .padding(start = ui.dp(10f))
-                    .size(ui.dp(44f))
-                    .clip(RoundedCornerShape(50))
-                    .background(FieldBackground)
-                    .border(1.dp, FieldBorder, RoundedCornerShape(50))
-                    .clickable(onClick = onSchedule),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.fluent_calendar_regular),
-                    contentDescription = "Schedule",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        }
         if (focused) {
             Text(
                 text = "Cancel",
@@ -395,7 +367,7 @@ private fun SearchOverlay(
 ) {
     val dims = LocalDimens.current
     val q = query.trim()
-    LazyColumn(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+    LazyColumn(modifier = Modifier.fillMaxSize().background(com.biaruuu.kiro.ui.theme.KiroBackground)) {
         if (q.isEmpty()) {
             if (recents.isNotEmpty()) {
                 item(key = "recent-title") {
@@ -477,14 +449,15 @@ private fun SearchOverlay(
     }
 }
 
-/** Genre chips: the picked one is a white pill, the rest are quiet outlined pills. "All" clears the filter. */
+/** Genre text tabs. The white line slides to the picked one; "All" clears the genre filter. */
 @Composable
 private fun GenreTabs(
     selected: String,
     onSelect: (String) -> Unit,
     onSelectAll: () -> Unit,
 ) {
-    val ui = com.biaruuu.kiro.ui.theme.rememberUi()
+    val dims = LocalDimens.current
+    val density = LocalDensity.current
     val tabs = remember { listOf(ALL) + GENRES }
     val index = tabs.indexOf(selected).coerceAtLeast(0)
     val scroll = rememberScrollState()
@@ -492,101 +465,60 @@ private fun GenreTabs(
     val widths = remember { mutableStateListOf<Float>().apply { repeat(tabs.size) { add(0f) } } }
     var viewport by remember { mutableIntStateOf(0) }
 
+    val lineX by animateFloatAsState(lefts[index], label = "genre-line-x")
+    val lineW by animateFloatAsState(widths[index], label = "genre-line-w")
+
     LaunchedEffect(index, viewport, widths[index]) {
         if (viewport > 0 && widths[index] > 0f) {
             scroll.animateScrollTo((lefts[index] + widths[index] / 2f - viewport / 2f).roundToInt().coerceAtLeast(0))
         }
     }
 
-    val scope = rememberCoroutineScope()
-    val canLeft = scroll.value > 8
-    val canRight = scroll.value < scroll.maxValue - 8
-
-    @Composable
-    fun Arrow(left: Boolean) {
-        val source = remember { MutableInteractionSource() }
-        Box(
-            modifier = Modifier
-                .padding(horizontal = ui.dp(8f))
-                .pressScale(source)
-                .size(ui.dp(36f))
-                .clip(CircleShape)
-                .background(Color(0xFF232326))
-                .clickable(interactionSource = source, indication = null) {
-                    scope.launch {
-                        val step = (viewport * 0.6f).roundToInt()
-                        scroll.animateScrollTo((scroll.value + if (left) -step else step).coerceIn(0, scroll.maxValue))
-                    }
-                },
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.fluent_chevron_down_regular),
-                contentDescription = if (left) "Scroll left" else "Scroll right",
-                tint = Color.White,
-                modifier = Modifier.size(ui.dp(20f)).rotate(if (left) 90f else -90f),
-            )
-        }
-    }
-
-    Box(modifier = Modifier.fillMaxWidth().height(ui.dp(52f)).onSizeChanged { viewport = it.width }) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .horizontalScroll(scroll),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Spacer(Modifier.width(ui.dp(16f)))
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(44.dp)
+            .onSizeChanged { viewport = it.width }
+            .horizontalScroll(scroll),
+    ) {
+        Row(modifier = Modifier.fillMaxHeight()) {
+            Spacer(Modifier.width(dims.gutter))
             tabs.forEachIndexed { i, tab ->
                 val isSelected = i == index
-                val source = remember { MutableInteractionSource() }
                 Box(
                     modifier = Modifier
+                        .fillMaxHeight()
                         .onGloballyPositioned {
                             lefts[i] = it.positionInParent().x
                             widths[i] = it.size.width.toFloat()
                         }
-                        .pressScale(source)
-                        .height(ui.dp(40f))
-                        .clip(RoundedCornerShape(50))
-                        .background(if (isSelected) Color.White else Color(0xFF1A1A1C))
-                        .clickable(interactionSource = source, indication = null) {
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) {
                             if (tab == ALL) onSelectAll() else if (!isSelected) onSelect(tab)
-                        }
-                        .padding(horizontal = ui.dp(22f)),
+                        },
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = tab,
-                        color = if (isSelected) Color.Black else Color(0xFFC4C4CA),
-                        fontSize = ui.sp(15.5f),
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                        color = if (isSelected) Color.White else MutedText,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
                         maxLines = 1,
                     )
                 }
-                Spacer(Modifier.width(if (i == tabs.lastIndex) ui.dp(16f) else ui.dp(8f)))
+                Spacer(Modifier.width(if (i == tabs.lastIndex) dims.gutter else 24.dp))
             }
         }
-        if (canLeft) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .fillMaxHeight()
-                    .background(androidx.compose.ui.graphics.Brush.horizontalGradient(0f to Color.Black, 0.55f to Color.Black, 1f to Color.Transparent))
-                    .padding(end = ui.dp(26f)),
-                contentAlignment = Alignment.CenterStart,
-            ) { Arrow(left = true) }
-        }
-        if (canRight) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .fillMaxHeight()
-                    .background(androidx.compose.ui.graphics.Brush.horizontalGradient(0f to Color.Transparent, 0.45f to Color.Black, 1f to Color.Black))
-                    .padding(start = ui.dp(26f)),
-                contentAlignment = Alignment.CenterEnd,
-            ) { Arrow(left = false) }
-        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .offset { IntOffset(lineX.roundToInt(), 0) }
+                .width(with(density) { lineW.toDp() })
+                .height(2.dp)
+                .background(Color.White),
+        )
     }
 }
 
@@ -624,21 +556,21 @@ private fun ResultsGrid(
             columns = GridCells.Fixed(columns),
             contentPadding = PaddingValues(start = dims.gutter, end = dims.gutter, bottom = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
             item(span = { GridItemSpan(maxLineSpan) }, key = "count", contentType = "count") {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(40.dp),
+                        .height(52.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text = "$count results",
-                        color = Color(0xFF8E8E96),
-                        fontSize = 14.sp,
+                        text = "$count Results",
+                        color = MutedText,
+                        fontSize = 13.sp,
                         maxLines = 1,
                     )
                     Row(
@@ -651,16 +583,16 @@ private fun ResultsGrid(
                     ) {
                         Text(
                             text = sort.label(),
-                            color = Color(0xFFC4C4CA),
-                            fontSize = 14.sp,
+                            color = MutedText,
+                            fontSize = 13.sp,
                             maxLines = 1,
                         )
                         Spacer(Modifier.width(4.dp))
                         Icon(
                             painter = painterResource(R.drawable.fluent_chevron_down_regular),
                             contentDescription = "Sort",
-                            tint = Color(0xFFB4B4BA),
-                            modifier = Modifier.size(18.dp),
+                            tint = MutedText,
+                            modifier = Modifier.size(20.dp),
                         )
                     }
                 }
@@ -714,7 +646,7 @@ private fun SortSheet(
         sheetState = sheetState,
         containerColor = SheetBackground,
         scrimColor = Color.Black.copy(alpha = 0.72f),
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        shape = RectangleShape,
         tonalElevation = 0.dp,
         dragHandle = null,
     ) {

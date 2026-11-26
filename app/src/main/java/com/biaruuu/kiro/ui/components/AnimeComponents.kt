@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -76,17 +75,15 @@ fun PosterCard(
 ) {
     val placeholder = remember(anime.id) { parseColor(anime.coverColor) ?: KiroSurface }
     val tag = remember(anime.id) { statusTag(anime.status) }
-    val ui = com.biaruuu.kiro.ui.theme.rememberUi()
-    val radius = if (compact) ui.dp(11f) else 12.dp
 
     Column(modifier = modifier.clickable(onClick = onClick)) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(if (compact) 0.69f else PosterAspect)
-                .clip(RoundedCornerShape(radius))
+                .aspectRatio(if (compact) 0.707f else PosterAspect)
+                .clip(RoundedCornerShape(12.dp))
                 .background(placeholder.copy(alpha = 0.3f))
-                .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(radius)),
+                .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(12.dp)),
         ) {
             AsyncImage(
                 model = anime.posterUrl,
@@ -101,8 +98,8 @@ fun PosterCard(
                 Text(
                     text = tag,
                     color = Color.White,
-                    fontSize = if (compact) ui.sp(9.5f) else 9.sp,
-                    lineHeight = if (compact) ui.sp(12f) else 12.sp,
+                    fontSize = if (compact) 10.sp else 9.sp,
+                    lineHeight = 12.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     modifier = Modifier
@@ -114,14 +111,14 @@ fun PosterCard(
                 )
             }
         }
-        Spacer(Modifier.height(if (compact) ui.dp(8f) else 10.dp))
+        Spacer(Modifier.height(if (compact) 8.dp else 10.dp))
         Text(
             text = anime.displayTitle,
             style = MaterialTheme.typography.bodyLarge,
-            fontSize = if (compact) ui.sp(15.5f) else androidx.compose.ui.unit.TextUnit.Unspecified,
-            lineHeight = if (compact) ui.sp(20f) else 21.sp,
+            fontSize = if (compact) 13.sp else androidx.compose.ui.unit.TextUnit.Unspecified,
+            lineHeight = if (compact) 18.sp else 21.sp,
             fontWeight = FontWeight.Medium,
-            color = if (compact) Color(0xFFE6E6EA) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.92f),
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.92f),
             maxLines = titleMaxLines,
             overflow = TextOverflow.Ellipsis,
         )
@@ -165,7 +162,10 @@ fun AnimeRow(
     }
 }
 
-/** "Top 10" row: a big outlined number beside each poster, sized from the screen width. */
+/**
+ * "Top 10" row: the same quiet poster row as the others, with a small rank pill in the corner of
+ * each poster instead of big outlined numerals.
+ */
 @Composable
 fun RankedRow(
     title: String,
@@ -173,69 +173,45 @@ fun RankedRow(
     onAnimeClick: (Anime) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val ui = com.biaruuu.kiro.ui.theme.rememberUi()
-    val posterWidth = ui.dp(112f)
-    val posterHeight = posterWidth * 1.5f
-    val stroke = with(androidx.compose.ui.platform.LocalDensity.current) { 1.6.dp.toPx() }
+    val dims = LocalDimens.current
     Column(modifier = modifier) {
         Text(
             text = title,
-            fontSize = ui.sp(19f),
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.titleLarge,
+            fontSize = dims.sectionTitle,
+            fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = ui.dp(20f)),
+            modifier = Modifier.padding(horizontal = dims.gutter),
         )
-        Spacer(Modifier.height(ui.dp(14f)))
+        Spacer(Modifier.height(14.dp))
         LazyRow(
-            contentPadding = PaddingValues(horizontal = ui.dp(16f)),
-            horizontalArrangement = Arrangement.spacedBy(ui.dp(4f)),
+            contentPadding = PaddingValues(horizontal = dims.gutter),
+            horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing),
         ) {
             itemsIndexed(items, key = { _, anime -> anime.id }, contentType = { _, _ -> "ranked" }) { index, anime ->
-                val rank = index + 1
-                Row(verticalAlignment = Alignment.Top) {
-                    Box(modifier = Modifier.height(posterHeight), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "$rank",
-                            style = androidx.compose.ui.text.TextStyle(
-                                color = Color(0xFF8E8E93),
-                                drawStyle = androidx.compose.ui.graphics.drawscope.Stroke(
-                                    width = stroke,
-                                    join = androidx.compose.ui.graphics.StrokeJoin.Round,
-                                ),
-                                letterSpacing = if (rank >= 10) ui.sp(-14f) else ui.sp(0f),
-                                platformStyle = androidx.compose.ui.text.PlatformTextStyle(includeFontPadding = false),
-                            ),
-                            fontSize = ui.sp(158f),
-                            lineHeight = ui.sp(158f),
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            softWrap = false,
-                        )
-                    }
-                    Column(modifier = Modifier.width(posterWidth).clickable { onAnimeClick(anime) }) {
-                        AsyncImage(
-                            model = anime.posterUrl,
-                            contentDescription = anime.displayTitle,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(posterHeight)
-                                .clip(RoundedCornerShape(ui.dp(10f)))
-                                .background(Color(0xFF1C1C1F)),
-                        )
-                        Text(
-                            text = anime.displayTitle,
-                            color = Color(0xFFD8D8DD),
-                            fontSize = ui.sp(13.5f),
-                            lineHeight = ui.sp(17f),
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(top = ui.dp(9f)),
-                        )
-                    }
+                Box(modifier = Modifier.width(dims.cardWidth)) {
+                    PosterCard(
+                        anime = anime,
+                        onClick = { onAnimeClick(anime) },
+                        titleMaxLines = 1,
+                        compact = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Text(
+                        text = "${index + 1}",
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(6.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color.Black.copy(alpha = 0.55f))
+                            .padding(horizontal = 7.dp, vertical = 2.dp),
+                    )
                 }
             }
         }

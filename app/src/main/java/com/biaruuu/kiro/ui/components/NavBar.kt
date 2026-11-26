@@ -2,7 +2,6 @@ package com.biaruuu.kiro.ui.components
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -107,80 +106,36 @@ private fun NavItem(
     }
 }
 
-/** Phone bottom bar: a floating dark pill with a thin outline; the active tab gets a deeper pill. */
+/** Phone bottom bar: flat, dark, with a thin top divider. */
 @Composable
 fun KiroBottomBar(
     destinations: List<NavDestination>,
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    backdrop: Color = KiroBackground,
 ) {
-    val ui = com.biaruuu.kiro.ui.theme.rememberUi()
-    val shape = RoundedCornerShape(50)
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(backdrop)
-            .navigationBarsPadding()
-            .padding(start = ui.dp(14f), end = ui.dp(14f), top = ui.dp(6f), bottom = ui.dp(8f)),
-    ) {
-        Row(
+    Column(modifier = modifier.background(KiroBackground)) {
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(ui.dp(62f))
-                .clip(shape)
-                .background(Color(0xFF151517))
-                .border(1.dp, Color(0xFF2C2C30), shape)
-                .padding(ui.dp(5f)),
-            verticalAlignment = Alignment.CenterVertically,
+                .height(1.dp)
+                .background(DividerColor),
+        )
+        Row(
+            modifier = Modifier
+                .navigationBarsPadding()
+                .fillMaxWidth()
+                .height(60.dp),
         ) {
             destinations.forEachIndexed { index, destination ->
-                val selected = index == selectedIndex
-                val tint = if (selected) Color.White else Color(0xFFB8B8BE)
-                Column(
+                NavItem(
+                    destination = destination,
+                    selected = index == selectedIndex,
+                    onClick = { onSelect(index) },
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(50))
-                        .background(if (selected) Color(0xFF060607) else Color.Transparent)
-                        .selectable(
-                            selected = selected,
-                            onClick = { onSelect(index) },
-                            role = Role.Tab,
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() },
-                        ),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            painter = painterResource(if (selected) destination.iconSelected else destination.icon),
-                            contentDescription = null,
-                            tint = tint,
-                            modifier = Modifier.size(ui.dp(21f)),
-                        )
-                        if (destination.badge) {
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .offset(x = 4.dp, y = (-2).dp)
-                                    .size(6.dp)
-                                    .clip(CircleShape)
-                                    .background(KiroAccent),
-                            )
-                        }
-                    }
-                    Text(
-                        text = destination.label,
-                        color = tint,
-                        fontSize = ui.sp(11f),
-                        fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-                        maxLines = 1,
-                        modifier = Modifier.padding(top = ui.dp(3f)),
-                    )
-                }
+                        .fillMaxHeight(),
+                )
             }
         }
     }
