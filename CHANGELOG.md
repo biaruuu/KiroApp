@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.106.3]
+### Changed
+- Search is cleaner: smaller, dimmer result count and sort line, a more compact genre row with smaller outline-free arrow buttons and a wider soft fade so chips never look cut off.
+- Poster cards in the grid scale with the screen, with smaller, softer titles and a calmer outline.
+
 ## [1.106.2]
 ### Fixed
 - Search: the genre row took the whole screen height, which pushed the arrow to the middle and hid the results. It is now a fixed-height row.

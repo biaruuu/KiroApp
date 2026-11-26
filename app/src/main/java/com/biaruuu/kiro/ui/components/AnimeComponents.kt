@@ -76,15 +76,17 @@ fun PosterCard(
 ) {
     val placeholder = remember(anime.id) { parseColor(anime.coverColor) ?: KiroSurface }
     val tag = remember(anime.id) { statusTag(anime.status) }
+    val ui = com.biaruuu.kiro.ui.theme.rememberUi()
+    val radius = if (compact) ui.dp(11f) else 12.dp
 
     Column(modifier = modifier.clickable(onClick = onClick)) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(if (compact) 0.707f else PosterAspect)
-                .clip(RoundedCornerShape(12.dp))
+                .aspectRatio(if (compact) 0.69f else PosterAspect)
+                .clip(RoundedCornerShape(radius))
                 .background(placeholder.copy(alpha = 0.3f))
-                .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(12.dp)),
+                .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(radius)),
         ) {
             AsyncImage(
                 model = anime.posterUrl,
@@ -99,8 +101,8 @@ fun PosterCard(
                 Text(
                     text = tag,
                     color = Color.White,
-                    fontSize = if (compact) 10.sp else 9.sp,
-                    lineHeight = 12.sp,
+                    fontSize = if (compact) ui.sp(9.5f) else 9.sp,
+                    lineHeight = if (compact) ui.sp(12f) else 12.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     modifier = Modifier
@@ -112,14 +114,14 @@ fun PosterCard(
                 )
             }
         }
-        Spacer(Modifier.height(if (compact) 8.dp else 10.dp))
+        Spacer(Modifier.height(if (compact) ui.dp(8f) else 10.dp))
         Text(
             text = anime.displayTitle,
             style = MaterialTheme.typography.bodyLarge,
-            fontSize = if (compact) 13.sp else androidx.compose.ui.unit.TextUnit.Unspecified,
-            lineHeight = if (compact) 18.sp else 21.sp,
+            fontSize = if (compact) ui.sp(12.5f) else androidx.compose.ui.unit.TextUnit.Unspecified,
+            lineHeight = if (compact) ui.sp(16f) else 21.sp,
             fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.92f),
+            color = if (compact) Color(0xFFD2D2D8) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.92f),
             maxLines = titleMaxLines,
             overflow = TextOverflow.Ellipsis,
         )

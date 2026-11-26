@@ -507,12 +507,11 @@ private fun GenreTabs(
         val source = remember { MutableInteractionSource() }
         Box(
             modifier = Modifier
-                .padding(horizontal = ui.dp(6f))
+                .padding(horizontal = ui.dp(8f))
                 .pressScale(source)
-                .size(ui.dp(36f))
+                .size(ui.dp(32f))
                 .clip(CircleShape)
-                .background(Color(0xFF1A1A1C))
-                .border(1.dp, Color(0xFF2C2C30), CircleShape)
+                .background(Color(0xFF232326))
                 .clickable(interactionSource = source, indication = null) {
                     scope.launch {
                         val step = (viewport * 0.6f).roundToInt()
@@ -525,12 +524,12 @@ private fun GenreTabs(
                 painter = painterResource(R.drawable.fluent_chevron_down_regular),
                 contentDescription = if (left) "Scroll left" else "Scroll right",
                 tint = Color.White,
-                modifier = Modifier.size(ui.dp(20f)).rotate(if (left) 90f else -90f),
+                modifier = Modifier.size(ui.dp(18f)).rotate(if (left) 90f else -90f),
             )
         }
     }
 
-    Box(modifier = Modifier.fillMaxWidth().height(ui.dp(52f)).onSizeChanged { viewport = it.width }) {
+    Box(modifier = Modifier.fillMaxWidth().height(ui.dp(48f)).onSizeChanged { viewport = it.width }) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -548,7 +547,7 @@ private fun GenreTabs(
                             widths[i] = it.size.width.toFloat()
                         }
                         .pressScale(source)
-                        .height(ui.dp(38f))
+                        .height(ui.dp(36f))
                         .clip(RoundedCornerShape(50))
                         .background(if (isSelected) Color.White else Color(0xFF1A1A1C))
                         .clickable(interactionSource = source, indication = null) {
@@ -573,8 +572,8 @@ private fun GenreTabs(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .fillMaxHeight()
-                    .background(androidx.compose.ui.graphics.Brush.horizontalGradient(0f to Color.Black, 0.65f to Color.Black.copy(alpha = 0.92f), 1f to Color.Transparent))
-                    .padding(end = ui.dp(12f)),
+                    .background(androidx.compose.ui.graphics.Brush.horizontalGradient(0f to Color.Black, 0.55f to Color.Black, 1f to Color.Transparent))
+                    .padding(end = ui.dp(26f)),
                 contentAlignment = Alignment.CenterStart,
             ) { Arrow(left = true) }
         }
@@ -583,8 +582,8 @@ private fun GenreTabs(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .fillMaxHeight()
-                    .background(androidx.compose.ui.graphics.Brush.horizontalGradient(0f to Color.Transparent, 0.35f to Color.Black.copy(alpha = 0.92f), 1f to Color.Black))
-                    .padding(start = ui.dp(12f)),
+                    .background(androidx.compose.ui.graphics.Brush.horizontalGradient(0f to Color.Transparent, 0.45f to Color.Black, 1f to Color.Black))
+                    .padding(start = ui.dp(26f)),
                 contentAlignment = Alignment.CenterEnd,
             ) { Arrow(left = false) }
         }
@@ -625,21 +624,21 @@ private fun ResultsGrid(
             columns = GridCells.Fixed(columns),
             contentPadding = PaddingValues(start = dims.gutter, end = dims.gutter, bottom = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
             item(span = { GridItemSpan(maxLineSpan) }, key = "count", contentType = "count") {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(44.dp),
+                        .height(40.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text = "$count Results",
-                        color = MutedText,
-                        fontSize = 13.sp,
+                        text = "$count results",
+                        color = Color(0xFF7C7C84),
+                        fontSize = 12.sp,
                         maxLines = 1,
                     )
                     Row(
@@ -652,16 +651,16 @@ private fun ResultsGrid(
                     ) {
                         Text(
                             text = sort.label(),
-                            color = MutedText,
-                            fontSize = 13.sp,
+                            color = Color(0xFFB4B4BA),
+                            fontSize = 12.sp,
                             maxLines = 1,
                         )
                         Spacer(Modifier.width(4.dp))
                         Icon(
                             painter = painterResource(R.drawable.fluent_chevron_down_regular),
                             contentDescription = "Sort",
-                            tint = MutedText,
-                            modifier = Modifier.size(20.dp),
+                            tint = Color(0xFFB4B4BA),
+                            modifier = Modifier.size(18.dp),
                         )
                     }
                 }
