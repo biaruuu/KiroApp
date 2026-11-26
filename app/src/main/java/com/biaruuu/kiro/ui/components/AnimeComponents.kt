@@ -118,10 +118,10 @@ fun PosterCard(
         Text(
             text = anime.displayTitle,
             style = MaterialTheme.typography.bodyLarge,
-            fontSize = if (compact) ui.sp(12.5f) else androidx.compose.ui.unit.TextUnit.Unspecified,
-            lineHeight = if (compact) ui.sp(16f) else 21.sp,
+            fontSize = if (compact) ui.sp(15.5f) else androidx.compose.ui.unit.TextUnit.Unspecified,
+            lineHeight = if (compact) ui.sp(20f) else 21.sp,
             fontWeight = FontWeight.Medium,
-            color = if (compact) Color(0xFFD2D2D8) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.92f),
+            color = if (compact) Color(0xFFE6E6EA) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.92f),
             maxLines = titleMaxLines,
             overflow = TextOverflow.Ellipsis,
         )

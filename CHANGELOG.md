@@ -4,6 +4,10 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.106.4]
+### Changed
+- Search text is bigger and easier to read: poster names, genre chips, the results count and the sort line. The genre chips and "<" ">" buttons are a little larger too.
+
 ## [1.106.3]
 ### Changed
 - Search is cleaner: smaller, dimmer result count and sort line, a more compact genre row with smaller outline-free arrow buttons and a wider soft fade so chips never look cut off.

@@ -509,7 +509,7 @@ private fun GenreTabs(
             modifier = Modifier
                 .padding(horizontal = ui.dp(8f))
                 .pressScale(source)
-                .size(ui.dp(32f))
+                .size(ui.dp(36f))
                 .clip(CircleShape)
                 .background(Color(0xFF232326))
                 .clickable(interactionSource = source, indication = null) {
@@ -524,12 +524,12 @@ private fun GenreTabs(
                 painter = painterResource(R.drawable.fluent_chevron_down_regular),
                 contentDescription = if (left) "Scroll left" else "Scroll right",
                 tint = Color.White,
-                modifier = Modifier.size(ui.dp(18f)).rotate(if (left) 90f else -90f),
+                modifier = Modifier.size(ui.dp(20f)).rotate(if (left) 90f else -90f),
             )
         }
     }
 
-    Box(modifier = Modifier.fillMaxWidth().height(ui.dp(48f)).onSizeChanged { viewport = it.width }) {
+    Box(modifier = Modifier.fillMaxWidth().height(ui.dp(52f)).onSizeChanged { viewport = it.width }) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -547,7 +547,7 @@ private fun GenreTabs(
                             widths[i] = it.size.width.toFloat()
                         }
                         .pressScale(source)
-                        .height(ui.dp(36f))
+                        .height(ui.dp(40f))
                         .clip(RoundedCornerShape(50))
                         .background(if (isSelected) Color.White else Color(0xFF1A1A1C))
                         .clickable(interactionSource = source, indication = null) {
@@ -559,7 +559,7 @@ private fun GenreTabs(
                     Text(
                         text = tab,
                         color = if (isSelected) Color.Black else Color(0xFFC4C4CA),
-                        fontSize = ui.sp(13.5f),
+                        fontSize = ui.sp(15.5f),
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                         maxLines = 1,
                     )
@@ -637,8 +637,8 @@ private fun ResultsGrid(
                 ) {
                     Text(
                         text = "$count results",
-                        color = Color(0xFF7C7C84),
-                        fontSize = 12.sp,
+                        color = Color(0xFF8E8E96),
+                        fontSize = 14.sp,
                         maxLines = 1,
                     )
                     Row(
@@ -651,8 +651,8 @@ private fun ResultsGrid(
                     ) {
                         Text(
                             text = sort.label(),
-                            color = Color(0xFFB4B4BA),
-                            fontSize = 12.sp,
+                            color = Color(0xFFC4C4CA),
+                            fontSize = 14.sp,
                             maxLines = 1,
                         )
                         Spacer(Modifier.width(4.dp))
