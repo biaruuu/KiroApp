@@ -4,6 +4,10 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.107.0]
+### Changed
+- Liquid-glass bottom bar: a translucent frosted pill with a soft light edge and a glass highlight behind the active tab. On Home and Search the content now scrolls underneath it.
+
 ## [1.106.4]
 ### Changed
 - Search text is bigger and easier to read: poster names, genre chips, the results count and the sort line. The genre chips and "<" ">" buttons are a little larger too.

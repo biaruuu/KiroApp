@@ -307,7 +307,7 @@ private fun KiroScaffold() {
                     destinations = ShownDestinations.map { it.second },
                     selectedIndex = ShownDestinations.indexOfFirst { it.first == tab },
                     onSelect = { selectTab(ShownDestinations[it].first) },
-                    backdrop = if (tab == TAB_HOME || tab == TAB_SEARCH) Color.Black else KiroBackground,
+                    backdrop = if (tab == TAB_HOME || tab == TAB_SEARCH) Color.Transparent else KiroBackground,
                 )
             }
         },
@@ -332,7 +332,7 @@ private fun KiroScaffold() {
                     .weight(1f)
                     .fillMaxHeight()
                     .background(if (tab == TAB_HOME || tab == TAB_SEARCH) Color.Black else KiroBackground)
-                    .padding(bottom = innerPadding.calculateBottomPadding()),
+                    .padding(bottom = if (!useRail && (tab == TAB_HOME || tab == TAB_SEARCH)) 0.dp else innerPadding.calculateBottomPadding()),
                 transitionSpec = {
                     androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(220)) togetherWith
                         androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(120))
