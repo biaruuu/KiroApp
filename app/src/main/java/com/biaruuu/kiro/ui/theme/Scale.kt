@@ -2,6 +2,7 @@ package com.biaruuu.kiro.ui.theme
 
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.composed
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -33,7 +34,7 @@ fun rememberUi(): Ui {
 fun androidx.compose.ui.Modifier.pressScale(
     source: androidx.compose.foundation.interaction.InteractionSource,
     pressedScale: Float = 0.95f,
-): androidx.compose.ui.Modifier = androidx.compose.ui.composed {
+): androidx.compose.ui.Modifier = composed {
     val pressed by source.collectIsPressedAsState()
     val scale by androidx.compose.animation.core.animateFloatAsState(
         if (pressed) pressedScale else 1f,
