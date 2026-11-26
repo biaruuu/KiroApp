@@ -50,6 +50,7 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -75,6 +76,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import com.biaruuu.kiro.ui.theme.pressScale
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -495,45 +498,96 @@ private fun GenreTabs(
         }
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .onSizeChanged { viewport = it.width }
-            .horizontalScroll(scroll)
-            .padding(vertical = ui.dp(6f)),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Spacer(Modifier.width(ui.dp(16f)))
-        tabs.forEachIndexed { i, tab ->
-            val isSelected = i == index
+    val scope = rememberCoroutineScope()
+    val canLeft = scroll.value > 8
+    val canRight = scroll.value < scroll.maxValue - 8
+
+    @Composable
+    fun Arrow(left: Boolean) {
+        val source = remember { MutableInteractionSource() }
+        Box(
+            modifier = Modifier
+                .padding(horizontal = ui.dp(8f))
+                .pressScale(source)
+                .size(ui.dp(34f))
+                .clip(CircleShape)
+                .background(Color.White)
+                .clickable(interactionSource = source, indication = null) {
+                    scope.launch {
+                        val step = (viewport * 0.6f).roundToInt()
+                        scroll.animateScrollTo((scroll.value + if (left) -step else step).coerceIn(0, scroll.maxValue))
+                    }
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.fluent_chevron_down_regular),
+                contentDescription = if (left) "Scroll left" else "Scroll right",
+                tint = Color.Black,
+                modifier = Modifier.size(ui.dp(20f)).rotate(if (left) 90f else -90f),
+            )
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxWidth().onSizeChanged { viewport = it.width }) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(scroll)
+                .padding(vertical = ui.dp(6f)),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Spacer(Modifier.width(ui.dp(16f)))
+            tabs.forEachIndexed { i, tab ->
+                val isSelected = i == index
+                val source = remember { MutableInteractionSource() }
+                Box(
+                    modifier = Modifier
+                        .onGloballyPositioned {
+                            lefts[i] = it.positionInParent().x
+                            widths[i] = it.size.width.toFloat()
+                        }
+                        .pressScale(source)
+                        .height(ui.dp(36f))
+                        .clip(RoundedCornerShape(50))
+                        .background(if (isSelected) Color.White else FieldBackground)
+                        .border(1.dp, if (isSelected) Color.White else FieldBorder, RoundedCornerShape(50))
+                        .clickable(interactionSource = source, indication = null) {
+                            if (tab == ALL) onSelectAll() else if (!isSelected) onSelect(tab)
+                        }
+                        .padding(horizontal = ui.dp(18f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = tab,
+                        color = if (isSelected) Color.Black else Color(0xFFC4C4CA),
+                        fontSize = ui.sp(13.5f),
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                        maxLines = 1,
+                    )
+                }
+                Spacer(Modifier.width(if (i == tabs.lastIndex) ui.dp(16f) else ui.dp(8f)))
+            }
+        }
+        if (canLeft) {
             Box(
                 modifier = Modifier
-                    .onGloballyPositioned {
-                        lefts[i] = it.positionInParent().x
-                        widths[i] = it.size.width.toFloat()
-                    }
-                    .height(ui.dp(34f))
-                    .clip(RoundedCornerShape(50))
-                    .background(if (isSelected) Color.White else FieldBackground)
-                    .border(1.dp, if (isSelected) Color.White else FieldBorder, RoundedCornerShape(50))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                    ) {
-                        if (tab == ALL) onSelectAll() else if (!isSelected) onSelect(tab)
-                    }
-                    .padding(horizontal = ui.dp(16f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = tab,
-                    color = if (isSelected) Color.Black else Color(0xFFC4C4CA),
-                    fontSize = ui.sp(13f),
-                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                    maxLines = 1,
-                )
-            }
-            Spacer(Modifier.width(if (i == tabs.lastIndex) ui.dp(16f) else ui.dp(8f)))
+                    .align(Alignment.CenterStart)
+                    .fillMaxHeight()
+                    .background(androidx.compose.ui.graphics.Brush.horizontalGradient(0f to Color.Black, 0.7f to Color.Black.copy(alpha = 0.9f), 1f to Color.Transparent))
+                    .padding(end = ui.dp(14f)),
+                contentAlignment = Alignment.CenterStart,
+            ) { Arrow(left = true) }
+        }
+        if (canRight) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .background(androidx.compose.ui.graphics.Brush.horizontalGradient(0f to Color.Transparent, 0.3f to Color.Black.copy(alpha = 0.9f), 1f to Color.Black))
+                    .padding(start = ui.dp(14f)),
+                contentAlignment = Alignment.CenterEnd,
+            ) { Arrow(left = false) }
         }
     }
 }

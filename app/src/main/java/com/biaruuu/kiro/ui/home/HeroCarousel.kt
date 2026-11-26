@@ -3,6 +3,7 @@ package com.biaruuu.kiro.ui.home
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import com.biaruuu.kiro.ui.theme.pressScale
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -347,12 +348,14 @@ private fun HeroButton(
     ui: com.biaruuu.kiro.ui.theme.Ui,
     modifier: Modifier = Modifier,
 ) {
+    val source = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Row(
         modifier = modifier
+            .pressScale(source)
             .height(ui.dp(44f))
             .clip(RoundedCornerShape(50))
             .background(if (filled) Color.White else Color(0xFF3C3C41).copy(alpha = 0.7f))
-            .clickable(onClick = onClick),
+            .clickable(interactionSource = source, indication = null, onClick = onClick),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
