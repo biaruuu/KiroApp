@@ -507,11 +507,12 @@ private fun GenreTabs(
         val source = remember { MutableInteractionSource() }
         Box(
             modifier = Modifier
-                .padding(horizontal = ui.dp(8f))
+                .padding(horizontal = ui.dp(6f))
                 .pressScale(source)
-                .size(ui.dp(34f))
+                .size(ui.dp(36f))
                 .clip(CircleShape)
-                .background(Color.White)
+                .background(Color(0xFF1A1A1C))
+                .border(1.dp, Color(0xFF2C2C30), CircleShape)
                 .clickable(interactionSource = source, indication = null) {
                     scope.launch {
                         val step = (viewport * 0.6f).roundToInt()
@@ -523,18 +524,17 @@ private fun GenreTabs(
             Icon(
                 painter = painterResource(R.drawable.fluent_chevron_down_regular),
                 contentDescription = if (left) "Scroll left" else "Scroll right",
-                tint = Color.Black,
+                tint = Color.White,
                 modifier = Modifier.size(ui.dp(20f)).rotate(if (left) 90f else -90f),
             )
         }
     }
 
-    Box(modifier = Modifier.fillMaxWidth().onSizeChanged { viewport = it.width }) {
+    Box(modifier = Modifier.fillMaxWidth().height(ui.dp(52f)).onSizeChanged { viewport = it.width }) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(scroll)
-                .padding(vertical = ui.dp(6f)),
+                .fillMaxSize()
+                .horizontalScroll(scroll),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Spacer(Modifier.width(ui.dp(16f)))
@@ -548,14 +548,13 @@ private fun GenreTabs(
                             widths[i] = it.size.width.toFloat()
                         }
                         .pressScale(source)
-                        .height(ui.dp(36f))
+                        .height(ui.dp(38f))
                         .clip(RoundedCornerShape(50))
-                        .background(if (isSelected) Color.White else FieldBackground)
-                        .border(1.dp, if (isSelected) Color.White else FieldBorder, RoundedCornerShape(50))
+                        .background(if (isSelected) Color.White else Color(0xFF1A1A1C))
                         .clickable(interactionSource = source, indication = null) {
                             if (tab == ALL) onSelectAll() else if (!isSelected) onSelect(tab)
                         }
-                        .padding(horizontal = ui.dp(18f)),
+                        .padding(horizontal = ui.dp(22f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -574,8 +573,8 @@ private fun GenreTabs(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .fillMaxHeight()
-                    .background(androidx.compose.ui.graphics.Brush.horizontalGradient(0f to Color.Black, 0.7f to Color.Black.copy(alpha = 0.9f), 1f to Color.Transparent))
-                    .padding(end = ui.dp(14f)),
+                    .background(androidx.compose.ui.graphics.Brush.horizontalGradient(0f to Color.Black, 0.65f to Color.Black.copy(alpha = 0.92f), 1f to Color.Transparent))
+                    .padding(end = ui.dp(12f)),
                 contentAlignment = Alignment.CenterStart,
             ) { Arrow(left = true) }
         }
@@ -584,8 +583,8 @@ private fun GenreTabs(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .fillMaxHeight()
-                    .background(androidx.compose.ui.graphics.Brush.horizontalGradient(0f to Color.Transparent, 0.3f to Color.Black.copy(alpha = 0.9f), 1f to Color.Black))
-                    .padding(start = ui.dp(14f)),
+                    .background(androidx.compose.ui.graphics.Brush.horizontalGradient(0f to Color.Transparent, 0.35f to Color.Black.copy(alpha = 0.92f), 1f to Color.Black))
+                    .padding(start = ui.dp(12f)),
                 contentAlignment = Alignment.CenterEnd,
             ) { Arrow(left = false) }
         }

@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.106.2]
+### Fixed
+- Search: the genre row took the whole screen height, which pushed the arrow to the middle and hid the results. It is now a fixed-height row.
+### Changed
+- Genre chips are filled dark pills with no outline and the "<" and ">" buttons are dark circles with a white chevron, matching the reference.
+
 ## [1.106.1]
 ### Changed
 - Search genres: round white "<" and ">" buttons appear at the ends of the chip row and scroll it; the picked genre still centres itself.
