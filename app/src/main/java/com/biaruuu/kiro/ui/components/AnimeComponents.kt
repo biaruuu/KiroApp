@@ -172,7 +172,7 @@ fun RankedRow(
     modifier: Modifier = Modifier,
 ) {
     val ui = com.biaruuu.kiro.ui.theme.rememberUi()
-    val posterWidth = ui.dp(122f)
+    val posterWidth = ui.dp(112f)
     val posterHeight = posterWidth * 1.5f
     val stroke = with(androidx.compose.ui.platform.LocalDensity.current) { 1.6.dp.toPx() }
     Column(modifier = modifier) {
@@ -205,8 +205,8 @@ fun RankedRow(
                                 letterSpacing = if (rank >= 10) ui.sp(-14f) else ui.sp(0f),
                                 platformStyle = androidx.compose.ui.text.PlatformTextStyle(includeFontPadding = false),
                             ),
-                            fontSize = ui.sp(172f),
-                            lineHeight = ui.sp(172f),
+                            fontSize = ui.sp(158f),
+                            lineHeight = ui.sp(158f),
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             softWrap = false,
@@ -225,11 +225,13 @@ fun RankedRow(
                         )
                         Text(
                             text = anime.displayTitle,
-                            color = Color(0xFF8E8E93),
-                            fontSize = ui.sp(12f),
-                            maxLines = 1,
+                            color = Color(0xFFD8D8DD),
+                            fontSize = ui.sp(13.5f),
+                            lineHeight = ui.sp(17f),
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(top = ui.dp(8f)),
+                            modifier = Modifier.padding(top = ui.dp(9f)),
                         )
                     }
                 }

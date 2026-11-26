@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.105.3]
+### Changed
+- Top 10: the anime name under each poster is now brighter, larger and can use two lines, so it is easy to read.
+- "View episodes" is a little wider than "Favourites", like the reference, and the poster and number sizes were rebalanced.
+
 ## [1.105.2]
 ### Changed
 - Home now uses a true black background like the reference, with a darker hero fade so the title, genres and buttons stay readable over bright artwork.

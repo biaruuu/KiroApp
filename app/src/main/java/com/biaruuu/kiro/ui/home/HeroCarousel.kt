@@ -312,7 +312,7 @@ private fun PhoneHeroPage(
                     filled = true,
                     onClick = { onPlay(anime) },
                     ui = ui,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1.27f),
                 )
                 HeroButton(
                     label = "Favourites",
