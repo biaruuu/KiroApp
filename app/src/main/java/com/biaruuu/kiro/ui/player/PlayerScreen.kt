@@ -152,6 +152,11 @@ fun PlayerScreen(
     val context = LocalContext.current
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    // Tells the live announcement to use its thin one-line bar while a video is on screen.
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        com.biaruuu.kiro.data.GlobalSocket.inPlayer.value = true
+        onDispose { com.biaruuu.kiro.data.GlobalSocket.inPlayer.value = false }
+    }
 
     // Same view model the details page uses, so the episode list is already loaded.
     val vm: DetailViewModel = viewModel(key = "detail-$animeId", factory = DetailViewModel.Factory(animeId))

@@ -84,7 +84,7 @@ import com.biaruuu.kiro.ui.theme.KiroAccent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private val Bg = Color(0xFF121212)
+private val Bg = Color(0xFF0A0A0B)
 private val DividerColor = Color(0xFF333335)
 private val MutedText = Color(0xFF8E8E93)
 private val SheetBackground = Color(0xFF18181B)
@@ -338,8 +338,8 @@ private fun DetailContent(
                     Text(
                         anime.displayTitle,
                         color = Color.White,
-                        fontSize = 24.sp,
-                        lineHeight = 29.sp,
+                        fontSize = 22.sp,
+                        lineHeight = 27.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
                     val info = metaLine(anime, detail).replace(" | ", "  ·  ")
@@ -362,8 +362,8 @@ private fun DetailContent(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp)
-                        .clip(RoundedCornerShape(16.dp))
+                        .height(48.dp)
+                        .clip(RoundedCornerShape(50))
                         .background(KiroAccent)
                         .clickable {
                             val first = released.firstOrNull()
@@ -645,7 +645,7 @@ private fun ActionButton(label: String, icon: Int, tint: Color, onClick: () -> U
         modifier = Modifier.widthIn(min = 56.dp).clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick).padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFF1B1B1F)), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(46.dp).clip(CircleShape).background(Color(0xFF1A1A1C)), contentAlignment = Alignment.Center) {
             Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
         }
         Spacer(Modifier.height(6.dp))

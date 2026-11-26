@@ -47,6 +47,9 @@ object GlobalSocket {
     /** This phone's own pick for [current]: "like", "dislike" or null. */
     val myChoice = MutableStateFlow<String?>(null)
 
+    /** True while a video player is open: the prompt then shrinks to a thin bar so the picture stays visible. */
+    val inPlayer = MutableStateFlow(false)
+
     /** Phones connected right now. */
     val online = MutableStateFlow(0)
 

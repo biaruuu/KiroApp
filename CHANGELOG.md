@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.109.0]
+### Changed
+- General revamp in the same black, minimal style: Library (pill chips with scroll arrows instead of underlined tabs), Me (settings in rounded groups with icons) and the Details page (round action buttons, pill Play button, smaller title).
+- The live announcement is now a compact dark card. While a video is playing it shrinks to a thin one-line bar at the very top, so the picture stays visible, and the like and dislike buttons stay on it.
+
 ## [1.108.0]
 ### Added
 - "Tagalog Dubbed" row on Home, above Top 10 trending: every anime that has a Filipino dub added in the Admin panel appears there at once.

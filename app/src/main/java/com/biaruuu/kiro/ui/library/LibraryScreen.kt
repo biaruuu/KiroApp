@@ -93,7 +93,7 @@ private val Hairline = Color(0xFF222226)
 private val Muted = Color(0xFF9A9A9F)
 private val EmptyTint = Color(0xFF5E5E63)
 private val Placeholder = Color(0xFF262628)
-private val SheetBackground = Color(0xFF18181B)
+private val SheetBackground = Color(0xFF151517)
 
 private const val TAB_WATCHED = 0
 private const val TAB_LIST = 1
@@ -167,15 +167,13 @@ fun LibraryScreen(
     val listSortLabels = listOf("Recently added", "Recently updated", "Highest average rating")
     val ratedSortLabels = listOf("Recently rated", "Highest rating")
 
-    Column(modifier = modifier.statusBarsPadding()) {
+    Column(modifier = modifier.background(Color.Black).statusBarsPadding()) {
         com.biaruuu.kiro.ui.components.LibraryHeader(
             profile = profile,
             name = shownName,
             modifier = Modifier.clickable(enabled = authState is com.biaruuu.kiro.data.auth.AuthState.SignedIn, onClick = onCustomize),
         )
-        Box(Modifier.fillMaxWidth().height(1.dp).background(Hairline))
         LibraryTabs(pager = pager, onSelect = { scope.launch { pager.animateScrollToPage(it) } })
-        Box(Modifier.fillMaxWidth().height(1.dp).background(Hairline))
 
         // Swiping or tapping a tab slides between the four pages.
         HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
@@ -336,78 +334,17 @@ fun LibraryScreen(
 
 @Composable
 private fun LibraryTabs(pager: PagerState, onSelect: (Int) -> Unit) {
-    val density = LocalDensity.current
-    val scroll = rememberScrollState()
-    val lefts = remember { mutableStateListOf<Float>().apply { repeat(Tabs.size) { add(0f) } } }
-    val widths = remember { mutableStateListOf<Float>().apply { repeat(Tabs.size) { add(0f) } } }
-    var viewport by remember { mutableIntStateOf(0) }
-
-    // The white line slides between the two tabs while the page is being dragged.
-    val cur = pager.currentPage
-    val frac = pager.currentPageOffsetFraction
-    val target = (if (frac > 0f) cur + 1 else if (frac < 0f) cur - 1 else cur).coerceIn(0, Tabs.lastIndex)
-    val p = abs(frac).coerceIn(0f, 1f)
-    val lineX = lerp(lefts[cur], lefts[target], p)
-    val lineW = lerp(widths[cur], widths[target], p)
-
-    // Keep the chosen tab in view.
-    LaunchedEffect(cur, viewport, widths[cur]) {
-        if (viewport > 0 && widths[cur] > 0f) {
-            scroll.animateScrollTo((lefts[cur] + widths[cur] / 2f - viewport / 2f).roundToInt().coerceAtLeast(0))
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(44.dp)
-            .onSizeChanged { viewport = it.width }
-            .horizontalScroll(scroll),
-    ) {
-        Row(modifier = Modifier.fillMaxHeight()) {
-            Spacer(Modifier.width(16.dp))
-            Tabs.forEachIndexed { index, label ->
-                val color by animateColorAsState(
-                    if (cur == index) Color.White else Color(0xFF8C8C91),
-                    label = "tab-color",
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .onGloballyPositioned {
-                            lefts[index] = it.positionInParent().x
-                            widths[index] = it.size.width.toFloat()
-                        }
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                        ) { onSelect(index) },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(label, color = color, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
-                }
-                Spacer(Modifier.width(if (index == Tabs.lastIndex) 16.dp else 24.dp))
-            }
-        }
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .offset { IntOffset(lineX.roundToInt(), 0) }
-                .width(with(density) { lineW.toDp() })
-                .height(2.dp)
-                .background(Color.White),
-        )
-    }
+    com.biaruuu.kiro.ui.components.ChipRow(labels = Tabs, selected = pager.currentPage, onSelect = onSelect)
 }
 
 @Composable
 private fun CountBar(count: String, sortLabel: String?, onSortClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(count, color = Muted, fontSize = 13.sp)
+        Text(count, color = Color(0xFF8E8E96), fontSize = 13.5.sp)
         if (sortLabel != null) {
             Row(
                 modifier = Modifier.clickable(
@@ -417,7 +354,7 @@ private fun CountBar(count: String, sortLabel: String?, onSortClick: () -> Unit)
                 ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(sortLabel, color = Muted, fontSize = 13.sp)
+                Text(sortLabel, color = Color(0xFFC4C4CA), fontSize = 13.5.sp)
                 Spacer(Modifier.width(4.dp))
                 Icon(
                     painter = painterResource(R.drawable.fluent_chevron_down_regular),
