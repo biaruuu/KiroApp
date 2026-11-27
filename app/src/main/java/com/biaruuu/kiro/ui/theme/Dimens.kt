@@ -46,7 +46,7 @@ fun dimensFor(widthDp: Int): Dimens {
             Dimens(
                 windowClass = windowClass,
                 gutter = gutter.dp,
-                rowSpacing = 32.dp,
+                rowSpacing = 28.dp,
                 cardSpacing = 10.dp,
                 // About 2.7 cards fit, so the third peeks in and hints that the row scrolls.
                 cardWidth = ((widthDp - gutter * 1.5f) / 2.7f).coerceIn(104f, 160f).dp,
@@ -54,7 +54,7 @@ fun dimensFor(widthDp: Int): Dimens {
                 heroAspect = 0.68f,
                 heroTitle = 26.sp,
                 heroTagline = 15.sp,
-                sectionTitle = 18.sp,
+                sectionTitle = 17.sp,
                 wordmark = 26.sp,
                 searchMaxWidth = 720.dp,
                 navRailWidth = 0.dp,

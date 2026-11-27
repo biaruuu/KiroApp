@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.114.0]
+
+### Changed
+- Home polish: tighter 28 dp row rhythm, cleaner section titles, quieter 10 dp poster cards on the elevated surface colour, bolder rank numbers, and Continue Watching cards that size with the screen.
+
 ## [1.113.1]
 
 ### Changed

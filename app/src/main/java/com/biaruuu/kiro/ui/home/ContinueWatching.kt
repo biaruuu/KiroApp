@@ -80,7 +80,8 @@ fun ContinueWatchingRow(
             text = "Continue Watching",
             style = MaterialTheme.typography.titleLarge,
             fontSize = dims.sectionTitle,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = (-0.2).sp,
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(horizontal = dims.gutter),
         )
@@ -91,14 +92,14 @@ fun ContinueWatchingRow(
         ) {
             items(items, key = { it.animeId }) { e ->
                 Column(
-                    modifier = Modifier.width(260.dp).clickable { onContinue(e.animeId, e.episode) },
+                    modifier = Modifier.width((dims.cardWidth * 1.85f).coerceIn(200.dp, 320.dp)).clickable { onContinue(e.animeId, e.episode) },
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(16f / 9f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFF262628)),
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(com.biaruuu.kiro.ui.theme.KiroSurface),
                     ) {
                         AsyncImage(
                             model = e.thumb ?: e.image,
@@ -150,7 +151,7 @@ fun ContinueWatchingRow(
                     )
                     Text(
                         "Episode ${e.episode}",
-                        color = Color(0xFF8E8E93),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp,
                     )
                 }

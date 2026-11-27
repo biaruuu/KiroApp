@@ -82,9 +82,9 @@ fun PosterCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(if (compact) 0.707f else PosterAspect)
-                .clip(RoundedCornerShape(12.dp))
-                .background(placeholder.copy(alpha = 0.3f))
-                .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(12.dp)),
+                .clip(RoundedCornerShape(10.dp))
+                .background(KiroSurface)
+                .border(0.5.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(10.dp)),
         ) {
             AsyncImage(
                 model = anime.posterUrl,
@@ -112,14 +112,14 @@ fun PosterCard(
                 )
             }
         }
-        Spacer(Modifier.height(if (compact) 8.dp else 10.dp))
+        Spacer(Modifier.height(if (compact) 7.dp else 10.dp))
         Text(
             text = anime.displayTitle,
             style = MaterialTheme.typography.bodyLarge,
-            fontSize = if (compact) 13.sp else androidx.compose.ui.unit.TextUnit.Unspecified,
-            lineHeight = if (compact) 18.sp else 21.sp,
+            fontSize = if (compact) 12.5.sp else androidx.compose.ui.unit.TextUnit.Unspecified,
+            lineHeight = if (compact) 17.sp else 21.sp,
             fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.92f),
+            color = MaterialTheme.colorScheme.onBackground,
             maxLines = titleMaxLines,
             overflow = TextOverflow.Ellipsis,
         )
@@ -140,13 +140,14 @@ fun AnimeRow(
             text = title,
             style = MaterialTheme.typography.titleLarge,
             fontSize = dims.sectionTitle,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = (-0.2).sp,
             color = MaterialTheme.colorScheme.onBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = dims.gutter),
         )
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(12.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = dims.gutter),
             horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing),
@@ -180,13 +181,14 @@ fun RankedRow(
             text = title,
             style = MaterialTheme.typography.titleLarge,
             fontSize = dims.sectionTitle,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = (-0.2).sp,
             color = MaterialTheme.colorScheme.onBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = dims.gutter),
         )
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(12.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = dims.gutter),
             horizontalArrangement = Arrangement.spacedBy(dims.cardSpacing),
@@ -203,9 +205,9 @@ fun RankedRow(
                     Text(
                         text = "${index + 1}",
                         color = KiroText,
-                        fontSize = 11.sp,
+                        fontSize = 12.sp,
                         lineHeight = 14.sp,
-                        fontWeight = FontWeight.Medium,
+                        fontWeight = FontWeight.SemiBold,
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(6.dp)
