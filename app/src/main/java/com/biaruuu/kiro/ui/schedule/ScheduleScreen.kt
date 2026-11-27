@@ -61,9 +61,9 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 
-private val Hairline = Color(0xFF222226)
-private val Muted = Color(0xFF9A9A9F)
-private val Placeholder = Color(0xFF262628)
+private val Hairline = com.biaruuu.kiro.ui.theme.KiroOutline
+private val Muted = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
+private val Placeholder = com.biaruuu.kiro.ui.theme.KiroSurface
 
 private sealed interface Loaded {
     object Loading : Loaded
@@ -150,7 +150,7 @@ fun ScheduleScreen(onAnimeClick: (Anime) -> Unit, modifier: Modifier = Modifier)
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(20.dp))
-                                .background(if (onlyMine) KiroAccent else Color(0xFF18181B))
+                                .background(if (onlyMine) KiroAccent else com.biaruuu.kiro.ui.theme.KiroSurface)
                                 .clickable { onlyMine = !onlyMine }
                                 .padding(horizontal = 12.dp, vertical = 6.dp),
                         )
@@ -159,7 +159,7 @@ fun ScheduleScreen(onAnimeClick: (Anime) -> Unit, modifier: Modifier = Modifier)
                         Box(Modifier.fillMaxSize().padding(bottom = 48.dp), contentAlignment = Alignment.Center) {
                             Text(
                                 if (onlyMine) "Nothing from your list airs on this day" else "No episodes scheduled",
-                                color = Color(0xFF5E5E63), fontSize = 14.sp,
+                                color = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted, fontSize = 14.sp,
                             )
                         }
                     } else {
@@ -192,7 +192,7 @@ private fun AiringRow(a: AniListExtra.Airing, inList: Boolean, now: Long, zone: 
         else -> "in ${left / 86_400}d ${left % 86_400 / 3600}h"
     }
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.width(60.dp).height(86.dp).clip(RoundedCornerShape(8.dp)).background(Placeholder)) {
+        Box(Modifier.width(60.dp).height(86.dp).clip(RoundedCornerShape(10.dp)).background(Placeholder)) {
             AsyncImage(
                 model = a.anime.posterUrl,
                 contentDescription = a.anime.displayTitle,
@@ -219,7 +219,7 @@ private fun AiringRow(a: AniListExtra.Airing, inList: Boolean, now: Long, zone: 
         Spacer(Modifier.width(10.dp))
         Text(
             status, color = if (left <= 0) Muted else Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium,
-            modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color(0xFF18181B)).padding(horizontal = 10.dp, vertical = 6.dp),
+            modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(com.biaruuu.kiro.ui.theme.KiroSurface).padding(horizontal = 10.dp, vertical = 6.dp),
         )
     }
 }
