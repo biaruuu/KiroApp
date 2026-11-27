@@ -129,7 +129,7 @@ fun DownloadedEpisodesScreen(
     removeTarget?.let { d ->
         AlertDialog(
             onDismissRequest = { removeTarget = null },
-            containerColor = Color(0xFF18181B),
+            containerColor = com.biaruuu.kiro.ui.theme.KiroSurface,
             title = { Text("Delete episode ${d.episode}?", color = KiroText, fontWeight = FontWeight.Medium, fontSize = 18.sp) },
             text = { Text("It will be deleted from your phone.", color = Muted, fontSize = 15.sp) },
             confirmButton = {
@@ -143,7 +143,7 @@ fun DownloadedEpisodesScreen(
     if (removeAll) {
         AlertDialog(
             onDismissRequest = { removeAll = false },
-            containerColor = Color(0xFF18181B),
+            containerColor = com.biaruuu.kiro.ui.theme.KiroSurface,
             title = { Text("Delete all episodes?", color = KiroText, fontWeight = FontWeight.Medium, fontSize = 18.sp) },
             text = { Text("Every downloaded episode of \"$title\" will be deleted from your phone.", color = Muted, fontSize = 15.sp) },
             confirmButton = {

@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.114.3]
+
+### Changed
+- Your Library uses the shared dark palette (surfaces, hairlines, secondary labels) with softer 10 dp poster corners.
+
 ## [1.114.2]
 
 ### Changed

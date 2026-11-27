@@ -90,11 +90,11 @@ import com.biaruuu.kiro.ui.theme.KiroBackground
 import com.biaruuu.kiro.ui.theme.KiroAccent
 import kotlinx.coroutines.launch
 
-private val Hairline = Color(0xFF222226)
-private val Muted = Color(0xFF9A9A9F)
+private val Hairline = com.biaruuu.kiro.ui.theme.KiroOutline
+private val Muted = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
 private val EmptyTint = Color(0xFF5E5E63)
-private val Placeholder = Color(0xFF262628)
-private val SheetBackground = Color(0xFF18181B)
+private val Placeholder = com.biaruuu.kiro.ui.theme.KiroSurface
+private val SheetBackground = com.biaruuu.kiro.ui.theme.KiroSurface
 
 private const val TAB_WATCHED = 0
 private const val TAB_LIST = 1
@@ -308,7 +308,7 @@ fun LibraryScreen(
         }
         AlertDialog(
             onDismissRequest = { removeTarget = null },
-            containerColor = Color(0xFF18181B),
+            containerColor = com.biaruuu.kiro.ui.theme.KiroSurface,
             title = { Text(heading, color = KiroText, fontWeight = FontWeight.Medium, fontSize = 18.sp) },
             text = { Text(body, color = Muted, fontSize = 15.sp) },
             confirmButton = {
@@ -369,7 +369,7 @@ private fun LibraryTabs(pager: PagerState, onSelect: (Int) -> Unit) {
             Spacer(Modifier.width(16.dp))
             Tabs.forEachIndexed { index, label ->
                 val color by animateColorAsState(
-                    if (cur == index) Color.White else Color(0xFF8C8C91),
+                    if (cur == index) Color.White else com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted,
                     label = "tab-color",
                 )
                 Box(
@@ -694,7 +694,7 @@ private fun DownloadPosterGrid(
             val active = episodes.count { it.active }
             Column(modifier = Modifier.combinedClickable(onClick = { onOpen(first.animeId) }, onLongClick = { onRemove(first) })) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().aspectRatio(0.707f).clip(RoundedCornerShape(8.dp)).background(Placeholder),
+                    modifier = Modifier.fillMaxWidth().aspectRatio(0.707f).clip(RoundedCornerShape(10.dp)).background(Placeholder),
                 ) {
                     AsyncImage(
                         model = first.poster.ifEmpty { null },

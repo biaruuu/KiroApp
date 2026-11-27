@@ -106,7 +106,7 @@ internal fun DownloadQueueSheet(onDismiss: () -> Unit) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color(0xFF18181B),
+        containerColor = com.biaruuu.kiro.ui.theme.KiroSurface,
         scrimColor = Color.Black.copy(alpha = 0.72f),
         shape = RectangleShape,
         tonalElevation = 0.dp,
