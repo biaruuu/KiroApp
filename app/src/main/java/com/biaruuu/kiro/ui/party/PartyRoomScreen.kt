@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.party
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -113,7 +114,7 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("You're not in a room.", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                Text("You're not in a room.", color = KiroText, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(6.dp))
                 Text("Start or join one from Me > Watch party.", color = RmMuted, fontSize = 13.sp)
                 Spacer(Modifier.height(16.dp))
@@ -168,7 +169,7 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
                     Column(Modifier.weight(1f).padding(horizontal = 2.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                room.name.ifBlank { "Watch party" }, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold,
+                                room.name.ifBlank { "Watch party" }, color = KiroText, fontSize = 17.sp, fontWeight = FontWeight.SemiBold,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
                             )
                         }
@@ -231,7 +232,7 @@ fun PartyRoomScreen(onBack: () -> Unit, onBrowse: () -> Unit, modifier: Modifier
                     Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text("Nothing playing yet", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Nothing playing yet", color = KiroText, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(6.dp))
                     Text(
                         if (p.host) "Pick an anime and start an episode. It plays here for everyone."
@@ -319,7 +320,7 @@ private fun JoinAsk(asks: List<WatchParty.JoinRequest>) {
         DecoratedAvatar(a.avatar, a.name, 30.dp, a.decoration)
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
-            Text(a.name, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(a.name, color = KiroText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(if (asks.size > 1) "wants to join  ·  +${asks.size - 1} more" else "wants to join", color = RmMuted, fontSize = 11.sp, maxLines = 1)
         }
         Text(
@@ -366,7 +367,7 @@ private fun BrowseMirror(b: WatchParty.Browse) {
                 }
                 Column(Modifier.weight(1f)) {
                     Text(
-                        a?.displayTitle?.takeIf { it.isNotBlank() } ?: b.title.ifBlank { "Looking at an anime" }, color = Color.White, fontSize = 15.sp,
+                        a?.displayTitle?.takeIf { it.isNotBlank() } ?: b.title.ifBlank { "Looking at an anime" }, color = KiroText, fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis,
                     )
                     if (meta.isNotBlank()) Text(meta, color = RmMuted, fontSize = 12.sp, maxLines = 1)
@@ -380,7 +381,7 @@ private fun BrowseMirror(b: WatchParty.Browse) {
                     "schedule" -> "Checking the schedule"
                     else -> "Browsing Kiro"
                 },
-                color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+                color = KiroText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
             )
             Spacer(Modifier.height(4.dp))
             Text("The host is picking what to watch. It will start here for everyone.", color = RmMuted, fontSize = 12.sp, lineHeight = 17.sp)
@@ -398,7 +399,7 @@ private fun NowPlaying(r: WatchParty.Remote, hostName: String) {
     val a = ui.base
     Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 10.dp)) {
         Text(
-            a?.displayTitle?.takeIf { it.isNotBlank() } ?: r.title.ifBlank { "Now playing" }, color = Color.White, fontSize = 15.sp,
+            a?.displayTitle?.takeIf { it.isNotBlank() } ?: r.title.ifBlank { "Now playing" }, color = KiroText, fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
         Text(
@@ -423,7 +424,7 @@ private fun VoicePane(voiceOff: Boolean, modifier: Modifier) {
         Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             if (voiceOff) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
-                    Text("Voice chat is off", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Voice chat is off", color = KiroText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(4.dp))
                     Text("The host turned voice chat off for this room.", color = RmMuted, fontSize = 12.sp, textAlign = TextAlign.Center)
                 }
@@ -431,7 +432,7 @@ private fun VoicePane(voiceOff: Boolean, modifier: Modifier) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
                     Icon(painterResource(R.drawable.fluent_mic_regular), null, tint = PtFaint, modifier = Modifier.size(32.dp))
                     Spacer(Modifier.height(10.dp))
-                    Text("Nobody is in voice yet", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Nobody is in voice yet", color = KiroText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(4.dp))
                     Text("Join to talk with everyone in the room. Earphones help avoid echo.", color = RmMuted, fontSize = 12.sp, lineHeight = 17.sp, textAlign = TextAlign.Center)
                 }
@@ -460,7 +461,7 @@ private fun VoicePane(voiceOff: Boolean, modifier: Modifier) {
                                 )
                             }
                             Row(Modifier.align(Alignment.BottomStart).padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Text(m.name, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                                Text(m.name, color = KiroText, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                             }
                         }
                     }
@@ -476,7 +477,7 @@ private fun VoicePane(voiceOff: Boolean, modifier: Modifier) {
             Column(Modifier.weight(1f)) {
                 Text(
                     if (inCall.size == 1) "1 member" else "${inCall.size} members",
-                    color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+                    color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
                 )
                 Text(
                     if (!joined) "Not connected" else if (open) "Connected" else "Connecting…",
@@ -534,7 +535,7 @@ private fun SheetTitle(title: String, back: (() -> Unit)?, onClose: () -> Unit) 
             )
             Spacer(Modifier.width(4.dp))
         }
-        Text(title, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+        Text(title, color = KiroText, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
         Icon(
             painterResource(R.drawable.fluent_dismiss_regular), contentDescription = "Close", tint = RmMuted,
             modifier = Modifier.size(36.dp).clip(RoundedCornerShape(18.dp)).clickable(onClick = onClose).padding(8.dp),
@@ -558,7 +559,7 @@ private fun SheetRow(label: String, hint: String = "", danger: Boolean = false, 
 private fun InfoRow(label: String, value: String) {
     Row(Modifier.fillMaxWidth().padding(vertical = 7.dp)) {
         Text(label, color = RmMuted, fontSize = 13.sp, modifier = Modifier.weight(1f))
-        Text(value, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(value, color = KiroText, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -592,7 +593,7 @@ private fun SheetContent(
                     Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
                 }
             } else {
-                Text(room.name.ifBlank { "Watch party" }, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                Text(room.name.ifBlank { "Watch party" }, color = KiroText, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
             }
             Spacer(Modifier.height(12.dp))
             Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(RmBg).padding(horizontal = 14.dp, vertical = 6.dp)) {
@@ -611,7 +612,7 @@ private fun SheetContent(
                 if (confirm) {
                     AlertDialog(
                         onDismissRequest = { confirm = false }, containerColor = RmCard,
-                        title = { Text("Clear the chat?", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold) },
+                        title = { Text("Clear the chat?", color = KiroText, fontSize = 17.sp, fontWeight = FontWeight.SemiBold) },
                         text = { Text("Every message in this room will be deleted for everyone.", color = Color(0xFFD0D0D4), fontSize = 14.sp) },
                         confirmButton = { TextButton(onClick = { confirm = false; WatchParty.clearChat() }) { Text("Clear", color = RmRed) } },
                         dismissButton = { TextButton(onClick = { confirm = false }) { Text("Cancel", color = RmMuted) } },
@@ -628,7 +629,7 @@ private fun SheetContent(
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(m.name, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                            Text(m.name, color = KiroText, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                             if (m.host) {
                                 Spacer(Modifier.width(6.dp))
                                 Icon(painterResource(R.drawable.fluent_crown_filled), contentDescription = "Host", tint = Color.Unspecified, modifier = Modifier.size(16.dp))
@@ -638,7 +639,7 @@ private fun SheetContent(
                     }
                     if (p.host && !m.host) {
                         Text(
-                            "Kick", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium,
+                            "Kick", color = KiroText, fontSize = 13.sp, fontWeight = FontWeight.Medium,
                             modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable { WatchParty.kick(m.uid) }.padding(horizontal = 10.dp, vertical = 8.dp),
                         )
                         Text(
@@ -656,9 +657,9 @@ private fun SheetContent(
                 } else {
                     room.banned.forEach { (uid, name) ->
                         Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(name, color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                            Text(name, color = KiroText, fontSize = 14.sp, modifier = Modifier.weight(1f))
                             Text(
-                                "Allow", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium,
+                                "Allow", color = KiroText, fontSize = 13.sp, fontWeight = FontWeight.Medium,
                                 modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable { WatchParty.unban(uid) }.padding(horizontal = 10.dp, vertical = 8.dp),
                             )
                         }
@@ -686,7 +687,7 @@ private fun SheetContent(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         DecoratedAvatar(m.avatar, m.name, 34.dp, m.decoration)
                         Spacer(Modifier.width(10.dp))
-                        Text(m.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                        Text(m.name, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                     }
                     Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         PermChip("Chat", !noChat, Modifier.weight(1f)) { WatchParty.setDenied(m.uid, !noChat, noVoice) }
@@ -722,7 +723,7 @@ private fun SheetContent(
                     Box(
                         Modifier.weight(1f).height(60.dp).clip(RoundedCornerShape(14.dp)).background(RmBg).border(1.dp, RmHair, RoundedCornerShape(14.dp)),
                         contentAlignment = Alignment.Center,
-                    ) { Text(ch.toString(), color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.SemiBold) }
+                    ) { Text(ch.toString(), color = KiroText, fontSize = 26.sp, fontWeight = FontWeight.SemiBold) }
                 }
             }
             Spacer(Modifier.height(12.dp))

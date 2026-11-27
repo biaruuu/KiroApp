@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.me
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -121,7 +122,7 @@ fun CustomizePage() {
                     .padding(horizontal = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(name, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium, fontFamily = NameStyles.family(context, font), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(name, color = KiroText, fontSize = 18.sp, fontWeight = FontWeight.Medium, fontFamily = NameStyles.family(context, font), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(NameStyles.label(font), color = Muted, fontSize = 12.sp)
                 Spacer(Modifier.size(10.dp))
                 Box(Modifier.size(22.dp)) {
@@ -167,7 +168,7 @@ private fun Grid(items: List<Design?>, selectedId: String, onPick: (String) -> U
 
 @Composable
 private fun NoneTile() {
-    Text("None", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
+    Text("None", color = KiroText, fontSize = 13.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
 }
 
 @Composable

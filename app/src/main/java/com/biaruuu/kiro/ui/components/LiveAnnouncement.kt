@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.components
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -113,7 +114,7 @@ fun LiveAnnouncementOverlay() {
                     DecoratedAvatar(admin?.avatar.orEmpty(), name, ui.dp(26f), null)
                     Spacer(Modifier.size(ui.dp(8f)))
                     Text(
-                        name, color = Color.White, fontSize = ui.sp(12.5f), fontWeight = FontWeight.SemiBold,
+                        name, color = KiroText, fontSize = ui.sp(12.5f), fontWeight = FontWeight.SemiBold,
                         maxLines = 1, overflow = TextOverflow.Ellipsis, fontFamily = nameFont,
                         modifier = Modifier.widthIn(max = ui.dp(110f)),
                     )
@@ -121,7 +122,7 @@ fun LiveAnnouncementOverlay() {
                     VerifiedBadge(ui.dp(13f))
                     Spacer(Modifier.size(ui.dp(8f)))
                     Text(
-                        l.text, color = Color.White.copy(alpha = 0.92f), fontSize = ui.sp(12.5f),
+                        l.text, color = KiroText.copy(alpha = 0.92f), fontSize = ui.sp(12.5f),
                         maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
                     )
                     Spacer(Modifier.size(ui.dp(6f)))
@@ -146,7 +147,7 @@ fun LiveAnnouncementOverlay() {
                             Spacer(Modifier.size(ui.dp(10f)))
                             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    name, color = Color.White, fontSize = ui.sp(14.5f), fontWeight = FontWeight.SemiBold,
+                                    name, color = KiroText, fontSize = ui.sp(14.5f), fontWeight = FontWeight.SemiBold,
                                     maxLines = 1, overflow = TextOverflow.Ellipsis, fontFamily = nameFont,
                                     modifier = Modifier.weight(1f, fill = false),
                                 )

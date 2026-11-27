@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.library
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -81,7 +82,7 @@ internal fun QueueBanner(onOpen: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text("Download queue", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            Text("Download queue", color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium)
             val parts = buildList {
                 if (active.isNotEmpty()) add("${active.size} in queue")
                 if (speed > 0) add(speedText(speed))
@@ -114,7 +115,7 @@ internal fun DownloadQueueSheet(onDismiss: () -> Unit) {
         Column(modifier = Modifier.navigationBarsPadding().padding(top = 16.dp)) {
             Row(modifier = Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Download queue", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium)
+                    Text("Download queue", color = KiroText, fontSize = 18.sp, fontWeight = FontWeight.Medium)
                     val speed = active.sumOf { it.speed }
                     val left = active.filter { it.downloading }.maxOfOrNull { it.secondsLeft } ?: -1L
                     val sub = buildList {
@@ -159,7 +160,7 @@ private fun QueueRow(d: Downloads.Item, position: Int, activeCount: Int) {
             )
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(d.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(d.title, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text("Episode ${d.episode}", color = Dim, fontSize = 12.sp)
                 val status = when {
                     d.failed -> "Failed (${d.error.ifEmpty { "unknown" }})"

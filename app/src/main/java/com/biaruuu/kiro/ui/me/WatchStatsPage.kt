@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.me
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -170,7 +171,7 @@ private fun StreakCard(streak: WatchStats.Streak, today: LocalDate) {
                     Text(tier.name, color = tier.top, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp)
                     Text(
                         if (streak.count == 1) "1 day" else "${streak.count} days",
-                        color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.SemiBold,
+                        color = KiroText, fontSize = 26.sp, fontWeight = FontWeight.SemiBold,
                     )
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
                         androidx.compose.material3.Icon(
@@ -218,7 +219,7 @@ private fun StreakCard(streak: WatchStats.Streak, today: LocalDate) {
                 val left = next.minDays - streak.count
                 Text(
                     "$left more ${if (left == 1) "day" else "days"} to ${next.name}",
-                    color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium,
+                    color = KiroText, fontSize = 12.sp, fontWeight = FontWeight.Medium,
                 )
                 Spacer(Modifier.height(6.dp))
                 val prevMin = tier.minDays
@@ -237,7 +238,7 @@ private fun SectionTitle(text: String, modifier: Modifier = Modifier, action: St
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
             com.biaruuu.kiro.ui.i18n.I18n.tr(text),
-            color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp,
+            color = KiroText, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp,
             modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
         if (action != null) {
@@ -296,7 +297,7 @@ private fun RecentActivityCard(events: List<Event>) {
                 )
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(e.title, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(e.title, color = KiroText, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
                         when (e.kind) {
                             "watched" -> "Watched"
@@ -372,7 +373,7 @@ private fun LibraryCard() {
 @Composable
 private fun Count(label: String, n: Int, modifier: Modifier) {
     Column(modifier.clip(RoundedCornerShape(10.dp)).background(Color.White.copy(alpha = 0.05f)).padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("$n", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        Text("$n", color = KiroText, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
         Text(label, color = Dim, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
@@ -401,7 +402,7 @@ private fun LevelCard(level: WatchStats.Level) {
     }
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Card).padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Level ${level.level}", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Text("Level ${level.level}", color = KiroText, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
             Text("${level.totalXp} XP", color = Dim, fontSize = 13.sp)
         }
         Spacer(Modifier.height(10.dp))
@@ -422,7 +423,7 @@ private fun Tile(label: String, value: String, modifier: Modifier) {
     Column(modifier.clip(RoundedCornerShape(16.dp)).background(Card).padding(14.dp)) {
         Text(label, color = Dim, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(4.dp))
-        Text(value, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        Text(value, color = KiroText, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
 }
 
@@ -527,7 +528,7 @@ private fun GenresCard(genres: List<Pair<String, Int>>) {
         top.forEachIndexed { i, (name, sec) ->
             val frac by animateFloatAsState(sec.toFloat() / max, label = "g$i")
             Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(name, color = Color.White, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.width(96.dp))
+                Text(name, color = KiroText, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.width(96.dp))
                 Box(Modifier.weight(1f).height(10.dp).clip(RoundedCornerShape(5.dp)).background(Color.White.copy(alpha = 0.08f))) {
                     Box(Modifier.fillMaxWidth(frac).height(10.dp).background(GENRE_COLORS[i % GENRE_COLORS.size]))
                 }

@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.home
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -154,7 +155,7 @@ fun HeroCarousel(
                 Text(
                     text = "KIRO",
                     style = TextStyle(shadow = TextShadow),
-                    color = Color.White,
+                    color = KiroText,
                     fontSize = dims.wordmark,
                     fontWeight = FontWeight.Medium,
                     letterSpacing = 4.sp,
@@ -255,7 +256,7 @@ private fun PhoneHeroPage(
                     fontSize = dims.heroTitle,
                     lineHeight = dims.heroTitle * 1.3f,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
+                    color = KiroText,
                     textAlign = TextAlign.Center,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -267,7 +268,7 @@ private fun PhoneHeroPage(
                 Text(
                     text = info,
                     style = TextStyle(shadow = TextShadow),
-                    color = Color.White.copy(alpha = 0.9f),
+                    color = KiroText.copy(alpha = 0.9f),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center,
@@ -281,7 +282,7 @@ private fun PhoneHeroPage(
                 Text(
                     text = line,
                     style = TextStyle(shadow = TextShadow),
-                    color = Color.White.copy(alpha = 0.72f),
+                    color = KiroText.copy(alpha = 0.72f),
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
                     textAlign = TextAlign.Center,
@@ -324,8 +325,8 @@ private fun HeroButtons(anime: Anime, onPlay: (Anime) -> Unit) {
             },
             shape = RoundedCornerShape(20.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White.copy(alpha = 0.18f),
-                contentColor = Color.White,
+                containerColor = KiroText.copy(alpha = 0.18f),
+                contentColor = KiroText,
             ),
             modifier = Modifier.height(38.dp),
         ) {
@@ -361,7 +362,7 @@ private fun WideHeroPage(
                 Text(
                     text = details,
                     style = MaterialTheme.typography.labelLarge,
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = KiroText.copy(alpha = 0.7f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -372,7 +373,7 @@ private fun WideHeroPage(
                 fontSize = dims.heroTitle,
                 lineHeight = dims.heroTitle * 1.2f,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = KiroText,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -393,7 +394,7 @@ private fun PlayButton(onClick: () -> Unit) {
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color.White,
+            containerColor = KiroText,
             contentColor = Color.Black,
         ),
         modifier = Modifier

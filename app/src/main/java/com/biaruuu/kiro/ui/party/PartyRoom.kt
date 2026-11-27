@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.party
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import android.Manifest
 import android.content.pm.PackageManager
 import android.widget.Toast
@@ -133,7 +134,7 @@ fun VoiceControls(modifier: Modifier = Modifier) {
     }
     Column(modifier) {
         if (!joined) {
-            Text("Voice chat", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text("Voice chat", color = KiroText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(4.dp))
             Text("Talk with everyone in the room. Earphones help avoid echo.", color = PrMuted, fontSize = 12.sp, lineHeight = 17.sp)
             Spacer(Modifier.height(14.dp))
@@ -148,7 +149,7 @@ fun VoiceControls(modifier: Modifier = Modifier) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 PtDot(if (muted) Color(0xFFFF6B6B) else PrGreen, 8)
                 Spacer(Modifier.width(8.dp))
-                Text(if (muted) "You're muted" else "You're in voice", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                Text(if (muted) "You're muted" else "You're in voice", color = KiroText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
             }
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -242,7 +243,7 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                         )
                     }
                     Spacer(Modifier.height(14.dp))
-                    Text(if (alone) "Invite your friends" else "No messages yet", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(if (alone) "Invite your friends" else "No messages yet", color = KiroText, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(4.dp))
                     Text(
                         if (alone) "Invite others so you can watch and chat together." else "Say hi to everyone.",
@@ -284,7 +285,7 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                                 Column(Modifier.weight(1f)) {
                                     if (first) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(m.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                                            Text(m.name, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                                             if (m.uid == hostUid) {
                                                 Spacer(Modifier.width(5.dp))
                                                 androidx.compose.material3.Icon(
@@ -311,7 +312,7 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                                 modifier = Modifier.background(PrCard),
                             ) {
                                 if (mine) DropdownMenuItem(
-                                    text = { Text("Edit message", color = Color.White, fontSize = 15.sp) },
+                                    text = { Text("Edit message", color = KiroText, fontSize = 15.sp) },
                                     trailingIcon = {
                                         androidx.compose.material3.Icon(
                                             painterResource(com.biaruuu.kiro.R.drawable.fluent_edit_regular), contentDescription = null,
@@ -384,7 +385,7 @@ fun PartyChatPane(modifier: Modifier = Modifier, onInvite: (() -> Unit)? = null)
                 Box(Modifier.width(2.dp).height(30.dp).background(Color.White))
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Editing message", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Editing message", color = KiroText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     Text(e.text, color = PrMuted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 androidx.compose.material3.Icon(
@@ -567,7 +568,7 @@ fun PartyPill(modifier: Modifier = Modifier, onOpen: () -> Unit, onWatch: (Int, 
             Box(Modifier.size(7.dp).clip(CircleShape).background(if (muted) Color(0xFFFF6B6B) else PrGreen))
             Spacer(Modifier.width(7.dp))
         }
-        Text("${members.size} watching", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+        Text("${members.size} watching", color = KiroText, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1)
         if (!p.host && r != null && r.animeId > 0) {
             Spacer(Modifier.width(8.dp))
             Text(

@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.components
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,10 +22,10 @@ fun RewatchDialog(onNo: () -> Unit, onYes: () -> Unit) {
     AlertDialog(
         onDismissRequest = onNo,
         containerColor = Color(0xFF18181B),
-        title = { Text("Watch again?", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+        title = { Text("Watch again?", color = KiroText, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
         text = { Text("Are you sure you want to rewatch this again?", color = Color(0xFF9A9A9F), fontSize = 15.sp) },
         confirmButton = { TextButton(onClick = onYes) { Text("Yes", color = KiroAccent, fontWeight = FontWeight.Bold) } },
-        dismissButton = { TextButton(onClick = onNo) { Text("No", color = Color.White) } },
+        dismissButton = { TextButton(onClick = onNo) { Text("No", color = KiroText) } },
     )
 }
 
@@ -45,6 +46,6 @@ fun WatchedBadge(modifier: Modifier = Modifier) {
             modifier = Modifier.size(11.dp),
         )
         androidx.compose.foundation.layout.Spacer(Modifier.width(3.dp))
-        Text("Watched", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        Text("Watched", color = KiroText, fontSize = 10.sp, fontWeight = FontWeight.Bold)
     }
 }

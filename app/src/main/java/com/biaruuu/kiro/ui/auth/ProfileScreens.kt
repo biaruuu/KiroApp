@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.auth
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
@@ -104,7 +105,7 @@ fun ProfileGate(uid: String, fallbackName: String, content: @Composable () -> Un
         profile.loaded -> OnboardingFlow(fallbackName)
         timedOut -> content() // offline and nothing cached: don't trap the user
         else -> Box(Modifier.fillMaxSize().background(KiroBackground), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
+            CircularProgressIndicator(color = KiroText, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
         }
     }
 }
@@ -153,7 +154,7 @@ private fun OnboardingFlow(suggestion: String) {
                         1 -> "Tell us about yourself"
                         else -> "Upload your profile photo"
                     },
-                    color = Color.White,
+                    color = KiroText,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium,
                 )
@@ -250,7 +251,7 @@ fun Avatar(avatar: String, name: String, size: Dp, modifier: Modifier = Modifier
         } else {
             Text(
                 (name.firstOrNull() ?: 'K').uppercase(),
-                color = Color.White,
+                color = KiroText,
                 fontSize = (size.value * 0.4f).sp,
                 fontWeight = FontWeight.Black,
             )
@@ -421,7 +422,7 @@ private fun AvatarCropDialog(uri: Uri, onCancel: () -> Unit, onCropped: (String)
                 } else if (failed) {
                     Text("Couldn't open this photo.", color = Muted, fontSize = 14.sp)
                 } else {
-                    CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
+                    CircularProgressIndicator(color = KiroText, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
                 }
             }
             PrimaryButton(

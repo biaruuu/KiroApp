@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.components
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -215,7 +216,7 @@ fun StreakBadge(streak: Int, litToday: Boolean, size: Dp, modifier: Modifier = M
         if (showNumber && streak > 0) {
             Text(
                 "$shown",
-                color = Color.White.copy(alpha = if (idle) 0.75f else 1f),
+                color = KiroText.copy(alpha = if (idle) 0.75f else 1f),
                 fontWeight = FontWeight.Black,
                 fontSize = (size.value * (if (shown >= 100) 0.27f else 0.34f)).sp,
                 textAlign = TextAlign.Center,

@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.me
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -70,7 +71,7 @@ fun StoragePage() {
     var confirm by remember { mutableStateOf<Confirm?>(null) }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-        Text("Kiro is using ${formatBytes(total)}", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium)
+        Text("Kiro is using ${formatBytes(total)}", color = KiroText, fontSize = 18.sp, fontWeight = FontWeight.Medium)
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(Color(0xFF222226))) {
             if (dlBytes > 0) Box(Modifier.weight(dlBytes.toFloat()).fillMaxSize().background(KiroAccent))
@@ -120,7 +121,7 @@ fun StoragePage() {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text(title, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(title, color = KiroText, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text("${list.size} episode${if (list.size == 1) "" else "s"} · ${formatBytes(list.sumOf { it.bytes })}", color = Muted, fontSize = 12.sp)
                     }
                     Text(
@@ -141,10 +142,10 @@ fun StoragePage() {
         AlertDialog(
             onDismissRequest = { confirm = null },
             containerColor = Color(0xFF18181B),
-            title = { Text(c.title, color = Color.White) },
+            title = { Text(c.title, color = KiroText) },
             text = { Text(c.text, color = Color(0xFFD0D0D4)) },
             confirmButton = { TextButton(onClick = { confirm = null; c.action() }) { Text("Delete", color = Color(0xFFFF6B6B)) } },
-            dismissButton = { TextButton(onClick = { confirm = null }) { Text("Cancel", color = Color.White) } },
+            dismissButton = { TextButton(onClick = { confirm = null }) { Text("Cancel", color = KiroText) } },
         )
     }
 }
@@ -154,7 +155,7 @@ private fun Legend(color: Color, label: String, value: String) {
     Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.width(10.dp).height(10.dp).clip(RoundedCornerShape(5.dp)).background(color))
         Spacer(Modifier.width(10.dp))
-        Text(label, color = Color.White, fontSize = 13.sp, modifier = Modifier.weight(1f))
+        Text(label, color = KiroText, fontSize = 13.sp, modifier = Modifier.weight(1f))
         Text(value, color = Muted, fontSize = 13.sp)
     }
 }

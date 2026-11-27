@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.components
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -97,7 +98,7 @@ fun PosterCard(
                 val pillShape = RoundedCornerShape(50)
                 Text(
                     text = tag,
-                    color = Color.White,
+                    color = KiroText,
                     fontSize = if (compact) 10.sp else 9.sp,
                     lineHeight = 12.sp,
                     fontWeight = FontWeight.Medium,
@@ -201,7 +202,7 @@ fun RankedRow(
                     )
                     Text(
                         text = "${index + 1}",
-                        color = Color.White,
+                        color = KiroText,
                         fontSize = 11.sp,
                         lineHeight = 14.sp,
                         fontWeight = FontWeight.Medium,

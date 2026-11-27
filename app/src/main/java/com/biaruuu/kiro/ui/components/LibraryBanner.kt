@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.components
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -43,7 +44,7 @@ fun LibraryHeader(profile: Profile, name: String, modifier: Modifier = Modifier)
             DecoratedAvatar(profile.avatar, name, 30.dp, profile.decoration)
             Spacer(Modifier.width(12.dp))
             Text(
-                name, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                name, color = KiroText, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 fontFamily = NameStyles.family(context, profile.nameFont),
             )
         }

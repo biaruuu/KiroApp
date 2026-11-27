@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.schedule
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -105,7 +106,7 @@ fun ScheduleScreen(onAnimeClick: (Anime) -> Unit, modifier: Modifier = Modifier)
 
     Column(modifier = modifier.statusBarsPadding()) {
         Box(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 16.dp), contentAlignment = Alignment.CenterStart) {
-            Text("Schedule", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium)
+            Text("Schedule", color = KiroText, fontSize = 18.sp, fontWeight = FontWeight.Medium)
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Hairline))
         UnderlineTabs(labels, pager) { scope.launch { pager.animateScrollToPage(it) } }
@@ -118,7 +119,7 @@ fun ScheduleScreen(onAnimeClick: (Anime) -> Unit, modifier: Modifier = Modifier)
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Text("Couldn't load the schedule", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text("Couldn't load the schedule", color = KiroText, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(6.dp))
                 Text("Check your connection and try again.", color = Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(16.dp))
@@ -202,7 +203,7 @@ private fun AiringRow(a: AniListExtra.Airing, inList: Boolean, now: Long, zone: 
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                a.anime.displayTitle, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                a.anime.displayTitle, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium,
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(4.dp))

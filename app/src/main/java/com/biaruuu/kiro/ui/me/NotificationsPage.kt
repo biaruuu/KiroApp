@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.me
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -124,7 +125,7 @@ fun NotificationsPage(onOpen: (String) -> Unit) {
                 Spacer(Modifier.height(10.dp))
                 if (a != null) {
                     if (a.title.isNotBlank()) {
-                        Text(a.title, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        Text(a.title, color = KiroText, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                         Spacer(Modifier.height(3.dp))
                     }
                     Text(
@@ -134,7 +135,7 @@ fun NotificationsPage(onOpen: (String) -> Unit) {
                 } else if (r != null) {
                     Text(
                         if (newer) "Kiro ${r.version} is available" else "Kiro ${r.version}",
-                        color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium,
+                        color = KiroText, fontSize = 15.sp, fontWeight = FontWeight.Medium,
                     )
                     Spacer(Modifier.height(3.dp))
                     Text(
@@ -163,7 +164,7 @@ private fun DeveloperHeader(card: com.biaruuu.kiro.data.AdminCard?, time: String
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val context = LocalContext.current
                 Text(
-                    name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    name, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     fontFamily = com.biaruuu.kiro.data.NameStyles.family(context, card?.nameFont.orEmpty()),
                     modifier = Modifier.weight(1f, fill = false),
                 )

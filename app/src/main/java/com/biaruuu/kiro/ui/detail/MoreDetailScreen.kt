@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.detail
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -42,7 +43,7 @@ import com.biaruuu.kiro.R
 import com.biaruuu.kiro.ui.components.ErrorState
 import com.biaruuu.kiro.ui.theme.KiroAccent
 
-private val Bg = Color(0xFF121212)
+private val Bg = Color(0xFF000000)
 private val DividerColor = Color(0xFF333335)
 private val MutedText = Color(0xFF8E8E93)
 
@@ -73,7 +74,7 @@ fun MoreDetailScreen(animeId: Int, onBack: () -> Unit, modifier: Modifier = Modi
             }
             Text(
                 "Detail",
-                color = Color.White,
+                color = KiroText,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start = 4.dp),
@@ -112,7 +113,7 @@ fun MoreDetailScreen(animeId: Int, onBack: () -> Unit, modifier: Modifier = Modi
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 anime.displayTitle,
-                                color = Color.White,
+                                color = KiroText,
                                 fontSize = 18.sp,
                                 lineHeight = 24.sp,
                                 fontWeight = FontWeight.Bold,
@@ -163,7 +164,7 @@ fun MoreDetailScreen(animeId: Int, onBack: () -> Unit, modifier: Modifier = Modi
                                 )
                                 Text(
                                     names,
-                                    color = Color.White,
+                                    color = KiroText,
                                     fontSize = 14.sp,
                                     modifier = Modifier.weight(1f),
                                 )
@@ -188,6 +189,6 @@ fun MoreDetailScreen(animeId: Int, onBack: () -> Unit, modifier: Modifier = Modi
 
 @Composable
 private fun SectionTitle(text: String) {
-    Text(text, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+    Text(text, color = KiroText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
     Spacer(Modifier.height(10.dp))
 }

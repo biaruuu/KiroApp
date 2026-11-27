@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.auth
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import android.content.Intent
 import android.net.Uri
 import android.util.Patterns
@@ -152,7 +153,7 @@ private fun GuestConfirm(onBack: () -> Unit) {
             Column(modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp, vertical = 28.dp)) {
                 Text(
                     "Are you sure you want to continue as a guest?",
-                    color = Color.White,
+                    color = KiroText,
                     fontSize = 20.sp,
                     lineHeight = 28.sp,
                     fontWeight = FontWeight.Medium,
@@ -184,7 +185,7 @@ private fun GuestConfirm(onBack: () -> Unit) {
                         .clickable(onClick = onBack),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("Go back", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text("Go back", color = KiroText, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -216,7 +217,7 @@ private fun WelcomeScreen(onEmail: () -> Unit, onGuest: () -> Unit, onTerms: () 
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(Modifier.weight(1f))
-            Text("KIRO", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Medium, letterSpacing = 10.sp)
+            Text("KIRO", color = KiroText, fontSize = 30.sp, fontWeight = FontWeight.Medium, letterSpacing = 10.sp)
             Spacer(Modifier.height(12.dp))
             Text(
                 "Discover your favorite anime and\ncustomize your library.",
@@ -563,7 +564,7 @@ private fun EmailFlow(onBack: () -> Unit) {
                     }
                     Text(
                         if (signUp) "Already have an account? Log in" else "New to Kiro? Create account",
-                        color = Color.White,
+                        color = KiroText,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.clickable {
@@ -622,7 +623,7 @@ internal fun UnderlineField(
         focused -> Color.White
         else -> Color(0xFF2E2E33)
     }
-    val style = TextStyle(color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, fontFamily = AppFont)
+    val style = TextStyle(color = KiroText, fontSize = 16.sp, fontWeight = FontWeight.Medium, fontFamily = AppFont)
     Column(Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -765,7 +766,7 @@ private fun VerifyScreen(email: String) {
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(6.dp))
-                Text(email, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
+                Text(email, color = KiroText, fontSize = 16.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(6.dp))
                 Text("Open it, then come back here.", color = Muted, fontSize = 13.sp, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(18.dp))

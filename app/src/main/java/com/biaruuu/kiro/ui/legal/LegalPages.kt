@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.legal
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -56,7 +57,7 @@ fun LegalContent(terms: Boolean, modifier: Modifier = Modifier) {
         Text(UPDATED, color = Color(0xFF8E8E93), fontSize = 12.sp)
         for ((heading, body) in sections) {
             Spacer(Modifier.height(22.dp))
-            Text(heading, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(heading, color = KiroText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
             Text(body, color = Color(0xFFB4B4BA), fontSize = 13.sp, lineHeight = 20.sp)
         }

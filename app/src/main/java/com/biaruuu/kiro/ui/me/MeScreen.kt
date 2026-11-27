@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.me
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -96,7 +97,7 @@ fun MeScreen(onOpen: (String) -> Unit, modifier: Modifier = Modifier, hasUnread:
                     Text(
                         if (signedIn != null) "Hello, $shownName!" else "Hello, guest!",
                         fontFamily = com.biaruuu.kiro.data.NameStyles.family(context, profile.nameFont),
-                        color = Color.White,
+                        color = KiroText,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Medium,
                         maxLines = 1,
@@ -188,7 +189,7 @@ private fun SettingsRow(@DrawableRes icon: Int, label: String, value: String? = 
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
     ) {
-        Text(label, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Normal, modifier = Modifier.weight(1f))
+        Text(label, color = KiroText, fontSize = 15.sp, fontWeight = FontWeight.Normal, modifier = Modifier.weight(1f))
         if (value != null) {
             Text(value, color = Muted, fontSize = 13.sp)
             Spacer(Modifier.size(4.dp))

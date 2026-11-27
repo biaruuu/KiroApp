@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.components
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -44,7 +45,7 @@ fun PageTopBar(title: String, onBack: (() -> Unit)?, modifier: Modifier = Modifi
             }
             Text(
                 title,
-                color = Color.White,
+                color = KiroText,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,

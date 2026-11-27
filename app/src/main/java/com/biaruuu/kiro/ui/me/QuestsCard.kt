@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.me
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -55,7 +56,7 @@ fun QuestsCard(days: Map<Long, WatchStats.Day>, version: Int) {
 
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CardBg).padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Daily quests", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), maxLines = 1)
+            Text("Daily quests", color = KiroText, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), maxLines = 1)
             Text("$done/3", color = Dim, fontSize = 13.sp)
         }
         Spacer(Modifier.height(4.dp))
@@ -132,7 +133,7 @@ fun RecapCard(days: Map<Long, WatchStats.Day>, version: Int) {
 
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CardBg).padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Weekly recap", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), maxLines = 1)
+            Text("Weekly recap", color = KiroText, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), maxLines = 1)
             Row(
                 Modifier.clip(RoundedCornerShape(20.dp)).border(1.dp, Color(0xFF3A3A3F), RoundedCornerShape(20.dp))
                     .clickable {
@@ -146,11 +147,11 @@ fun RecapCard(days: Map<Long, WatchStats.Day>, version: Int) {
             ) {
                 Icon(painterResource(R.drawable.fluent_open_regular), null, tint = Color.White, modifier = Modifier.size(14.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Share", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                Text("Share", color = KiroText, fontSize = 12.sp, fontWeight = FontWeight.Medium)
             }
         }
         Spacer(Modifier.height(10.dp))
-        Text(durText(seconds), color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        Text(durText(seconds), color = KiroText, fontSize = 30.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
         Text(delta, color = Dim, fontSize = 12.sp)
         Spacer(Modifier.height(14.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -173,6 +174,6 @@ private fun RecapStat(label: String, value: String, modifier: Modifier) {
     Column(modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFF111114)).padding(horizontal = 12.dp, vertical = 10.dp)) {
         Text(label, color = Dim, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(2.dp))
-        Text(value, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(value, color = KiroText, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }

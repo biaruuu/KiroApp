@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -489,7 +490,7 @@ private fun KiroScaffold() {
         ) {
             Text(
                 "You're offline. Downloaded episodes still play.",
-                color = Color.White, fontSize = 12.sp, modifier = Modifier.weight(1f),
+                color = KiroText, fontSize = 12.sp, modifier = Modifier.weight(1f),
             )
             if (tab != TAB_LIBRARY || backStack.isNotEmpty()) {
                 Text(

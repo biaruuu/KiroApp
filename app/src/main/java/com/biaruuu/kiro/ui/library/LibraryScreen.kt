@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.library
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -308,7 +309,7 @@ fun LibraryScreen(
         AlertDialog(
             onDismissRequest = { removeTarget = null },
             containerColor = Color(0xFF18181B),
-            title = { Text(heading, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 18.sp) },
+            title = { Text(heading, color = KiroText, fontWeight = FontWeight.Medium, fontSize = 18.sp) },
             text = { Text(body, color = Muted, fontSize = 15.sp) },
             confirmButton = {
                 TextButton(onClick = {
@@ -328,7 +329,7 @@ fun LibraryScreen(
                 }) { Text("Remove", color = KiroAccent, fontWeight = FontWeight.Medium) }
             },
             dismissButton = {
-                TextButton(onClick = { removeTarget = null }) { Text("Cancel", color = Color.White) }
+                TextButton(onClick = { removeTarget = null }) { Text("Cancel", color = KiroText) }
             },
         )
     }
@@ -489,7 +490,7 @@ private fun WatchedCard(
         Row(verticalAlignment = Alignment.Top) {
             Text(
                 entry.title,
-                color = Color.White,
+                color = KiroText,
                 fontSize = 13.sp,
                 lineHeight = 20.sp,
                 maxLines = 2,
@@ -513,7 +514,7 @@ private fun WatchedCard(
         }
         Text(
             "Episode ${entry.episode}",
-            color = Color.White,
+            color = KiroText,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
         )
@@ -554,7 +555,7 @@ private fun PosterGrid(
                 Spacer(Modifier.height(6.dp))
                 Text(
                     e.title,
-                    color = Color.White,
+                    color = KiroText,
                     fontSize = 13.sp,
                     lineHeight = 21.sp,
                     maxLines = 2,
@@ -640,7 +641,7 @@ private fun SortSheet(
                             )
                         }
                     }
-                    Text(label, color = Color.White, fontSize = 15.sp)
+                    Text(label, color = KiroText, fontSize = 15.sp)
                 }
             }
             Box(Modifier.padding(horizontal = 24.dp, vertical = 6.dp).fillMaxWidth().height(1.dp).background(Hairline))
@@ -660,7 +661,7 @@ private fun SortSheet(
                         modifier = Modifier.size(22.dp),
                     )
                 }
-                Text("Cancel", color = Color.White, fontSize = 15.sp)
+                Text("Cancel", color = KiroText, fontSize = 15.sp)
             }
             Spacer(Modifier.height(8.dp))
         }
@@ -715,11 +716,11 @@ private fun DownloadPosterGrid(
                             Box(Modifier.size(6.dp).clip(androidx.compose.foundation.shape.CircleShape).background(KiroAccent))
                             Spacer(Modifier.width(5.dp))
                         }
-                        Text("${episodes.size} ep", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                        Text("${episodes.size} ep", color = KiroText, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                     }
                 }
                 Spacer(Modifier.height(6.dp))
-                Text(first.title, color = Color.White, fontSize = 13.sp, lineHeight = 21.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(first.title, color = KiroText, fontSize = 13.sp, lineHeight = 21.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
     }

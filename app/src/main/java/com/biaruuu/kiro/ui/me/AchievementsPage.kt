@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.me
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -82,7 +83,7 @@ fun AchievementsPage() {
                     Icon(painterResource(R.drawable.fluent_trophy_regular), null, tint = Color(0xFFFFC83D), modifier = Modifier.size(30.dp))
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("$done of ${rows.size} unlocked", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Text("$done of ${rows.size} unlocked", color = KiroText, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                         Text("Keep watching to earn them all", color = Muted, fontSize = 12.sp)
                     }
                 }

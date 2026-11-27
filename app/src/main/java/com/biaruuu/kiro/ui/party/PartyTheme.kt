@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.party
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,7 +31,7 @@ import com.biaruuu.kiro.ui.components.DecoratedAvatar
 import com.biaruuu.kiro.ui.i18n.Text
 
 /** One small set of colours for the whole watch party, so every screen of it looks the same. */
-internal val PtBg = Color(0xFF121212)
+internal val PtBg = Color(0xFF000000)
 internal val PtSurface = Color(0xFF1B1B1F)
 internal val PtRaised = Color(0xFF26262B)
 internal val PtLine = Color(0xFF232328)
@@ -133,7 +134,7 @@ internal fun PtAvatarStack(members: List<WatchParty.Member>, modifier: Modifier 
             Box(
                 Modifier.offset(x = (shown.size * step).dp).size(size.dp).clip(CircleShape).background(PtRaised).border(2.dp, PtBg, CircleShape),
                 contentAlignment = Alignment.Center,
-            ) { Text("+$extra", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) }
+            ) { Text("+$extra", color = KiroText, fontSize = 10.sp, fontWeight = FontWeight.SemiBold) }
         }
     }
 }

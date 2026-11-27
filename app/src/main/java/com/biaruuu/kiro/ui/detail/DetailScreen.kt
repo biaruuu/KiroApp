@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.detail
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.animation.core.animateFloatAsState
@@ -84,7 +85,7 @@ import com.biaruuu.kiro.ui.theme.KiroAccent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private val Bg = Color(0xFF121212)
+private val Bg = Color(0xFF000000)
 private val DividerColor = Color(0xFF333335)
 private val MutedText = Color(0xFF8E8E93)
 private val SheetBackground = Color(0xFF18181B)
@@ -310,7 +311,7 @@ private fun DetailContent(
                                     modifier = Modifier.size(12.dp),
                                 )
                                 Spacer(Modifier.width(3.dp))
-                                Text(rate, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                                Text(rate, color = KiroText, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                             }
                         }
                         Spacer(Modifier.weight(1f))
@@ -337,7 +338,7 @@ private fun DetailContent(
                     Spacer(Modifier.height(8.dp))
                     Text(
                         anime.displayTitle,
-                        color = Color.White,
+                        color = KiroText,
                         fontSize = 22.sp,
                         lineHeight = 27.sp,
                         fontWeight = FontWeight.Medium,
@@ -345,7 +346,7 @@ private fun DetailContent(
                     val genres = genreLine(anime)
                     if (genres.isNotEmpty()) {
                         Spacer(Modifier.height(6.dp))
-                        Text(genres, color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp, fontWeight = FontWeight.Normal)
+                        Text(genres, color = KiroText.copy(alpha = 0.7f), fontSize = 12.sp, fontWeight = FontWeight.Normal)
                     }
                 }
             }
@@ -465,7 +466,7 @@ private fun DetailContent(
                         )
                         Text(
                             "More",
-                            color = Color.White,
+                            color = KiroText,
                             fontSize = 11.sp,
                             lineHeight = 18.sp,
                             fontWeight = FontWeight.Medium,
@@ -497,7 +498,7 @@ private fun DetailContent(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             anime.displayTitle,
-                            color = Color.White,
+                            color = KiroText,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                             maxLines = 1,
@@ -672,9 +673,9 @@ private fun CountdownRow(number: Int, label: String, image: String?) {
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text("Episode $number", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+            Text("Episode $number", color = KiroText, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.height(4.dp))
-            Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            Text(label, color = KiroText, fontSize = 13.sp, fontWeight = FontWeight.Medium)
         }
     }
 }
@@ -719,7 +720,7 @@ private fun EpisodeRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 episode.heading,
-                color = Color.White,
+                color = KiroText,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 maxLines = 2,
@@ -772,11 +773,11 @@ private fun DownloadButton(item: com.biaruuu.kiro.data.Downloads.Item?, onStart:
             running -> {
                 val p = (item!!.percent / 100f).coerceIn(0f, 1f)
                 if (p > 0f) {
-                    androidx.compose.material3.CircularProgressIndicator(progress = { p }, color = Color.White, trackColor = Color(0xFF3A3A3D), strokeWidth = 2.5.dp, modifier = Modifier.size(24.dp))
+                    androidx.compose.material3.CircularProgressIndicator(progress = { p }, color = KiroText, trackColor = Color(0xFF3A3A3D), strokeWidth = 2.5.dp, modifier = Modifier.size(24.dp))
                 } else {
                     com.biaruuu.kiro.ui.components.KiroSpinner(size = 24.dp, strokeWidth = 2.5.dp)
                 }
-                Text(if (p > 0f) "${(p * 100).toInt()}" else "", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Medium)
+                Text(if (p > 0f) "${(p * 100).toInt()}" else "", color = KiroText, fontSize = 9.sp, fontWeight = FontWeight.Medium)
             }
             else -> Icon(painterResource(R.drawable.fluent_arrow_download_regular), contentDescription = "Download", tint = if (item?.failed == true) Color(0xFFFF6B6B) else Color.White, modifier = Modifier.size(24.dp))
         }
@@ -785,13 +786,13 @@ private fun DownloadButton(item: com.biaruuu.kiro.data.Downloads.Item?, onStart:
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { confirm = false },
             containerColor = Color(0xFF18181B),
-            title = { Text("Remove download?", color = Color.White) },
+            title = { Text("Remove download?", color = KiroText) },
             text = { Text("This episode will be deleted from your phone.", color = MutedText) },
             confirmButton = {
                 androidx.compose.material3.TextButton(onClick = { confirm = false; onRemove() }) { Text("Remove", color = Color(0xFFFF6B6B)) }
             },
             dismissButton = {
-                androidx.compose.material3.TextButton(onClick = { confirm = false }) { Text("Cancel", color = Color.White) }
+                androidx.compose.material3.TextButton(onClick = { confirm = false }) { Text("Cancel", color = KiroText) }
             },
         )
     }

@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.113.0]
+
+### Changed
+- True AMOLED dark: pure black (#000000) backgrounds across the app, with near-black cards and hairlines.
+- Text and buttons use a soft off-white instead of pure white, so text no longer glows or strains the eyes on black.
+
 ## [1.112.0]
 
 ### Changed

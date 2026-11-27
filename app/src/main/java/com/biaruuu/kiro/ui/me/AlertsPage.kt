@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.me
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.animateContentSize
@@ -87,7 +88,7 @@ private fun SwitchRow(title: String, subtitle: String? = null, checked: Boolean,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(title, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (subtitle != null) {
                 Spacer(Modifier.height(3.dp))
                 Text(subtitle, color = Muted, fontSize = 12.sp, lineHeight = 17.sp)
@@ -110,7 +111,7 @@ private fun TimeChip(label: String, value: String, modifier: Modifier, onClick: 
     ) {
         Text(label, color = Muted, fontSize = 11.sp)
         Spacer(Modifier.height(2.dp))
-        Text(value, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+        Text(value, color = KiroText, fontSize = 16.sp, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -223,12 +224,12 @@ fun AlertsPage() {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text(a.anime.displayTitle, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Text(a.anime.displayTitle, color = KiroText, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         Spacer(Modifier.height(2.dp))
                         Text("Episode ${a.episode}", color = Muted, fontSize = 12.sp)
                     }
                     Spacer(Modifier.width(12.dp))
-                    Text(Instant.ofEpochSecond(a.airingAt).atZone(zone).format(fmt), color = Color.White, fontSize = 12.sp)
+                    Text(Instant.ofEpochSecond(a.airingAt).atZone(zone).format(fmt), color = KiroText, fontSize = 12.sp)
                 }
             }
         }

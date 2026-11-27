@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.me
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -82,7 +83,7 @@ private fun AdmTabFrame(content: @Composable () -> Unit) {
 private fun AdmSectionTitle(title: String, hint: String? = null, count: Int? = null) {
     Column(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 2.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text(title, color = KiroText, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             if (count != null) {
                 Spacer(Modifier.width(8.dp))
                 Text(count.toString(), color = Muted, fontSize = 12.sp, modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(AdmChip).padding(horizontal = 8.dp, vertical = 2.dp))
@@ -147,7 +148,7 @@ private fun AdmDeleteAction(label: String = "Delete", what: String, onConfirm: (
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { ask = false },
             containerColor = Card,
-            title = { Text("$label?", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold) },
+            title = { Text("$label?", color = KiroText, fontSize = 17.sp, fontWeight = FontWeight.SemiBold) },
             text = { Text(what, color = AdmSoft, fontSize = 14.sp) },
             confirmButton = {
                 androidx.compose.material3.TextButton(onClick = { ask = false; onConfirm() }) { Text(label, color = AdmRed) }
@@ -162,7 +163,7 @@ private fun AdmDeleteAction(label: String = "Delete", what: String, onConfirm: (
 @Composable
 private fun AdmSecondaryButton(label: String, onClick: () -> Unit) {
     Text(
-        label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium,
+        label, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium,
         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(AdmChip).clickable(onClick = onClick).padding(vertical = 14.dp),
         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
     )
@@ -173,7 +174,7 @@ private fun AdmStat(value: String, label: String, modifier: Modifier = Modifier)
     Column(
         modifier = modifier.clip(RoundedCornerShape(14.dp)).background(Card).border(1.dp, AdmHair, RoundedCornerShape(14.dp)).padding(vertical = 14.dp, horizontal = 14.dp),
     ) {
-        Text(value, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+        Text(value, color = KiroText, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
         Text(label, color = Muted, fontSize = 12.sp)
     }
 }
@@ -252,7 +253,7 @@ fun AdminPage() {
                                     val (name, hint, n) = tools[i]
                                     AdmCard(Modifier.weight(1f).clickable { section = i }) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(name, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                                            Text(name, color = KiroText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                                             if (n > 0) AdmTag(if (n > 99) "99+" else n.toString(), strong = true)
                                             Spacer(Modifier.width(8.dp))
                                             Text("›", color = Muted, fontSize = 18.sp)
@@ -273,10 +274,10 @@ fun AdminPage() {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "‹", color = Color.White, fontSize = 26.sp,
+                    "‹", color = KiroText, fontSize = 26.sp,
                     modifier = Modifier.clip(CircleShape).clickable { section = null }.padding(horizontal = 14.dp, vertical = 2.dp),
                 )
-                Text(tools[current].first, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                Text(tools[current].first, color = KiroText, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
             }
             AdmTabFrame {
                 when (current) {
@@ -356,7 +357,7 @@ private fun UserRow(u: PresenceUser, online: Boolean, now: Long) {
             Box(Modifier.size(9.dp).clip(CircleShape).background(if (online) Green else Color(0xFF55555A)))
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(u.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                Text(u.name, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
                 Text(
                     if (online) (u.watching?.let { "Watching: $it" } ?: "Browsing") else "Last seen ${ago(u.lastSeen)}",
                     color = if (online && u.watching != null) AdmSoft else Muted, fontSize = 12.sp, lineHeight = 17.sp,
@@ -401,7 +402,7 @@ private fun LettersTab() {
         items(shown, key = { it.id }) { l ->
             AdmCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(l.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, modifier = Modifier.weight(1f, fill = false))
+                    Text(l.name, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, modifier = Modifier.weight(1f, fill = false))
                     if (l.topic.isNotEmpty()) { Spacer(Modifier.width(8.dp)); AdmTag(l.topic, strong = true) }
                     Spacer(Modifier.weight(1f))
                     Text(ago(l.createdAt), color = Muted, fontSize = 11.sp)
@@ -446,7 +447,7 @@ private fun ReportsTab() {
         items(reports, key = { it.id }) { r ->
             AdmCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(r.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 2, modifier = Modifier.weight(1f))
+                    Text(r.title, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 2, modifier = Modifier.weight(1f))
                     Spacer(Modifier.width(8.dp))
                     Text(ago(r.createdAt), color = Muted, fontSize = 11.sp)
                 }
@@ -604,7 +605,7 @@ private fun AnnounceTab() {
         }
         items(announcements, key = { it.id }) { a ->
             AdmCard {
-                Text(a.title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                Text(a.title, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(3.dp))
                 Text(a.body, color = AdmSoft, fontSize = 13.sp, lineHeight = 18.sp, maxLines = 4)
                 Spacer(Modifier.height(6.dp))
@@ -660,7 +661,7 @@ private fun DesignsTab() {
                 Spacer(Modifier.height(14.dp))
                 val bytes = picked
                 if (bytes != null) {
-                    Box(Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF121212)), contentAlignment = Alignment.Center) {
+                    Box(Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF000000)), contentAlignment = Alignment.Center) {
                         com.biaruuu.kiro.ui.components.AnimatedAsset(
                             com.biaruuu.kiro.data.Design("preview", type, name, bytes = bytes),
                             if (type == com.biaruuu.kiro.data.Designs.DECORATION) Modifier.size(120.dp) else Modifier.fillMaxSize(),
@@ -702,7 +703,7 @@ private fun DesignsTab() {
                     com.biaruuu.kiro.ui.components.AnimatedAsset(d, Modifier.size(52.dp))
                     Spacer(Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(d.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                        Text(d.name, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
                         Text(types.firstOrNull { it.first == d.type }?.second ?: d.type, color = Muted, fontSize = 12.sp)
                     }
                     AdmDeleteAction(what = "\"${d.name}\" will disappear for every user.") {
@@ -764,7 +765,7 @@ private fun TagalogTab() {
                         )
                         Spacer(Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(c.displayTitle, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 2)
+                            Text(c.displayTitle, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 2)
                             Text("AniList ${c.id}" + if (c.episodes > 0) " · ${c.episodes} episodes" else "", color = Muted, fontSize = 12.sp)
                         }
                         AdmTextAction("Change") { chosen = null; query = "" }
@@ -826,7 +827,7 @@ private fun TagalogTab() {
                         )
                         Spacer(Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(a.displayTitle, color = Color.White, fontSize = 14.sp, maxLines = 2)
+                            Text(a.displayTitle, color = KiroText, fontSize = 14.sp, maxLines = 2)
                             Text(listOf(a.format, if (a.seasonYear > 0) a.seasonYear.toString() else "").filter { !it.isNullOrEmpty() }.joinToString(" · "), color = Muted, fontSize = 12.sp)
                         }
                     }
@@ -844,7 +845,7 @@ private fun TagalogTab() {
             AdmCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(e.title.ifBlank { "AniList ${e.anilistId}" }, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                        Text(e.title.ifBlank { "AniList ${e.anilistId}" }, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
                         Text("Episode ${e.episode} · ${if (e.quality > 0) "${e.quality}p" else "Auto"} · ${ago(e.createdAt)}", color = Muted, fontSize = 12.sp)
                     }
                     AdmDeleteAction(what = "Episode ${e.episode} of ${e.title.ifBlank { "this anime" }} will no longer appear as a Filipino Dub source.") {

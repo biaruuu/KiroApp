@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.search
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -98,7 +99,7 @@ import kotlinx.coroutines.launch
 import java.text.NumberFormat
 
 // Colours sampled from the reference screens.
-private val HeaderBackground = Color(0xFF121212)
+private val HeaderBackground = Color(0xFF000000)
 private val FieldBackground = Color(0xFF18181B)
 private val DividerColor = Color(0xFF333335)
 private val MutedText = Color(0xFF8E8E93)
@@ -281,7 +282,7 @@ private fun SearchField(
             onValueChange = onValueChange,
             singleLine = true,
             textStyle = LocalTextStyle.current.copy(
-                color = Color.White,
+                color = KiroText,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
             ),
@@ -340,7 +341,7 @@ private fun SearchField(
         if (focused) {
             Text(
                 text = "Cancel",
-                color = Color.White,
+                color = KiroText,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier
@@ -376,7 +377,7 @@ private fun SearchOverlay(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Text("Recent Searches", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Text("Recent Searches", color = KiroText, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                         Text(
                             "Clear",
                             color = Color(0xFF9A9AA2),
@@ -401,7 +402,7 @@ private fun SearchOverlay(
                     ) {
                         Text(
                             r,
-                            color = Color.White,
+                            color = KiroText,
                             fontSize = 14.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -430,7 +431,7 @@ private fun SearchOverlay(
                         append(title)
                     } else {
                         append(title.substring(0, at))
-                        withStyle(SpanStyle(color = Color.White, fontWeight = FontWeight.Medium)) { append(title.substring(at, at + q.length)) }
+                        withStyle(SpanStyle(color = KiroText, fontWeight = FontWeight.Medium)) { append(title.substring(at, at + q.length)) }
                         append(title.substring(at + q.length))
                     }
                 }
@@ -442,7 +443,7 @@ private fun SearchOverlay(
                         .padding(horizontal = dims.gutter),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(text, color = Color.White, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(text, color = KiroText, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }

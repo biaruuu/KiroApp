@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.me
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -58,7 +59,7 @@ private fun PartyField(
         BasicTextField(
             value = value, onValueChange = onChange, singleLine = true,
             textStyle = TextStyle(
-                color = Color.White, fontSize = if (big) 26.sp else 16.sp, fontWeight = if (big) FontWeight.Medium else FontWeight.Normal,
+                color = KiroText, fontSize = if (big) 26.sp else 16.sp, fontWeight = if (big) FontWeight.Medium else FontWeight.Normal,
                 letterSpacing = if (big) 6.sp else 0.sp, textAlign = if (big) TextAlign.Center else TextAlign.Start,
             ),
             cursorBrush = SolidColor(Color.White),
@@ -98,9 +99,9 @@ fun PartyPage() {
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Color(0xFF1B1B1F)).padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                androidx.compose.material3.CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
+                androidx.compose.material3.CircularProgressIndicator(color = KiroText, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
                 Spacer(Modifier.height(16.dp))
-                Text("Waiting for the host", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                Text("Waiting for the host", color = KiroText, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(6.dp))
                 Text("You will join as soon as the host accepts your request.", color = Color(0xFF9A9AA2), fontSize = 13.sp, lineHeight = 18.sp, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(18.dp))
@@ -111,7 +112,7 @@ fun PartyPage() {
     val ready = code.length == 6 && !busy
     Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).imePadding().padding(horizontal = 20.dp, vertical = 16.dp), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 460.dp).fillMaxWidth()) {
-            Text("Watch party", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+            Text("Watch party", color = KiroText, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(6.dp))
             Text(
                 "Watch together with live chat and voice. The room stays open while you browse Kiro.",
@@ -123,7 +124,7 @@ fun PartyPage() {
                 Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF1B1B1F)).padding(20.dp)) {
                     Text("You are in a room", color = Color(0xFF9A9AA2), fontSize = 12.sp)
                     Spacer(Modifier.height(4.dp))
-                    Text(inRoom!!.code, color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 6.sp)
+                    Text(inRoom!!.code, color = KiroText, fontSize = 30.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 6.sp)
                     Spacer(Modifier.height(16.dp))
                     PtButton("Open room", Modifier.fillMaxWidth(), filled = true) { DeepLink.request.value = "room" }
                 }

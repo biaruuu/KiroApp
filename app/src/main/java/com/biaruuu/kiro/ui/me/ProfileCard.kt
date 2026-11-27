@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.me
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import android.content.Intent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -88,7 +89,7 @@ fun ProfileCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             name,
-                            color = Color.White,
+                            color = KiroText,
                             fontSize = (19 * k).sp,
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = 0.sp,
@@ -101,7 +102,7 @@ fun ProfileCard(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(painterResource(R.drawable.fluent_star_filled), null, tint = Gold, modifier = Modifier.size((12 * k).dp))
                             Spacer(Modifier.width(3.dp))
-                            Text("Lv ${level.level}", color = Color.White, fontSize = (11 * k).sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                            Text("Lv ${level.level}", color = KiroText, fontSize = (11 * k).sp, fontWeight = FontWeight.Medium, maxLines = 1)
                         }
                     }
                     Spacer(Modifier.height(3.dp))
@@ -139,7 +140,7 @@ fun ProfileCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Spacer(Modifier.weight(1f))
-                Text("$badges", color = Color.White, fontSize = (12 * k).sp, fontWeight = FontWeight.Medium)
+                Text("$badges", color = KiroText, fontSize = (12 * k).sp, fontWeight = FontWeight.Medium)
                 Text(" Badges", color = Dim, fontSize = (12 * k).sp)
                 Spacer(Modifier.width(8.dp))
                 Row(
@@ -147,7 +148,7 @@ fun ProfileCard(
                         .padding(start = (10 * k).dp, end = (4 * k).dp, top = (4 * k).dp, bottom = (4 * k).dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("View All", color = Color.White, fontSize = (11 * k).sp, fontWeight = FontWeight.Medium)
+                    Text("View All", color = KiroText, fontSize = (11 * k).sp, fontWeight = FontWeight.Medium)
                     Icon(painterResource(R.drawable.fluent_chevron_right_regular), null, tint = Color.White, modifier = Modifier.size((15 * k).dp))
                 }
             }
@@ -167,6 +168,6 @@ private fun PillButton(icon: Int, label: String, k: Float, onClick: () -> Unit) 
     ) {
         Icon(painterResource(icon), null, tint = Color.White, modifier = Modifier.size((14 * k).dp))
         Spacer(Modifier.width((5 * k).dp))
-        Text(label, color = Color.White, fontSize = (11.5f * k).sp, fontWeight = FontWeight.Medium, maxLines = 1)
+        Text(label, color = KiroText, fontSize = (11.5f * k).sp, fontWeight = FontWeight.Medium, maxLines = 1)
     }
 }

@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.library
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -78,7 +79,7 @@ fun DownloadedEpisodesScreen(
                 Box(Modifier.size(56.dp).clickable(onClick = onBack), contentAlignment = Alignment.Center) {
                     Icon(painterResource(R.drawable.fluent_chevron_left_regular), contentDescription = "Back", tint = Color.White, modifier = Modifier.size(26.dp))
                 }
-                Text(title, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                Text(title, color = KiroText, fontSize = 18.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                 if (episodes.isNotEmpty()) {
                     Text(
                         "Delete all",
@@ -129,28 +130,28 @@ fun DownloadedEpisodesScreen(
         AlertDialog(
             onDismissRequest = { removeTarget = null },
             containerColor = Color(0xFF18181B),
-            title = { Text("Delete episode ${d.episode}?", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 18.sp) },
+            title = { Text("Delete episode ${d.episode}?", color = KiroText, fontWeight = FontWeight.Medium, fontSize = 18.sp) },
             text = { Text("It will be deleted from your phone.", color = Muted, fontSize = 15.sp) },
             confirmButton = {
                 TextButton(onClick = { Downloads.remove(context, d.animeId, d.episode); removeTarget = null }) {
                     Text("Delete", color = KiroAccent, fontWeight = FontWeight.Medium)
                 }
             },
-            dismissButton = { TextButton(onClick = { removeTarget = null }) { Text("Cancel", color = Color.White) } },
+            dismissButton = { TextButton(onClick = { removeTarget = null }) { Text("Cancel", color = KiroText) } },
         )
     }
     if (removeAll) {
         AlertDialog(
             onDismissRequest = { removeAll = false },
             containerColor = Color(0xFF18181B),
-            title = { Text("Delete all episodes?", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 18.sp) },
+            title = { Text("Delete all episodes?", color = KiroText, fontWeight = FontWeight.Medium, fontSize = 18.sp) },
             text = { Text("Every downloaded episode of \"$title\" will be deleted from your phone.", color = Muted, fontSize = 15.sp) },
             confirmButton = {
                 TextButton(onClick = { Downloads.removeSeries(context, animeId); removeAll = false; onBack() }) {
                     Text("Delete", color = KiroAccent, fontWeight = FontWeight.Medium)
                 }
             },
-            dismissButton = { TextButton(onClick = { removeAll = false }) { Text("Cancel", color = Color.White) } },
+            dismissButton = { TextButton(onClick = { removeAll = false }) { Text("Cancel", color = KiroText) } },
         )
     }
 }
@@ -176,7 +177,7 @@ private fun EpisodeCard(d: Downloads.Item, onClick: () -> Unit, onRemove: () -> 
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text("Episode ${d.episode}", color = KiroAccent, fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                Text(name, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(name, color = KiroText, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (d.quality.isNotBlank() && d.completed) {
                     Spacer(Modifier.height(2.dp))
                     Text(d.quality, color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)

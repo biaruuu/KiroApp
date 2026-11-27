@@ -1,5 +1,6 @@
 package com.biaruuu.kiro.ui.me
 
+import com.biaruuu.kiro.ui.theme.KiroText
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -144,7 +145,7 @@ internal fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> U
         modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
+        Text(label, color = KiroText, fontSize = 14.sp, modifier = Modifier.weight(1f))
         Switch(
             modifier = Modifier.scale(0.92f),
             checked = checked,
@@ -167,7 +168,7 @@ internal fun ChevronRow(label: String, value: String? = null, onClick: () -> Uni
         modifier = Modifier.fillMaxWidth().height(45.dp).clickable(onClick = onClick).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
+        Text(label, color = KiroText, fontSize = 14.sp, modifier = Modifier.weight(1f))
         if (value != null) Text(value, color = Muted, fontSize = 13.sp)
         Icon(
             painter = painterResource(R.drawable.fluent_chevron_right_regular),
@@ -253,7 +254,7 @@ private fun DownloadPage() {
                                 Icon(painterResource(R.drawable.fluent_checkmark_regular), null, tint = Color.White, modifier = Modifier.size(26.dp))
                             }
                         }
-                        Text(if (gb == 0) "No limit" else "$gb GB", color = Color.White, fontSize = 19.sp)
+                        Text(if (gb == 0) "No limit" else "$gb GB", color = KiroText, fontSize = 19.sp)
                     }
                 }
             }
@@ -296,7 +297,7 @@ private fun DownloadPage() {
                                 )
                             }
                         }
-                        Text(q, color = Color.White, fontSize = 19.sp)
+                        Text(q, color = KiroText, fontSize = 19.sp)
                     }
                 }
             }
@@ -324,14 +325,14 @@ private fun LanguagePage() {
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            androidx.compose.material3.Text(label, color = Color.White, fontSize = 14.sp)
+            androidx.compose.material3.Text(label, color = KiroText, fontSize = 14.sp)
             if (code == com.biaruuu.kiro.ui.i18n.I18n.FIL) {
                 Spacer(Modifier.width(8.dp))
                 Box(
                     modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.14f))
                         .padding(horizontal = 6.dp, vertical = 2.dp),
                 ) {
-                    androidx.compose.material3.Text("BETA", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+                    androidx.compose.material3.Text("BETA", color = KiroText, fontSize = 10.sp, fontWeight = FontWeight.Medium)
                 }
             }
             Spacer(Modifier.weight(1f))
@@ -392,7 +393,7 @@ private fun AccountPage(onBack: () -> Unit, sub: String?, openSub: (String?) -> 
                 Text("Email", color = Muted, fontSize = 12.sp)
             }
             Spacer(Modifier.height(6.dp))
-            Text(s?.email.orEmpty(), color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Medium)
+            Text(s?.email.orEmpty(), color = KiroText, fontSize = 17.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.height(22.dp))
             Box(Modifier.fillMaxWidth().height(1.dp).background(Hairline))
             Spacer(Modifier.height(12.dp))
@@ -448,7 +449,7 @@ private fun ValueRow(label: String, value: String, placeholder: Boolean = false,
         modifier = Modifier.fillMaxWidth().height(45.dp).clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+        Text(label, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium)
         Spacer(Modifier.size(16.dp))
         Text(
             value,
@@ -543,7 +544,7 @@ private fun ChevronRowPadless(label: String, onClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth().height(45.dp).clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+        Text(label, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
         Icon(
             painter = painterResource(R.drawable.fluent_chevron_right_regular),
             contentDescription = null,
@@ -565,12 +566,12 @@ private fun ConfirmDialog(text: String, confirm: String, onDismiss: () -> Unit, 
                 .background(Color(0xFF18181B))
                 .padding(24.dp),
         ) {
-            Text(text, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, lineHeight = 22.sp)
+            Text(text, color = KiroText, fontSize = 16.sp, fontWeight = FontWeight.Medium, lineHeight = 22.sp)
             Spacer(Modifier.height(24.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "Cancel",
-                    color = Color.White,
+                    color = KiroText,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.clickable(onClick = onDismiss).padding(horizontal = 20.dp, vertical = 14.dp),
