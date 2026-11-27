@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.114.1]
+
+### Changed
+- Details page uses the shared dark palette (elevated surfaces, hairlines and secondary labels), with slightly larger rounded episode thumbnails and a bolder Play label.
+
 ## [1.114.0]
 
 ### Changed

@@ -86,10 +86,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private val Bg = Color(0xFF000000)
-private val DividerColor = Color(0xFF333335)
-private val MutedText = Color(0xFF8E8E93)
-private val SheetBackground = Color(0xFF18181B)
-private val ThumbBackground = Color(0xFF2A2A2C)
+private val DividerColor = com.biaruuu.kiro.ui.theme.KiroOutline
+private val MutedText = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
+private val SheetBackground = com.biaruuu.kiro.ui.theme.KiroSurface
+private val ThumbBackground = com.biaruuu.kiro.ui.theme.KiroSurfaceHigh
 
 @Composable
 fun DetailScreen(
@@ -359,7 +359,7 @@ private fun DetailContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(46.dp)
-                        .clip(RoundedCornerShape(24.dp))
+                        .clip(RoundedCornerShape(23.dp))
                         .background(KiroAccent)
                         .clickable {
                             val first = released.firstOrNull()
@@ -378,7 +378,7 @@ private fun DetailContent(
                             modifier = Modifier.size(20.dp),
                         )
                         Spacer(Modifier.width(6.dp))
-                        Text("Play", color = Color.Black, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        Text("Play", color = Color.Black, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
                 Spacer(Modifier.height(16.dp))
@@ -386,7 +386,7 @@ private fun DetailContent(
                     ActionButton(
                         label = "Favourites",
                         icon = if (inList) R.drawable.fluent_checkmark_regular else R.drawable.fluent_add_regular,
-                        tint = if (inList) KiroAccent else Color(0xFF9A9AA2),
+                        tint = if (inList) KiroAccent else com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted,
                     ) {
                         if (!com.biaruuu.kiro.data.CloudSync.allowed(context)) {
                             com.biaruuu.kiro.data.CloudSync.requireLogin(context)
@@ -402,7 +402,7 @@ private fun DetailContent(
                     ActionButton(
                         label = status?.let { com.biaruuu.kiro.data.ShowStatus.label(it) } ?: "Status",
                         icon = R.drawable.fluent_inbox_regular,
-                        tint = if (status != null) KiroAccent else Color(0xFF9A9AA2),
+                        tint = if (status != null) KiroAccent else com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted,
                     ) {
                         if (!com.biaruuu.kiro.data.CloudSync.allowed(context)) {
                             com.biaruuu.kiro.data.CloudSync.requireLogin(context)
@@ -642,7 +642,7 @@ private fun ActionButton(label: String, icon: Int, tint: Color, onClick: () -> U
     ) {
         Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
         Spacer(Modifier.height(5.dp))
-        Text(label, color = Color(0xFFB4B4BA), fontSize = 10.sp, fontWeight = FontWeight.Normal)
+        Text(label, color = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted, fontSize = 10.sp, fontWeight = FontWeight.Normal)
     }
 }
 
@@ -656,9 +656,9 @@ private fun CountdownRow(number: Int, label: String, image: String?) {
     ) {
         Box(
             modifier = Modifier
-                .width(120.dp)
-                .height(68.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .width(124.dp)
+                .height(70.dp)
+                .clip(RoundedCornerShape(10.dp))
                 .background(ThumbBackground),
         ) {
             if (image != null) {
@@ -700,9 +700,9 @@ private fun EpisodeRow(
         Box(
             modifier = Modifier
                 .align(Alignment.Top)
-                .width(120.dp)
-                .height(68.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .width(124.dp)
+                .height(70.dp)
+                .clip(RoundedCornerShape(10.dp))
                 .background(ThumbBackground),
         ) {
             val thumb = episode.thumbnailUrl ?: fallbackImage
@@ -785,7 +785,7 @@ private fun DownloadButton(item: com.biaruuu.kiro.data.Downloads.Item?, onStart:
     if (confirm) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { confirm = false },
-            containerColor = Color(0xFF18181B),
+            containerColor = com.biaruuu.kiro.ui.theme.KiroSurface,
             title = { Text("Remove download?", color = KiroText) },
             text = { Text("This episode will be deleted from your phone.", color = MutedText) },
             confirmButton = {
