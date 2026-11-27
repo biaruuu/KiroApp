@@ -48,8 +48,8 @@ import com.biaruuu.kiro.data.UpdateChecker
 import com.biaruuu.kiro.ui.auth.Avatar
 import com.biaruuu.kiro.ui.theme.KiroAccent
 
-private val Muted = Color(0xFF9A9A9F)
-private val Card = Color(0xFF18181B)
+private val Muted = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
+private val Card = com.biaruuu.kiro.ui.theme.KiroSurface
 private val VerifiedBlue = Color(0xFF1D9BF0)
 
 /** One row of the list: a message from the developer, or a published version. */
@@ -148,7 +148,7 @@ fun NotificationsPage(onOpen: (String) -> Unit) {
                     }
                 }
             }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF222226)))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(com.biaruuu.kiro.ui.theme.KiroOutline))
         }
     }
 }

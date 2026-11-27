@@ -56,10 +56,10 @@ import com.biaruuu.kiro.ui.theme.KiroAccent
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 
-private val Muted = Color(0xFF9A9A9F)
-private val Card = Color(0xFF18181B)
-private val AdmHair = Color(0xFF26262B)
-private val AdmChip = Color(0xFF222226)
+private val Muted = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
+private val Card = com.biaruuu.kiro.ui.theme.KiroSurface
+private val AdmHair = com.biaruuu.kiro.ui.theme.KiroSurfaceHigh
+private val AdmChip = com.biaruuu.kiro.ui.theme.KiroOutline
 private val AdmSoft = Color(0xFFD0D0D4)
 private val AdmRed = Color(0xFFFF6B6B)
 private val Green = Color(0xFF3DDC84)

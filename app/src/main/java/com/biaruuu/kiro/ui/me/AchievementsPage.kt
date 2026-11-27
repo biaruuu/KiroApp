@@ -36,8 +36,8 @@ import com.biaruuu.kiro.R
 import com.biaruuu.kiro.data.Achievements
 import com.biaruuu.kiro.ui.theme.KiroAccent
 
-private val Muted = Color(0xFF9A9A9F)
-private val Card = Color(0xFF18181B)
+private val Muted = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
+private val Card = com.biaruuu.kiro.ui.theme.KiroSurface
 private val Locked = Color(0xFF2E2E32)
 
 private fun tierColor(tier: Int) = when (tier) {

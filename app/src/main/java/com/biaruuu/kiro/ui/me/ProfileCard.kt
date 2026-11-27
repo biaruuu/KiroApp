@@ -46,7 +46,7 @@ import com.biaruuu.kiro.ui.components.StreakBadge
 import com.biaruuu.kiro.ui.i18n.Text
 import com.biaruuu.kiro.ui.theme.KiroAccent
 
-private val Dim = Color(0xFF9A9AA2)
+private val Dim = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
 private val Gold = Color(0xFFFFC83D)
 
 /** The profile card at the top of Me: avatar and name, level, streak flame, Edit Profile, Share and badges. */
@@ -76,7 +76,7 @@ fun ProfileCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(shape)
-                .background(Color(0xFF18181B))
+                .background(com.biaruuu.kiro.ui.theme.KiroSurface)
                 .border(1.dp, Color.White.copy(alpha = 0.09f), shape),
         ) {
             Row(

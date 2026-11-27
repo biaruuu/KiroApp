@@ -41,8 +41,8 @@ import java.time.format.TextStyle
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
-private val CardBg = Color(0xFF18181B)
-private val Dim = Color(0xFF9A9AA2)
+private val CardBg = com.biaruuu.kiro.ui.theme.KiroSurface
+private val Dim = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
 private val Track = Color(0xFF2A2A2E)
 
 /** Three goals for today. Tap Claim on a finished one to collect its XP. */
@@ -98,7 +98,7 @@ fun QuestsCard(days: Map<Long, WatchStats.Day>, version: Int) {
                     Text(if (claimed) "Done" else "${minOf(have, q.goal)}/${q.goal} ${q.unit}", color = Dim, fontSize = 12.sp, maxLines = 1)
                 }
             }
-            if (i < quests.lastIndex) Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF222226)))
+            if (i < quests.lastIndex) Box(Modifier.fillMaxWidth().height(1.dp).background(com.biaruuu.kiro.ui.theme.KiroOutline))
         }
         Spacer(Modifier.height(8.dp))
         Text("Clear all three for +${DailyQuests.ALL_DONE_BONUS} bonus XP", color = Dim, fontSize = 12.sp)

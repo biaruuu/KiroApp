@@ -44,8 +44,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val Card = Color(0xFF18181B)
-private val Dim = Color(0xFF8E8E93)
+private val Card = com.biaruuu.kiro.ui.theme.KiroSurface
+private val Dim = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
 
 /** Me > Backup and restore: save the library to a file, or load one (e.g. on a new phone or account). */
 @Composable

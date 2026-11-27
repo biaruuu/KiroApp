@@ -46,8 +46,8 @@ import com.biaruuu.kiro.ui.theme.KiroAccent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private val Muted = Color(0xFF9A9A9F)
-private val CardBg = Color(0xFF18181B)
+private val Muted = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
+private val CardBg = com.biaruuu.kiro.ui.theme.KiroSurface
 
 private class Confirm(val title: String, val text: String, val action: () -> Unit)
 
@@ -73,7 +73,7 @@ fun StoragePage() {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
         Text("Kiro is using ${formatBytes(total)}", color = KiroText, fontSize = 18.sp, fontWeight = FontWeight.Medium)
         Spacer(Modifier.height(12.dp))
-        Row(Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(Color(0xFF222226))) {
+        Row(Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(com.biaruuu.kiro.ui.theme.KiroOutline)) {
             if (dlBytes > 0) Box(Modifier.weight(dlBytes.toFloat()).fillMaxSize().background(KiroAccent))
             if (cache > 0) Box(Modifier.weight(cache.toFloat()).fillMaxSize().background(Color(0xFFE5A93B)))
             if (data > 0) Box(Modifier.weight(data.toFloat()).fillMaxSize().background(Color(0xFF5BA8E8)))
@@ -141,7 +141,7 @@ fun StoragePage() {
     confirm?.let { c ->
         AlertDialog(
             onDismissRequest = { confirm = null },
-            containerColor = Color(0xFF18181B),
+            containerColor = com.biaruuu.kiro.ui.theme.KiroSurface,
             title = { Text(c.title, color = KiroText) },
             text = { Text(c.text, color = Color(0xFFD0D0D4)) },
             confirmButton = { TextButton(onClick = { confirm = null; c.action() }) { Text("Delete", color = Color(0xFFFF6B6B)) } },
@@ -167,7 +167,7 @@ private fun Action(label: String, value: String, enabled: Boolean, onClick: () -
             .clickable(enabled = enabled, onClick = onClick).padding(horizontal = 14.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = if (enabled) Color.White else Color(0xFF5E5E63), fontSize = 14.sp, modifier = Modifier.weight(1f))
+        Text(label, color = if (enabled) Color.White else com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted, fontSize = 14.sp, modifier = Modifier.weight(1f))
         Text(value, color = Muted, fontSize = 13.sp)
     }
 }

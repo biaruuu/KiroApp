@@ -79,10 +79,10 @@ import kotlinx.coroutines.withContext
 import okhttp3.Request
 import org.json.JSONObject
 
-private val Muted = Color(0xFF9A9A9F)
-private val Hairline = Color(0xFF222226)
+private val Muted = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
+private val Hairline = com.biaruuu.kiro.ui.theme.KiroOutline
 private val DisabledGray = Color(0xFF2E2E30)
-private val DisabledText = Color(0xFF5E5E63)
+private val DisabledText = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
 
 /** A full-screen settings page opened from the Me tab. */
 @Composable
@@ -173,7 +173,7 @@ internal fun ChevronRow(label: String, value: String? = null, onClick: () -> Uni
         Icon(
             painter = painterResource(R.drawable.fluent_chevron_right_regular),
             contentDescription = null,
-            tint = Color(0xFF5E5E63),
+            tint = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted,
             modifier = Modifier.size(22.dp),
         )
     }
@@ -229,7 +229,7 @@ private fun DownloadPage() {
         ModalBottomSheet(
             onDismissRequest = { limitSheet = false },
             sheetState = state,
-            containerColor = Color(0xFF18181B),
+            containerColor = com.biaruuu.kiro.ui.theme.KiroSurface,
             scrimColor = Color.Black.copy(alpha = 0.72f),
             shape = RectangleShape,
             tonalElevation = 0.dp,
@@ -267,7 +267,7 @@ private fun DownloadPage() {
         ModalBottomSheet(
             onDismissRequest = { sheet = false },
             sheetState = state,
-            containerColor = Color(0xFF18181B),
+            containerColor = com.biaruuu.kiro.ui.theme.KiroSurface,
             scrimColor = Color.Black.copy(alpha = 0.72f),
             shape = RectangleShape,
             tonalElevation = 0.dp,
@@ -463,7 +463,7 @@ private fun ValueRow(label: String, value: String, placeholder: Boolean = false,
         Icon(
             painter = painterResource(R.drawable.fluent_chevron_right_regular),
             contentDescription = null,
-            tint = Color(0xFF5E5E63),
+            tint = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted,
             modifier = Modifier.size(22.dp),
         )
     }
@@ -548,7 +548,7 @@ private fun ChevronRowPadless(label: String, onClick: () -> Unit) {
         Icon(
             painter = painterResource(R.drawable.fluent_chevron_right_regular),
             contentDescription = null,
-            tint = Color(0xFF5E5E63),
+            tint = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted,
             modifier = Modifier.size(22.dp),
         )
     }
@@ -563,7 +563,7 @@ private fun ConfirmDialog(text: String, confirm: String, onDismiss: () -> Unit, 
                 .widthIn(max = 420.dp)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFF18181B))
+                .background(com.biaruuu.kiro.ui.theme.KiroSurface)
                 .padding(24.dp),
         ) {
             Text(text, color = KiroText, fontSize = 16.sp, fontWeight = FontWeight.Medium, lineHeight = 22.sp)

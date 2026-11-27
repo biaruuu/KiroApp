@@ -54,9 +54,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val CardBg = Color(0xFF18181B)
-private val Line = Color(0xFF222226)
-private val Muted = Color(0xFF9A9A9F)
+private val CardBg = com.biaruuu.kiro.ui.theme.KiroSurface
+private val Line = com.biaruuu.kiro.ui.theme.KiroOutline
+private val Muted = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
 
 private class AlertShow(val id: Int, val title: String)
 
@@ -67,7 +67,7 @@ private fun clock(min: Int): String =
 @Composable
 private fun MiniSwitch(checked: Boolean, onChange: (Boolean) -> Unit) {
     val track by animateColorAsState(if (checked) Color.White else Color(0xFF3A3A3E), tween(160), label = "track")
-    val thumb by animateColorAsState(if (checked) Color(0xFF111111) else Color(0xFF9A9A9F), tween(160), label = "thumb")
+    val thumb by animateColorAsState(if (checked) Color(0xFF111111) else com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted, tween(160), label = "thumb")
     val x by animateDpAsState(if (checked) 18.dp else 2.dp, tween(160), label = "x")
     Box(
         Modifier
@@ -107,7 +107,7 @@ private fun SectionTitle(text: String) {
 @Composable
 private fun TimeChip(label: String, value: String, modifier: Modifier, onClick: () -> Unit) {
     Column(
-        modifier.clip(RoundedCornerShape(10.dp)).background(Color(0xFF18181B)).clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 10.dp),
+        modifier.clip(RoundedCornerShape(10.dp)).background(com.biaruuu.kiro.ui.theme.KiroSurface).clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 10.dp),
     ) {
         Text(label, color = Muted, fontSize = 11.sp)
         Spacer(Modifier.height(2.dp))

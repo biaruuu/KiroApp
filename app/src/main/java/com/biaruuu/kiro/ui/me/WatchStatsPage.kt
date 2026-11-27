@@ -58,8 +58,8 @@ import java.time.format.TextStyle
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
-private val Card = Color(0xFF18181B)
-private val Dim = Color(0xFF9A9AA2)
+private val Card = com.biaruuu.kiro.ui.theme.KiroSurface
+private val Dim = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
 
 internal fun durText(seconds: Int): String {
     val m = seconds / 60

@@ -53,7 +53,7 @@ private fun PartyField(
     capitalization: KeyboardCapitalization = KeyboardCapitalization.Sentences,
 ) {
     Box(
-        modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFF1B1B1F)).padding(horizontal = 16.dp),
+        modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(14.dp)).background(com.biaruuu.kiro.ui.theme.KiroSurface).padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center,
     ) {
         BasicTextField(
@@ -96,14 +96,14 @@ fun PartyPage() {
     if (waiting != null) {
         androidx.compose.ui.window.Dialog(onDismissRequest = { WatchParty.cancelWaiting() }) {
             Column(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Color(0xFF1B1B1F)).padding(24.dp),
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(com.biaruuu.kiro.ui.theme.KiroSurface).padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 androidx.compose.material3.CircularProgressIndicator(color = KiroText, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
                 Spacer(Modifier.height(16.dp))
                 Text("Waiting for the host", color = KiroText, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(6.dp))
-                Text("You will join as soon as the host accepts your request.", color = Color(0xFF9A9AA2), fontSize = 13.sp, lineHeight = 18.sp, textAlign = TextAlign.Center)
+                Text("You will join as soon as the host accepts your request.", color = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted, fontSize = 13.sp, lineHeight = 18.sp, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(18.dp))
                 PtButton("Cancel", Modifier.fillMaxWidth()) { WatchParty.cancelWaiting() }
             }
@@ -116,13 +116,13 @@ fun PartyPage() {
             Spacer(Modifier.height(6.dp))
             Text(
                 "Watch together with live chat and voice. The room stays open while you browse Kiro.",
-                color = Color(0xFF9A9AA2), fontSize = 13.sp, lineHeight = 19.sp,
+                color = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted, fontSize = 13.sp, lineHeight = 19.sp,
             )
             Spacer(Modifier.height(22.dp))
 
             if (inRoom != null) {
-                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF1B1B1F)).padding(20.dp)) {
-                    Text("You are in a room", color = Color(0xFF9A9AA2), fontSize = 12.sp)
+                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(com.biaruuu.kiro.ui.theme.KiroSurface).padding(20.dp)) {
+                    Text("You are in a room", color = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted, fontSize = 12.sp)
                     Spacer(Modifier.height(4.dp))
                     Text(inRoom!!.code, color = KiroText, fontSize = 30.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 6.sp)
                     Spacer(Modifier.height(16.dp))
@@ -132,7 +132,7 @@ fun PartyPage() {
                 PtSegmented(listOf("Create", "Join"), tab, { tab = it }, Modifier.fillMaxWidth())
                 Spacer(Modifier.height(20.dp))
                 if (tab == 0) {
-                    Text("Name your room", color = Color(0xFF9A9AA2), fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, bottom = 8.dp))
+                    Text("Name your room", color = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, bottom = 8.dp))
                     PartyField(roomName, { if (it.length <= 40) roomName = it }, "Friday anime night")
                     Spacer(Modifier.height(10.dp))
                     Text(
@@ -153,7 +153,7 @@ fun PartyPage() {
                         }
                     }
                 } else {
-                    Text("Room code", color = Color(0xFF9A9AA2), fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, bottom = 8.dp))
+                    Text("Room code", color = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted, fontSize = 12.sp, modifier = Modifier.padding(start = 4.dp, bottom = 8.dp))
                     PartyField(
                         code, { code = it.filter { ch -> ch.isLetterOrDigit() }.uppercase().take(6) }, "ABC123", big = true,
                         capitalization = KeyboardCapitalization.Characters,

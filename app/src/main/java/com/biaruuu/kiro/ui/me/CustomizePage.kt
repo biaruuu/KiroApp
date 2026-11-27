@@ -48,8 +48,8 @@ import com.biaruuu.kiro.ui.components.AnimatedAsset
 import com.biaruuu.kiro.ui.components.DecoratedAvatar
 import com.biaruuu.kiro.ui.theme.KiroAccent
 
-private val Muted = Color(0xFF9A9A9F)
-private val Card = Color(0xFF18181B)
+private val Muted = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
+private val Card = com.biaruuu.kiro.ui.theme.KiroSurface
 
 /** Pick an avatar decoration, library effect, library decoration and name font. A live preview is at the top; every pick saves at once. */
 @Composable
@@ -154,7 +154,7 @@ private fun Grid(items: List<Design?>, selectedId: String, onPick: (String) -> U
                         .height(104.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .background(Card)
-                        .border(2.dp, if (on) KiroAccent else Color(0xFF2A2A2D), RoundedCornerShape(10.dp))
+                        .border(2.dp, if (on) KiroAccent else com.biaruuu.kiro.ui.theme.KiroOutline, RoundedCornerShape(10.dp))
                         .clickable { onPick(d?.id ?: "") }
                         .padding(8.dp),
                     contentAlignment = Alignment.Center,

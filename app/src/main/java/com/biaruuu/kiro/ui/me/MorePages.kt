@@ -50,7 +50,7 @@ import com.biaruuu.kiro.ui.auth.UnderlineField
 import com.biaruuu.kiro.ui.theme.KiroAccent
 import com.google.firebase.firestore.FirebaseFirestore
 
-private val Muted = Color(0xFF9A9A9F)
+private val Muted = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
 private val Body = Color(0xFFB4B4BA)
 
 /**
@@ -248,7 +248,7 @@ fun ContactPage(onDone: () -> Unit) {
                 Spacer(Modifier.height(10.dp))
                 val hints = listOf("Something isn't working", "An idea to make Kiro better", "Ask the developer anything", "Anything else")
                 Column(
-                    Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).background(Color(0xFF18181B)),
+                    Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).background(com.biaruuu.kiro.ui.theme.KiroSurface),
                 ) {
                     topics.forEachIndexed { i, label ->
                         val on = topic == i
@@ -269,7 +269,7 @@ fun ContactPage(onDone: () -> Unit) {
                                 if (on) Box(Modifier.size(7.dp).clip(CircleShape).background(Color.Black))
                             }
                         }
-                        if (i < topics.lastIndex) Box(Modifier.fillMaxWidth().padding(start = 16.dp).height(1.dp).background(Color(0xFF2A2A2D)))
+                        if (i < topics.lastIndex) Box(Modifier.fillMaxWidth().padding(start = 16.dp).height(1.dp).background(com.biaruuu.kiro.ui.theme.KiroOutline))
                     }
                 }
                 Spacer(Modifier.height(20.dp))

@@ -47,8 +47,8 @@ import com.biaruuu.kiro.ui.auth.Avatar
 import com.biaruuu.kiro.data.auth.AuthState
 import com.biaruuu.kiro.ui.theme.KiroAccent
 
-private val Muted = Color(0xFF8E8E93)
-private val Hairline = Color(0xFF222226)
+private val Muted = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
+private val Hairline = com.biaruuu.kiro.ui.theme.KiroOutline
 
 /** The Me tab: account header and the settings list. [onOpen] pushes a settings page. */
 @Composable
@@ -168,14 +168,14 @@ private fun Chevron() {
     Icon(
         painter = painterResource(R.drawable.fluent_chevron_right_regular),
         contentDescription = null,
-        tint = Color(0xFF5E5E63),
+        tint = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted,
         modifier = Modifier.size(22.dp),
     )
 }
 
 @Composable
 private fun Group(title: String) {
-    Text(title, color = Color(0xFF6A6A70), fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 28.dp, bottom = 4.dp))
+    Text(title, color = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 28.dp, bottom = 4.dp))
 }
 
 @Composable

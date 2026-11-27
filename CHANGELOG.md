@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.114.5]
+
+### Changed
+- Me and its pages (profile, settings, tools, stats, party, admin) use the shared dark palette for surfaces, hairlines and secondary labels.
+
 ## [1.114.4]
 
 ### Changed
