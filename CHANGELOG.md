@@ -4,6 +4,15 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.112.0]
+
+### Changed
+- Captions now default to Roboto, a see-through Dark Box and an Outline, with no animation.
+- The Dark Box is lighter so the picture still shows through, and keeps the outline for readability. Caption position and height are unchanged.
+
+### Removed
+- "Your own font" file upload in Subtitle style.
+
 ## [1.111.1]
 
 ### Fixed

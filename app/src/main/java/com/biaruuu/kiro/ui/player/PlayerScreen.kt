@@ -703,7 +703,7 @@ fun PlayerScreen(
     val partyHostStyle by com.biaruuu.kiro.data.WatchParty.settings.collectAsState()
     val shownSubStyle = if (party?.host == false && partyHostStyle.subFont.isNotBlank()) {
         SubtitleStyle(
-            font = partyHostStyle.subFont.takeIf { it in SubtitleOptions.fonts && it != SubtitleOptions.CUSTOM } ?: SubtitleOptions.DEFAULT_FONT,
+            font = partyHostStyle.subFont.takeIf { it in SubtitleOptions.fonts } ?: SubtitleOptions.DEFAULT_FONT,
             size = partyHostStyle.subSize.coerceIn(0, SubtitleOptions.sizes.lastIndex),
             background = partyHostStyle.subBg.coerceIn(0, SubtitleOptions.backgrounds.lastIndex),
             edge = partyHostStyle.subEdge.coerceIn(0, SubtitleOptions.edges.lastIndex),
@@ -2248,21 +2248,6 @@ private fun MenuRow(label: String, value: String, onClick: () -> Unit) {
 private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -> Unit) {
     val context = LocalContext.current
     val trebuchet = remember { FontFamily(SubtitleOptions.typeface(context, SubtitleOptions.TREBUCHET)) }
-    var customName by remember { mutableStateOf(SubtitleOptions.customName(context)) }
-    val pickFont = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            val name = context.contentResolver.query(uri, null, null, null, null)?.use { c ->
-                val i = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                if (c.moveToFirst() && i >= 0) c.getString(i) else null
-            } ?: uri.lastPathSegment.orEmpty()
-            if (SubtitleOptions.importCustomFont(context, uri, name)) {
-                customName = SubtitleOptions.customName(context)
-                onChange(style.copy(font = SubtitleOptions.CUSTOM))
-            } else {
-                com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "That file isn't a usable font", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
 
     androidx.compose.material3.ProvideTextStyle(TextStyle(fontFamily = trebuchet)) {
     Column(Modifier.fillMaxSize()) {
@@ -2271,34 +2256,23 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
         item { SectionLabel("Font") }
         items(SubtitleOptions.fonts) { font ->
             val selected = style.font == font
-            val isCustom = font == SubtitleOptions.CUSTOM
-            val typeface = remember(font) { if (isCustom) null else SubtitleOptions.typeface(context, font) }
+            val typeface = remember(font) { SubtitleOptions.typeface(context, font) }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
-                        if (isCustom && customName == null) pickFont.launch(arrayOf("*/*")) else onChange(style.copy(font = font))
-                    }
+                    .clickable { onChange(style.copy(font = font)) }
                     .padding(horizontal = 20.dp, vertical = 11.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    if (isCustom) (customName ?: "Your own font") else font,
+                    font,
                     color = if (selected) Color.White else Color(0xFF9A9AA2),
-                    fontFamily = typeface?.let { FontFamily(it) },
+                    fontFamily = FontFamily(typeface),
                     fontSize = 15.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                if (isCustom) {
-                    Text(
-                        if (customName == null) "Choose file" else "Change",
-                        color = Color(0xFF9A9AA2),
-                        fontSize = 12.sp,
-                        modifier = Modifier.clip(RoundedCornerShape(20.dp)).clickable { pickFont.launch(arrayOf("*/*")) }.padding(horizontal = 8.dp, vertical = 4.dp),
-                    )
-                }
                 if (selected) Box(Modifier.padding(start = 8.dp).size(6.dp).clip(CircleShape).background(Color.White))
             }
         }
@@ -2307,10 +2281,7 @@ private fun SubtitleStylePanel(style: SubtitleStyle, onChange: (SubtitleStyle) -
         item { Chips(SubtitleOptions.sizes.map { it.first }, style.size) { onChange(style.copy(size = it)) } }
         item { SectionLabel("Background") }
         item {
-            Chips(SubtitleOptions.backgrounds.map { it.first }, style.background) {
-                // The dark box reads best without an outline.
-                onChange(style.copy(background = it, edge = if (it == SubtitleOptions.DARK_BOX) 0 else style.edge))
-            }
+            Chips(SubtitleOptions.backgrounds.map { it.first }, style.background) { onChange(style.copy(background = it)) }
         }
         item { SectionLabel("Animation") }
         item { Chips(listOf("Fade", "None"), if (style.fade) 0 else 1) { onChange(style.copy(fade = it == 0)) } }

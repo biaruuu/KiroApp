@@ -15,31 +15,30 @@ import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * How captions look. Font is a name from [SubtitleOptions.fonts] ("Custom" uses the imported file);
+ * How captions look. Font is a name from [SubtitleOptions.fonts] ;
  * size, background and edge are indexes into the option lists below.
  */
 data class SubtitleStyle(
     val font: String = SubtitleOptions.DEFAULT_FONT,
     val size: Int = 1,
-    val background: Int = 0,
+    val background: Int = SubtitleOptions.DARK_BOX,
     val edge: Int = 2,
     /** Optional: each new caption line fades in instead of popping on. */
     val fade: Boolean = false,
 )
 
 object SubtitleOptions {
-    /** Captions default to Satoshi, the bundled Satoshi Bold file. */
-    const val DEFAULT_FONT = "Satoshi"
+    /** Captions default to Roboto (the system sans-serif). */
+    const val DEFAULT_FONT = "Roboto"
     const val TREBUCHET = "Trebuchet MS"
-    const val CUSTOM = "Custom"
 
     /** Font name, bundled file (null = not a file) and the weight to use for variable fonts. */
     private data class Face(val asset: String?, val weight: Int)
 
     private val faces = linkedMapOf(
-        DEFAULT_FONT to Face("fonts/satoshi_bold.otf", 0),
+        DEFAULT_FONT to Face(null, 0),
+        "Satoshi" to Face("fonts/satoshi_bold.otf", 0),
         TREBUCHET to Face("fonts/trebuchet.ttf", 0),
-        "Roboto" to Face(null, 0),
         "Inter" to Face("fonts/inter.ttf", 500),
         "Open Sans" to Face("fonts/opensans.ttf", 500),
         "Poppins" to Face("fonts/poppins_medium.ttf", 0),
@@ -49,8 +48,7 @@ object SubtitleOptions {
         "Comic Neue" to Face("fonts/comicneue_bold.ttf", 0),
     )
 
-    /** Every choice, with "Custom" (a font file the user imports) last. */
-    val fonts: List<String> = faces.keys.toList() + CUSTOM
+    val fonts: List<String> = faces.keys.toList()
 
     /** Same four sizes as the reference: Small, Medium, Large, Extra Large (14/18/24/30 on a base of 18). */
     val sizes = listOf("Small" to 14f, "Medium" to 18f, "Large" to 24f, "Extra Large" to 30f)
@@ -61,7 +59,7 @@ object SubtitleOptions {
         "Transparent" to Color.TRANSPARENT,
         "Semi-Transparent" to Color.argb(0x73, 0, 0, 0),
         "Solid" to Color.BLACK,
-        "Dark Box" to Color.argb(0xB8, 0x0A, 0x0A, 0x0C),
+        "Dark Box" to Color.argb(0x5E, 0, 0, 0),
     )
     const val DARK_BOX = 3
     val edges = listOf(
@@ -72,44 +70,11 @@ object SubtitleOptions {
 
     private val cache = ConcurrentHashMap<String, Typeface>()
 
-    private fun customFile(context: Context) = File(context.filesDir, "subtitle_font.ttf")
-
-    fun customName(context: Context): String? =
-        context.applicationContext.getSharedPreferences("kiro_user_data", Context.MODE_PRIVATE)
-            .getString("sub_custom_font_name", null)
-
-    /** Copies a font file the user picked (.ttf / .otf) into the app and remembers its name. */
-    fun importCustomFont(context: Context, uri: Uri, displayName: String): Boolean {
-        return try {
-        val target = customFile(context)
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            target.outputStream().use { input.copyTo(it) }
-        } ?: return false
-        // Make sure it really is a font before keeping it.
-        Typeface.createFromFile(target)
-        context.applicationContext.getSharedPreferences("kiro_user_data", Context.MODE_PRIVATE).edit()
-            .putString("sub_custom_font_name", displayName.substringBeforeLast('.'))
-            .apply()
-        cache.remove(CUSTOM)
-        true
-        } catch (_: Exception) {
-            customFile(context).delete()
-            false
-        }
-    }
-
     fun typeface(context: Context, font: String): Typeface = cache.getOrPut(font) {
         val bold = if (Build.VERSION.SDK_INT >= 28) 500 else 0
         when (font) {
             "Roboto" ->
                 if (bold > 0) Typeface.create(Typeface.SANS_SERIF, bold, false) else Typeface.SANS_SERIF
-            CUSTOM -> customFile(context).takeIf { it.exists() }?.let {
-                try {
-                    Typeface.create(Typeface.createFromFile(it), Typeface.BOLD)
-                } catch (_: Exception) {
-                    null
-                }
-            }
             else -> faces[font]?.let { face ->
                 try {
                     val builder = Typeface.Builder(context.assets, face.asset!!)
@@ -135,7 +100,7 @@ object SubtitleStyleStore {
         return SubtitleStyle(
             font = font,
             size = p.getInt("sub_size_idx", 1).coerceIn(0, SubtitleOptions.sizes.lastIndex),
-            background = p.getInt("sub_bg_idx", 0).coerceIn(0, SubtitleOptions.backgrounds.lastIndex),
+            background = p.getInt("sub_bg_idx", SubtitleOptions.DARK_BOX).coerceIn(0, SubtitleOptions.backgrounds.lastIndex),
             edge = p.getInt("sub_edge_idx", 2).coerceIn(0, SubtitleOptions.edges.lastIndex),
             fade = p.getBoolean("sub_fade", false),
         )
