@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.113.1]
+
+### Changed
+- Dark palette: pure black base, elevated dark-grey surfaces (#1C1C1E, #2C2C2E) so cards, sheets and menus stay distinct, white primary text and soft #EBEBF5 secondary labels.
+
 ## [1.113.0]
 
 ### Changed

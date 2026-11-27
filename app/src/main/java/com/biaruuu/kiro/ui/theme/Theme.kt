@@ -17,16 +17,17 @@ import androidx.compose.ui.unit.sp
 import com.biaruuu.kiro.R
 
 /** The one accent: white for active states and progress, dark ink on top of it. */
-/** Soft off-white for text: pure white on pure black blooms (halation) on AMOLED screens. */
-val KiroText = Color(0xFFE6E6EA)
+/** Primary text and labels: crisp white on black. */
+val KiroText = Color(0xFFFFFFFF)
 val KiroAccent = KiroText
 val KiroOnAccent = Color.Black
 val KiroBackground = Color(0xFF000000)
-val KiroSurface = Color(0xFF0F0F11)
-val KiroSurfaceHigh = Color(0xFF1A1A1D)
-val KiroOnSurfaceMuted = Color(0xFF8E8E98)
+val KiroSurface = Color(0xFF1C1C1E)
+val KiroSurfaceHigh = Color(0xFF2C2C2E)
+/** Secondary labels: #EBEBF5 at 60%. */
+val KiroOnSurfaceMuted = Color(0x99EBEBF5)
 /** Hairlines and card outlines. */
-val KiroOutline = Color(0xFF222226)
+val KiroOutline = Color(0xFF38383A)
 
 private val KiroColors = darkColorScheme(
     primary = KiroAccent,
