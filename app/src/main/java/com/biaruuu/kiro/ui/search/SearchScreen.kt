@@ -100,10 +100,10 @@ import java.text.NumberFormat
 
 // Colours sampled from the reference screens.
 private val HeaderBackground = Color(0xFF000000)
-private val FieldBackground = Color(0xFF18181B)
-private val DividerColor = Color(0xFF333335)
-private val MutedText = Color(0xFF8E8E93)
-private val SheetBackground = Color(0xFF18181B)
+private val FieldBackground = com.biaruuu.kiro.ui.theme.KiroSurface
+private val DividerColor = com.biaruuu.kiro.ui.theme.KiroOutline
+private val MutedText = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted
+private val SheetBackground = com.biaruuu.kiro.ui.theme.KiroSurface
 
 // These match AniList's genre names exactly. "All" is added in front and means "no genre".
 private val GENRES = listOf(
@@ -291,8 +291,8 @@ private fun SearchField(
             keyboardActions = KeyboardActions(onSearch = { onSearch() }),
             modifier = Modifier
                 .weight(1f)
-                .height(40.dp)
-                .clip(RoundedCornerShape(20.dp))
+                .height(44.dp)
+                .clip(RoundedCornerShape(22.dp))
                 .background(FieldBackground)
                 .onFocusChanged { onFocusChange(it.isFocused) },
             decorationBox = { inner ->
@@ -377,10 +377,10 @@ private fun SearchOverlay(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Text("Recent Searches", color = KiroText, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Text("Recent Searches", color = KiroText, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                         Text(
                             "Clear",
-                            color = Color(0xFF9A9AA2),
+                            color = com.biaruuu.kiro.ui.theme.KiroOnSurfaceMuted,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.clickable(
