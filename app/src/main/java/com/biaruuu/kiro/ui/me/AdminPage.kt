@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -732,6 +733,12 @@ private fun TagalogTab() {
     var referer by remember { mutableStateOf("") }
     var quality by remember { mutableIntStateOf(0) }
     var busy by remember { mutableStateOf(false) }
+    var batch by remember { mutableStateOf(false) }
+    var links by remember { mutableStateOf("") }
+    var startEp by remember { mutableStateOf("1") }
+    var expanded by remember { mutableStateOf(setOf<Int>()) }
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    val parsed = remember(links, startEp) { com.biaruuu.kiro.data.TagalogDub.parseLinks(links, startEp.toIntOrNull()?.coerceAtLeast(1) ?: 1) }
     LaunchedEffect(query) {
         val q = query.trim()
         if (q.length < 2 || chosen != null) { results = emptyList(); return@LaunchedEffect }
@@ -772,48 +779,136 @@ private fun TagalogTab() {
                     }
                 }
                 if (c != null) {
-                    AdmLabel("2 · Episode and video")
-                    UnderlineField(
-                        value = episode, onChange = { if (it.length <= 4 && it.all(Char::isDigit)) episode = it }, hint = "Episode number",
-                        keyboardType = KeyboardType.Number, imeAction = ImeAction.Next, onImeAction = {}, autoFocus = false,
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    UnderlineField(
-                        value = url, onChange = { url = it.trim() }, hint = "Video link (.m3u8 or .mp4)",
-                        keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next, onImeAction = {}, autoFocus = false,
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    UnderlineField(
-                        value = referer, onChange = { referer = it.trim() }, hint = "Referer (only if the host needs one)",
-                        keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done, onImeAction = {}, autoFocus = false,
-                    )
-                    AdmLabel("Quality")
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                        listOf(0 to "Auto", 480 to "480p", 720 to "720p", 1080 to "1080p").forEach { (h, label) ->
-                            AdmPill(label, quality == h) { quality = h }
-                        }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
+                        AdmPill("One episode", !batch) { batch = false }
+                        AdmPill("Batch · paste links", batch) { batch = true }
                     }
-                    Spacer(Modifier.height(14.dp))
-                    val ep = episode.toIntOrNull() ?: 0
-                    PrimaryButton(
-                        label = "Publish",
-                        enabled = ep > 0 && url.startsWith("http") && !busy,
-                        busy = busy,
-                        onClick = {
-                            busy = true
-                            com.biaruuu.kiro.data.TagalogDub.publish(
-                                com.biaruuu.kiro.data.TagalogDub.Entry("", c.id, c.displayTitle, c.posterUrl.orEmpty(), ep, url, quality, referer, 0L),
-                            ) { error ->
-                                busy = false
-                                if (error == null) {
-                                    episode = (ep + 1).toString(); url = ""
-                                    com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Published episode $ep.", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Couldn't publish: $error", Toast.LENGTH_LONG).show()
-                                }
+                    if (batch) {
+                        AdmLabel("2 · Paste the links, one per line")
+                        Text(
+                            "The episode number is read from each link (\"Episode 001\"). A link without one continues from the previous episode.",
+                            color = Muted, fontSize = 12.sp, lineHeight = 17.sp,
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Box(
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 150.dp, max = 260.dp)
+                                .clip(RoundedCornerShape(12.dp)).background(AdmChip).padding(12.dp),
+                        ) {
+                            androidx.compose.foundation.text.BasicTextField(
+                                value = links,
+                                onValueChange = { links = it },
+                                textStyle = androidx.compose.ui.text.TextStyle(color = KiroText, fontSize = 12.sp, lineHeight = 17.sp),
+                                cursorBrush = androidx.compose.ui.graphics.SolidColor(KiroAccent),
+                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Uri),
+                                modifier = Modifier.fillMaxWidth(),
+                                decorationBox = { inner ->
+                                    if (links.isEmpty()) Text("https://…/Episode 001 Tagalog Dubbed.mp4\nhttps://…/Episode 002 Tagalog Dubbed.mp4", color = Muted, fontSize = 12.sp, lineHeight = 17.sp)
+                                    inner()
+                                },
+                            )
+                        }
+                        Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            AdmTextAction("Paste") { clipboard.getText()?.text?.let { links = if (links.isBlank()) it else links.trimEnd() + "\n" + it } }
+                            Spacer(Modifier.width(16.dp))
+                            AdmTextAction("Clear") { links = "" }
+                            Spacer(Modifier.weight(1f))
+                            Text("Start at", color = Muted, fontSize = 12.sp)
+                            Spacer(Modifier.width(8.dp))
+                            Box(Modifier.width(56.dp)) {
+                                UnderlineField(
+                                    value = startEp, onChange = { if (it.length <= 4 && it.all(Char::isDigit)) startEp = it }, hint = "1",
+                                    keyboardType = KeyboardType.Number, imeAction = ImeAction.Done, onImeAction = {}, autoFocus = false,
+                                )
                             }
-                        },
-                    )
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        UnderlineField(
+                            value = referer, onChange = { referer = it.trim() }, hint = "Referer (only if the host needs one)",
+                            keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done, onImeAction = {}, autoFocus = false,
+                        )
+                        AdmLabel("Quality")
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                            listOf(0 to "Auto", 480 to "480p", 720 to "720p", 1080 to "1080p").forEach { (h, label) ->
+                                AdmPill(label, quality == h) { quality = h }
+                            }
+                        }
+                        val items = parsed.items
+                        if (items.isNotEmpty()) {
+                            Spacer(Modifier.height(12.dp))
+                            Text(
+                                "${items.size} episodes · ${items.first().episode}–${items.last().episode}",
+                                color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium,
+                            )
+                            val notes = buildList {
+                                if (parsed.gaps.isNotEmpty()) add("Missing: " + parsed.gaps.take(8).joinToString(", ") + if (parsed.gaps.size > 8) " …" else "")
+                                if (parsed.duplicates > 0) add("${parsed.duplicates} duplicate link(s) skipped")
+                                if (parsed.invalid > 0) add("${parsed.invalid} line(s) ignored (not a link)")
+                            }
+                            notes.forEach { Text(it, color = Color(0xFFFFB74D), fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp)) }
+                        }
+                        Spacer(Modifier.height(14.dp))
+                        PrimaryButton(
+                            label = if (items.isEmpty()) "Publish" else "Publish ${items.size} episodes",
+                            enabled = items.isNotEmpty() && !busy,
+                            busy = busy,
+                            onClick = {
+                                busy = true
+                                val list = items.map { com.biaruuu.kiro.data.TagalogDub.Entry("", c.id, c.displayTitle, c.posterUrl.orEmpty(), it.episode, it.url, quality, referer, 0L) }
+                                com.biaruuu.kiro.data.TagalogDub.publishAll(list) { saved, error ->
+                                    busy = false
+                                    if (error == null) {
+                                        links = ""
+                                        com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Published $saved episodes.", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Saved $saved, then failed: $error", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            },
+                        )
+                    } else {
+                        AdmLabel("2 · Episode and video")
+                        UnderlineField(
+                            value = episode, onChange = { if (it.length <= 4 && it.all(Char::isDigit)) episode = it }, hint = "Episode number",
+                            keyboardType = KeyboardType.Number, imeAction = ImeAction.Next, onImeAction = {}, autoFocus = false,
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        UnderlineField(
+                            value = url, onChange = { url = it.trim() }, hint = "Video link (.m3u8 or .mp4)",
+                            keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next, onImeAction = {}, autoFocus = false,
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        UnderlineField(
+                            value = referer, onChange = { referer = it.trim() }, hint = "Referer (only if the host needs one)",
+                            keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done, onImeAction = {}, autoFocus = false,
+                        )
+                        AdmLabel("Quality")
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                            listOf(0 to "Auto", 480 to "480p", 720 to "720p", 1080 to "1080p").forEach { (h, label) ->
+                                AdmPill(label, quality == h) { quality = h }
+                            }
+                        }
+                        Spacer(Modifier.height(14.dp))
+                        val ep = episode.toIntOrNull() ?: 0
+                        PrimaryButton(
+                            label = "Publish",
+                            enabled = ep > 0 && url.startsWith("http") && !busy,
+                            busy = busy,
+                            onClick = {
+                                busy = true
+                                com.biaruuu.kiro.data.TagalogDub.publish(
+                                    com.biaruuu.kiro.data.TagalogDub.Entry("", c.id, c.displayTitle, c.posterUrl.orEmpty(), ep, url, quality, referer, 0L),
+                                ) { error ->
+                                    busy = false
+                                    if (error == null) {
+                                        episode = (ep + 1).toString(); url = ""
+                                        com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Published episode $ep.", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        com.biaruuu.kiro.ui.i18n.I18nToast.make(context, "Couldn't publish: $error", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -841,15 +936,43 @@ private fun TagalogTab() {
         if (entries.isEmpty()) {
             item { Text("Nothing published yet.", color = Muted, fontSize = 13.sp) }
         }
-        items(entries, key = { it.id }) { e ->
-            AdmCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(e.title.ifBlank { "AniList ${e.anilistId}" }, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
-                        Text("Episode ${e.episode} · ${if (e.quality > 0) "${e.quality}p" else "Auto"} · ${ago(e.createdAt)}", color = Muted, fontSize = 12.sp)
+        entries.groupBy { it.anilistId }.forEach { (animeId, list) ->
+            val sorted = list.sortedBy { it.episode }
+            val open = animeId in expanded
+            item(key = "g:$animeId") {
+                AdmCard(Modifier.clickable { expanded = if (open) expanded - animeId else expanded + animeId }) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        coil.compose.AsyncImage(
+                            model = sorted.firstOrNull { it.poster.isNotBlank() }?.poster, contentDescription = null,
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            modifier = Modifier.size(width = 36.dp, height = 50.dp).clip(RoundedCornerShape(6.dp)),
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(sorted.first().title.ifBlank { "AniList $animeId" }, color = KiroText, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                            val eps = sorted.map { it.episode }.toSet()
+                            val gaps = (sorted.first().episode..sorted.last().episode).filter { it !in eps }
+                            Text(
+                                "${sorted.size} episodes · ${sorted.first().episode}–${sorted.last().episode}" +
+                                    if (gaps.isNotEmpty()) " · missing ${gaps.size}" else "",
+                                color = if (gaps.isNotEmpty()) Color(0xFFFFB74D) else Muted, fontSize = 12.sp,
+                            )
+                        }
+                        AdmDeleteAction(what = "All ${sorted.size} Filipino dub episodes of ${sorted.first().title.ifBlank { "this anime" }} will be removed.") {
+                            com.biaruuu.kiro.data.TagalogDub.deleteAll(sorted.map { it.id })
+                        }
                     }
-                    AdmDeleteAction(what = "Episode ${e.episode} of ${e.title.ifBlank { "this anime" }} will no longer appear as a Filipino Dub source.") {
-                        com.biaruuu.kiro.data.TagalogDub.delete(e.id)
+                }
+            }
+            if (open) {
+                items(sorted, key = { it.id }) { e ->
+                    Row(modifier = Modifier.fillMaxWidth().padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Episode ${e.episode}", color = KiroText, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                        Text("${if (e.quality > 0) "${e.quality}p" else "Auto"} · ${ago(e.createdAt)}", color = Muted, fontSize = 12.sp)
+                        Spacer(Modifier.width(8.dp))
+                        AdmDeleteAction(what = "Episode ${e.episode} will no longer appear as a Filipino Dub source.") {
+                            com.biaruuu.kiro.data.TagalogDub.delete(e.id)
+                        }
                     }
                 }
             }

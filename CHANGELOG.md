@@ -4,6 +4,12 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.115.0]
+
+### Added
+- Admin → Filipino Dub: **Batch** mode. Paste many video links, one per line; episode numbers are read from each link ("Episode 001"), with a live preview (count, range, missing episodes, duplicates) and one-tap publish for the whole set.
+- Published dubs are now grouped per anime (episode count, range, missing episodes), expandable, with delete-all.
+
 ## [1.114.5]
 
 ### Changed
