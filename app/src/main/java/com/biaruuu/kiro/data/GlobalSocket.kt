@@ -116,6 +116,7 @@ object GlobalSocket {
                 retry = 0
                 _connected.value = true
                 webSocket.send(JSONObject().put("type", "global_join").toString())
+                CommunityChat.onConnected()
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
@@ -162,8 +163,15 @@ object GlobalSocket {
             }
             "announcement_end" -> if (current.value?.id == m.optString("id")) current.value = null
             "announce_ok" -> pending?.invoke(null).also { pending = null }
+            "chat_msg", "chat_mention", "chat_typing", "chat_deleted" -> CommunityChat.onSocket(m.optString("type"), m)
             "error" -> pending?.invoke(m.optString("message", "failed")).also { pending = null }
         }
+    }
+
+    /** Sends one message to the server if connected; false when it could not be sent. */
+    fun sendJson(o: JSONObject): Boolean {
+        val ws = socket ?: return false
+        return _connected.value && ws.send(o.toString())
     }
 
     /** Tap on like or dislike; tapping the same one again takes it back. Shown at once, confirmed by the server. */

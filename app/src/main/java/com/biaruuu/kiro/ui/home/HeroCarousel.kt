@@ -100,6 +100,7 @@ fun HeroCarousel(
     onNotifications: () -> Unit,
     modifier: Modifier = Modifier,
     hasUnread: Boolean = false,
+    onSchedule: () -> Unit = {},
 ) {
     val dims = LocalDimens.current
     val wide = dims.windowClass != WindowClass.Compact
@@ -160,6 +161,15 @@ fun HeroCarousel(
                     fontWeight = FontWeight.Medium,
                     letterSpacing = 4.sp,
                 )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onSchedule) {
+                    Icon(
+                        painter = painterResource(R.drawable.fluent_calendar_regular),
+                        contentDescription = "Schedule",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
                 IconButton(onClick = onNotifications) {
                     // Plain white bell like the reference. A faint offset copy underneath keeps
                     // it readable on bright artwork without putting a dark disc behind it.
@@ -181,6 +191,7 @@ fun HeroCarousel(
                             )
                         }
                     }
+                }
                 }
             }
 

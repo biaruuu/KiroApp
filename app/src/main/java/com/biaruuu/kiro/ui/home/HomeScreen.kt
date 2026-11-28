@@ -43,6 +43,7 @@ fun HomeScreen(
     onPlay: (Anime) -> Unit,
     onContinue: (Int, Int) -> Unit,
     onNotifications: () -> Unit,
+    onSchedule: () -> Unit = {},
     modifier: Modifier = Modifier,
     hasUnread: Boolean = false,
     viewModel: HomeViewModel = viewModel(),
@@ -97,6 +98,7 @@ fun HomeScreen(
                         heroes = current.content.hero,
                         onPlay = onPlay,
                         onNotifications = onNotifications,
+                        onSchedule = onSchedule,
                         hasUnread = hasUnread,
                     )
                 }

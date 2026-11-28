@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
@@ -66,14 +67,14 @@ import kotlinx.coroutines.delay
 
 private const val TAB_HOME = 0
 private const val TAB_SEARCH = 1
-private const val TAB_SCHEDULE = 2
+private const val TAB_COMMUNITY = 2
 private const val TAB_LIBRARY = 3
 private const val TAB_ME = 4
 
 private val Destinations = listOf(
     NavDestination("Home", R.drawable.fluent_home_regular, R.drawable.fluent_home_filled),
     NavDestination("Search", R.drawable.fluent_search_regular, R.drawable.fluent_search_filled),
-    NavDestination("Schedule", R.drawable.fluent_calendar_regular, R.drawable.fluent_calendar_filled),
+    NavDestination("Community", R.drawable.fluent_chat_regular, R.drawable.fluent_chat_regular),
     NavDestination("Your Library", R.drawable.fluent_inbox_regular, R.drawable.fluent_inbox_regular),
     NavDestination("Me", R.drawable.fluent_emoji_regular, R.drawable.fluent_emoji_filled),
 )
@@ -97,6 +98,7 @@ fun KiroApp() {
             Box(Modifier.fillMaxSize()) {
                 KiroScaffold()
                 com.biaruuu.kiro.ui.components.LiveAnnouncementOverlay()
+                com.biaruuu.kiro.ui.community.CommunityMentionPopup()
                 LiveChannel()
             }
         }
@@ -107,6 +109,10 @@ fun KiroApp() {
 @Composable
 private fun LiveChannel() {
     val context = LocalContext.current
+    // The server learns who this phone is (for @mentions) as soon as the profile is known or changes.
+    val me by com.biaruuu.kiro.data.ProfileRepository.profile.collectAsState()
+    val auth by com.biaruuu.kiro.data.auth.AuthRepository.state.collectAsState()
+    LaunchedEffect(me.username, me.avatar, me.decoration, me.nameFont, auth) { com.biaruuu.kiro.data.CommunityChat.identify() }
     val owner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     androidx.compose.runtime.DisposableEffect(owner) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
@@ -292,7 +298,7 @@ private fun KiroScaffold() {
                 // App icon shortcuts open a tab.
                 backStack.clear()
                 when (it) {
-                    "t:schedule" -> tab = TAB_SCHEDULE
+                    "t:schedule" -> backStack.add("sched")
                     "t:downloads" -> { tab = TAB_LIBRARY; openDownloadsKey++ }
                     else -> tab = TAB_LIBRARY
                 }
@@ -326,13 +332,19 @@ private fun KiroScaffold() {
 
     Box(modifier = Modifier.fillMaxSize()) {
     com.biaruuu.kiro.ui.party.PartyRuntime()
+    // The Community tab shows a dot while a mention is waiting; open requests (from a pop-up) jump to it.
+    val unreadMention by com.biaruuu.kiro.data.CommunityChat.unreadMention.collectAsState()
+    val navItems = remember(unreadMention) { Destinations.mapIndexed { i, d -> if (i == TAB_COMMUNITY) d.copy(badge = unreadMention) else d } }
+    val openRequest by com.biaruuu.kiro.data.CommunityChat.openRequest.collectAsState()
+    LaunchedEffect(openRequest) { if (openRequest > 0) { backStack.clear(); tab = TAB_COMMUNITY } }
+    val imeUp = androidx.compose.foundation.layout.WindowInsets.ime.getBottom(androidx.compose.ui.platform.LocalDensity.current) > 0
     Scaffold(
         containerColor = KiroBackground,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
-            if (!useRail) {
+            if (!useRail && !(tab == TAB_COMMUNITY && imeUp)) {
                 KiroBottomBar(
-                    destinations = Destinations,
+                    destinations = navItems,
                     selectedIndex = tab,
                     onSelect = selectTab,
                 )
@@ -342,7 +354,7 @@ private fun KiroScaffold() {
         Row(modifier = Modifier.fillMaxSize()) {
             if (useRail) {
                 KiroSideRail(
-                    destinations = Destinations,
+                    destinations = navItems,
                     selectedIndex = tab,
                     onSelect = selectTab,
                     width = dims.navRailWidth,
@@ -373,6 +385,7 @@ private fun KiroScaffold() {
                     onPlay = onAnimeClick,
                     onContinue = { id, ep -> openRoute("p:$id:$ep") },
                     onNotifications = { backStack.add("s:notifications") },
+                    onSchedule = { backStack.add("sched") },
                     hasUnread = hasUnread,
                     modifier = contentModifier,
                 )
@@ -383,10 +396,7 @@ private fun KiroScaffold() {
                     modifier = contentModifier,
                 )
 
-                TAB_SCHEDULE -> com.biaruuu.kiro.ui.schedule.ScheduleScreen(
-                    onAnimeClick = onAnimeClick,
-                    modifier = contentModifier,
-                )
+                TAB_COMMUNITY -> com.biaruuu.kiro.ui.community.CommunityScreen(modifier = contentModifier)
 
                 TAB_LIBRARY -> LibraryScreen(
                     onOpenAnime = { backStack.add("d:$it") },
@@ -412,7 +422,12 @@ private fun KiroScaffold() {
         },
         label = "pages",
     ) { top ->
-    if (top == "room") {
+    if (top == "sched") {
+        Column(Modifier.fillMaxSize().background(KiroBackground).statusBarsPadding()) {
+            com.biaruuu.kiro.ui.components.PageTopBar("", onBack = { backStack.removeAt(backStack.lastIndex) })
+            com.biaruuu.kiro.ui.schedule.ScheduleScreen(onAnimeClick = onAnimeClick, modifier = Modifier.weight(1f))
+        }
+    } else if (top == "room") {
         com.biaruuu.kiro.ui.party.PartyRoomScreen(
             onBack = { backStack.removeAt(backStack.lastIndex) },
             onBrowse = { backStack.clear(); tab = TAB_SEARCH },

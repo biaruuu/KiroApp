@@ -98,6 +98,15 @@ fun ProfileCard(
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false),
                         )
+                        if (com.biaruuu.kiro.data.Admin.isAdmin(com.biaruuu.kiro.data.auth.AuthRepository.state.collectAsState().value)) {
+                            // The developer account: a DEV tag and the verified tick, as in the Community chat.
+                            Spacer(Modifier.width((6 * k).dp))
+                            Box(Modifier.clip(RoundedCornerShape(4.dp)).background(Color(0xFF5865F2)).padding(horizontal = 5.dp, vertical = 1.dp)) {
+                                Text("DEV", color = Color.White, fontSize = (9.5f * k).sp, fontWeight = FontWeight.Bold, letterSpacing = 0.4.sp)
+                            }
+                            Spacer(Modifier.width(5.dp))
+                            VerifiedBadge((15 * k).dp)
+                        }
                         Spacer(Modifier.width((6 * k).dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(painterResource(R.drawable.fluent_star_filled), null, tint = Gold, modifier = Modifier.size((12 * k).dp))

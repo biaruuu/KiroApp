@@ -4,6 +4,17 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.116.0]
+
+### Added
+- **Community**: a live Discord-style chat (replaces the Schedule tab). Real-time over WebSocket, photos, emoji picker, typing indicator, day separators and grouped messages. Shows only username, avatar and profile decoration.
+- @mentions: tag someone with @username and they get a small pop-up (never while watching); the developer can tag @everyone and every user sees a pop-up that opens the full message. Messages that tag you are highlighted.
+- DEV tag and verified tick on the developer's messages, and on the developer's profile card in Me.
+- Message history is saved (Firestore `community`); you can delete your own messages, the developer any.
+
+### Changed
+- Schedule moved to a calendar icon in the Home hero (next to notifications).
+
 ## [1.115.0]
 
 ### Added
