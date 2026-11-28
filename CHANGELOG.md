@@ -4,6 +4,11 @@ All notable changes to Kiro are documented here. Every GitHub release publishes 
 matching section below as its release notes, so add an entry for each new version
 **before** tagging it.
 
+## [1.116.1]
+
+### Fixed
+- Build fix for the Community tab keyboard handling.
+
 ## [1.116.0]
 
 ### Added
